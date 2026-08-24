@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>猴子币 MONKEY · 三千万一轮托底，永不下坠</title>
+<meta name="description" content="猴子币 MONKEY 是一个可爱 Meme 代币，5%交易税，60%进入托底池，40%自动回购，三千万代币一轮托底。"/>
+<link rel="icon" type="image/jpeg" href="0ee769b5412dfd0f4d0a14349ca7307e.jpg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<style>
+  :root{
+    --cream:#FFF9EF;
+    --cream2:#FFF3DE;
+    --orange:#FF7A00;
+    --orange-deep:#F25C05;
+    --gold:#FFC93D;
+    --gold-deep:#F5A623;
+    --brown:#3B2F2F;
+    --brown-soft:#6B5757;
+    --banana:#FFE873;
+    --card:#FFFFFF;
+    --shadow:0 24px 60px -30px rgba(242,92,5,.35);
+    --radius:26px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"PingFang SC","MiSans","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -5%, rgba(255,201,61,.35), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, rgba(255,122,0,.14), transparent 55%),
+      var(--cream);
+    color:var(--brown);
+    overflow-x:hidden;
+    line-height:1.6;
+  }
+  ::selection{background:var(--gold);color:var(--brown)}
+
+  .blobs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;opacity:.5;filter:blur(8px);animation:float 10s ease-in-out infinite}
+  .blob.b1{width:280px;height:280px;background:radial-gradient(circle,var(--gold),transparent 70%);top:-60px;right:8%}
+  .blob.b2{width:240px;height:240px;background:radial-gradient(circle,var(--orange),transparent 70%);bottom:6%;left:-60px;animation-delay:-3s}
+  .blob.b3{width:180px;height:180px;background:radial-gradient(circle,var(--banana),transparent 70%);top:42%;left:50%;animation-delay:-6s}
+  @keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.05)}}
+
+  .wrapper{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 24px}
+
+  nav{
+    position:sticky;top:16px;z-index:50;margin:16px 24px 0;
+    max-width:1140px;margin-left:auto;margin-right:auto;
+    background:rgba(255,255,255,.82);backdrop-filter:blur(14px);
+    border:1.5px solid rgba(255,154,0,.25);
+    border-radius:999px;box-shadow:0 12px 34px -20px rgba(242,92,5,.5);
+    padding:10px 18px;
+    display:flex;align-items:center;gap:18px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;cursor:pointer}
+  .brand img{width:46px;height:46px;border-radius:50%;object-fit:cover;
+    border:2.5px solid var(--gold);box-shadow:0 0 0 4px rgba(255,201,61,.3);
+    animation:spin 8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .brand b{font-size:22px;letter-spacing:1px;background:linear-gradient(90deg,var(--orange-deep),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .nav-links{display:flex;gap:6px;margin-left:auto}
+  .nav-links a{position:relative;color:var(--brown-soft);text-decoration:none;font-weight:600;font-size:15px;
+    padding:8px 14px;border-radius:999px;transition:.25s}
+  .nav-links a:hover{color:var(--orange-deep);background:rgba(255,122,0,.1)}
+  .nav-links a.active{color:#fff;background:linear-gradient(90deg,var(--orange),var(--gold-deep));box-shadow:0 8px 20px -8px var(--orange)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;
+    border-radius:999px;padding:11px 22px;font-size:15px;transition:.3s;cursor:pointer;border:none;
+  }
+  .btn.primary{color:#fff;background:linear-gradient(90deg,var(--orange),var(--gold-deep));
+    box-shadow:0 14px 28px -12px var(--orange)}
+  .btn.primary:hover{transform:translateY(-3px);box-shadow:0 20px 34px -12px var(--orange)}
+  .btn.ghost{color:var(--orange-deep);border:1.6px solid var(--orange);background:#fff}
+  .btn.ghost:hover{background:var(--orange);color:#fff}
+  .nav-toggle{display:none;margin-left:auto;background:none;border:0;font-size:26px;color:var(--brown);cursor:pointer}
+
+  header.hero{text-align:center;padding:86px 0 40px;position:relative}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,201,61,.25);border:1.5px solid var(--gold);
+    color:var(--orange-deep);font-weight:700;font-size:13.5px;padding:8px 16px;border-radius:999px}
+  .badge .dot{width:9px;height:9px;border-radius:50%;background:var(--orange);box-shadow:0 0 0 4px rgba(255,122,0,.25);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(255,122,0,.25)}50%{box-shadow:0 0 0 8px rgba(255,122,0,0)}}
+  .hero .title{
+    font-size:clamp(54px,9vw,118px);font-weight:900;line-height:1.02;letter-spacing:2px;
+    background:linear-gradient(180deg,var(--orange-deep) 0%,var(--orange) 45%,var(--gold-deep) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 8px 22px rgba(255,122,0,.28));
+    margin:20px auto 6px;
+  }
+  .hero .en{font-size:clamp(18px,3vw,26px);font-weight:800;color:var(--brown-soft);letter-spacing:6px;text-transform:uppercase}
+  .hero p.sub{max-width:620px;margin:22px auto 0;font-size:18px;color:var(--brown-soft)}
+  .hero .mascot{margin:34px auto 0;width:min(320px,72vw)}
+  .hero .mascot img{width:100%;border-radius:50%;object-fit:cover;
+    border:6px solid rgba(255,255,255,.9);box-shadow:0 40px 90px -34px rgba(242,92,5,.55);
+    animation:swim 4.5s ease-in-out infinite}
+  @keyframes swim{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-16px) rotate(2deg)}}
+  .hero-cta{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:38px}
+  .hero .tags{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .hero .tags span{background:#fff;border:1.5px solid rgba(255,154,0,.2);color:var(--brown-soft);
+    font-size:13.5px;font-weight:600;padding:7px 14px;border-radius:999px}
+
+  section{margin:70px 0}
+  .sec-head{text-align:center;margin-bottom:46px}
+  .sec-kicker{display:inline-block;color:var(--orange-deep);font-weight:800;letter-spacing:3px;font-size:14px;
+    background:rgba(255,122,0,.12);padding:7px 16px;border-radius:999px;margin-bottom:14px}
+  .sec-head h2{font-size:clamp(30px,5vw,46px);font-weight:900;color:var(--brown);letter-spacing:1px}
+  .sec-head h2 em{font-style:normal;background:linear-gradient(90deg,var(--orange),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sec-head p{color:var(--brown-soft);margin-top:12px;font-size:17px}
+
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1.5px solid rgba(255,154,0,.14);padding:30px;transition:.35s}
+  .card:hover{transform:translateY(-6px)}
+
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:center}
+  .about-grid .lead{font-size:19px;color:var(--brown)}
+  .about-grid ul{list-style:none;margin-top:20px;display:grid;gap:14px}
+  .about-grid li{display:flex;gap:14px;align-items:flex-start;background:var(--cream2);padding:16px 18px;border-radius:18px}
+  .about-grid li .ico{font-size:24px}
+  .about-grid li b{display:block;color:var(--brown)}
+  .about-grid li p{color:var(--brown-soft);font-size:14.5px}
+  .stats-panel{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .stat{background:linear-gradient(160deg,var(--cream),#fff);border:1.5px solid rgba(255,154,0,.16);border-radius:22px;padding:24px;text-align:center}
+  .stat .num{font-size:clamp(30px,4vw,42px);font-weight:900;background:linear-gradient(90deg,var(--orange),var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .lab{color:var(--brown-soft);font-weight:600;font-size:14px;margin-top:6px}
+
+  .pie-row{display:grid;grid-template-columns:340px 1fr;gap:30px;align-items:center}
+  .donut{position:relative;width:min(340px,80vw);aspect-ratio:1;margin:0 auto}
+  .donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring{fill:none;stroke-width:42;stroke-linecap:butt}
+  .r1{stroke:url(#g1);stroke-dasharray:219.9 366.5;animation:grow 1.4s ease-out}
+  .r2{stroke:url(#g2);stroke-dasharray:146.6 366.5;animation:grow 1.4s .2s ease-out both}
+  @keyframes grow{from{stroke-dasharray:0 366.5}}
+  .donut .core{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .donut .core b{font-size:44px;font-weight:900;color:var(--brown)}
+  .donut .core span{color:var(--brown-soft)}
+  .legend{display:grid;gap:16px}
+  .legend .item{display:flex;gap:16px;align-items:center;background:var(--card);border:1.5px solid rgba(255,154,0,.14);
+    border-radius:20px;padding:18px 22px;box-shadow:var(--shadow);transition:.3s}
+  .legend .item:hover{transform:translateX(6px)}
+  .legend .dot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+  .legend .item b{font-size:18px}
+  .legend .item p{color:var(--brown-soft);font-size:14.5px}
+
+  .floor-hero{text-align:center;background:linear-gradient(160deg,#fff,#FFF3DE);border:1.5px solid rgba(255,154,0,.18);border-radius:var(--radius)}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:26px}
+  .flow .step{position:relative;background:#fff;border:1.5px solid rgba(255,201,61,.4);border-radius:20px;padding:24px 18px;text-align:center;transition:.3s}
+  .flow .step:hover{transform:translateY(-8px);box-shadow:var(--shadow)}
+  .flow .step .n{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:30px;height:30px;border-radius:50%;
+    background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+  .flow .step .ico{font-size:38px;margin-bottom:8px}
+  .flow .step b{display:block;font-size:17px;margin-bottom:6px}
+  .flow .step p{font-size:13.5px;color:var(--brown-soft)}
+  .flow .arrow{position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--orange);z-index:2}
+  .formula{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:rgba(255,255,255,.8);
+    border:1.5px dashed var(--orange);border-radius:18px;padding:18px;margin:24px 0 6px;font-size:17px;font-weight:700}
+  .formula b{color:var(--orange-deep)}
+  .formula .eq{color:var(--gold-deep);font-size:26px}
+
+  .calc{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:26px;align-items:stretch}
+  .calc .panel{background:#fff;border:1.5px solid rgba(255,154,0,.16);border-radius:22px;padding:26px}
+  .calc .panel h3{font-size:19px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+  .calc label{display:block;font-weight:700;font-size:14.5px;color:var(--brown-soft);margin-bottom:8px}
+  .calc .input-wrap{position:relative;display:flex;align-items:center}
+  .calc input{width:100%;font-size:28px;font-weight:800;color:var(--brown);background:var(--cream2);
+    border:2px solid rgba(255,154,0,.25);border-radius:16px;padding:16px 70px 16px 18px;transition:.25s}
+  .calc input:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 5px rgba(255,122,0,.12)}
+  .calc input::-webkit-inner-spin-button,.calc input::-webkit-outer-spin-button{-webkit-appearance:none}
+  .calc .unit{position:absolute;right:18px;font-weight:800;color:var(--orange-deep)}
+  .result-box{height:100%;display:flex;flex-direction:column;justify-content:center;text-align:center;background:
+    linear-gradient(160deg,#3B2F2F,#6B3518);color:#fff;border-radius:22px;padding:30px}
+  .result-box .lab{color:var(--gold);font-weight:800;letter-spacing:2px;font-size:14px}
+  .result-box .val{font-size:clamp(40px,6vw,62px);font-weight:900;margin:8px 0 4px;
+    background:linear-gradient(90deg,var(--gold),#fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .result-box .desc{font-size:14px;color:rgba(255,255,255,.75)}
+  .result-box.big{display:flex}
+  .try-way{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+  .try-way button{background:var(--cream2);border:1.5px solid rgba(255,154,0,.25);border-radius:999px;padding:9px 16px;
+    font-size:13px;font-weight:700;color:var(--brown-soft);cursor:pointer;transition:.25s}
+  .try-way button:hover{background:var(--orange);color:#fff;border-color:var(--orange)}
+
+  .buyback .card{overflow:hidden}
+  .bb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .bb-item{background:var(--cream2);border-radius:18px;padding:18px 22px;display:flex;gap:14px;align-items:center}
+  .bb-item .ico{font-size:28px}
+  .bb-item b{display:block;font-size:16px}
+  .bb-item p{font-size:13.5px;color:var(--brown-soft)}
+  .counter{display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.6px dashed var(--orange);
+    border-radius:18px;padding:14px 20px;margin-top:20px;font-weight:800;font-size:15px;color:var(--orange-deep)}
+  .counter #tick{color:var(--brown);font-size:20px;min-width:120px;text-align:center}
+
+  .roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .card.phase{border-top:6px solid}
+  .card.phase.p1{border-top-color:var(--gold)}
+  .card.phase.p2{border-top-color:var(--orange)}
+  .card.phase.p3{border-top-color:var(--orange-deep)}
+  .card.phase .ph{font-weight:800;color:var(--orange-deep);font-size:14px;letter-spacing:2px}
+  .card.phase h3{font-size:22px;margin:6px 0 12px}
+  .card.phase ul{list-style:none;display:grid;gap:8px}
+  .card.phase li{color:var(--brown-soft);font-size:14.5px;padding-left:20px;position:relative}
+  .card.phase li::before{content:"🍌";position:absolute;left:0;font-size:13px}
+  .card.phase.done li::before{content:"✅";font-size:13px}
+
+  .community{text-align:center;padding:40px 0}
+  .socials{display:flex;gap:16px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  .socials a{width:64px;height:64px;border-radius:20px;background:#fff;display:grid;place-items:center;font-size:28px;
+    border:1.5px solid rgba(255,154,0,.22);box-shadow:var(--shadow);transition:.3s;text-decoration:none}
+  .socials a:hover{transform:translateY(-8px) rotate(6deg);background:var(--gold)}
+  footer{border-top:1.5px solid rgba(255,154,0,.16);padding:34px 0 30px;margin-top:40px;text-align:center;color:var(--brown-soft)}
+  footer .addr{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid rgba(255,154,0,.2);
+    border-radius:999px;padding:8px 16px;font-size:13px;margin-top:14px;font-family:monospace;cursor:copy}
+  footer .addr:hover{border-color:var(--orange);color:var(--orange-deep)}
+  footer small{display:block;margin-top:14px;font-size:12px;opacity:.7}
+
+  @media(max-width:900px){
+    .nav-links{display:none;position:absolute;top:66px;left:8px;right:8px;flex-direction:column;gap:4px;
+      background:#fff;border:1.5px solid rgba(255,154,0,.2);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+    .nav-links.open{display:flex}
+    .nav-toggle{display:block}
+    nav{align-items:center}
+    .about-grid,.pie-row,.calc,.bb-grid{grid-template-columns:1fr}
+    .flow{grid-template-columns:1fr 1fr}
+    .flow .arrow{display:none}
+    .roadmap{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="blobs" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
+
+<nav>
+  <a class="brand" href="#top">
+    <img src="0ee769b5412dfd0f4d0a14349ca7307e.jpg" alt="猴子币 Logo"/>
+    <b>猴子币 · MONKEY</b>
+  </a>
+  <div class="nav-links" id="navLinks">
+    <a href="#about">关于</a>
+    <a href="#tokenomics">经济模型</a>
+    <a href="#floor">托底池</a>
+    <a href="#buyback">自动回购</a>
+    <a href="#roadmap">路线</a>
+    <a href="#community">社区</a>
+  </div>
+  <button class="nav-toggle" id="navToggle" aria-label="菜单">☰</button>
+  <a class="btn primary" href="#community" style="margin-left:6px">加入我们</a>
+</nav>
+
+<div class="wrapper" id="top">
+
+  <header class="hero">
+    <span class="badge"><span class="dot"></span> Meme 动物 · 三千万一轮托底 · 自动回购</span>
+    <div class="title">猴子币</div>
+    <div class="en">MONKEY TOKEN · $MKY</div>
+    <p class="sub">一只会攒 BNB 的快乐猴子，用层层托底守护每一位 Holder。不走寻常路的 Meme，可爱又硬核。</p>
+    <div class="mascot"><img src="0ee769b5412dfd0f4d0a14349ca7307e.jpg" alt="猴子币吉祥物"/></div>
+    <div class="hero-cta">
+      <a class="btn primary" href="#floor">🧮 看看托底价</a>
+      <a class="btn ghost" href="#tokenomics">📜 了解经济模型</a>
+    </div>
+    <div class="tags">
+      <span>✅ 5% 交易税</span><span>🛡️ 60% 进入托底池</span>
+      <span>🔁 40% 自动回购</span><span>🔥 托底兑换即销毁</span>
+    </div>
+  </header>
+
+  <section id="about">
+    <div class="sec-head">
+      <span class="sec-kicker">ABOUT</span>
+      <h2>什么是 <em>猴子币</em>？</h2>
+      <p>一只只属于社区的猴子，把每一笔交易的税变成守护你的盾牌。</p>
+    </div>
+    <div class="about-grid">
+      <div class="card">
+        <p class="lead">🐵 每笔买卖征收 <b style="color:var(--orange-deep)">5% 税</b>，其中 <b style="color:var(--orange-deep)">60%</b> 注入托底池、<b style="color:var(--orange-deep)">40%</b> 自动回购销毁。猴子币没有花哨承诺，只有看得见、算得出的托底价值。</p>
+        <ul>
+          <li><span class="ico">🛡️</span><div><b>托底机制</b><p>每轮三千万代币锚定托底池 BNB，价格透明可算。</p></div></li>
+          <li><span class="ico">🔥</span><div><b>通缩销毁</b><p>用户用代币兑换托底池，对应代币直达黑洞销毁。</p></div></li>
+          <li><span class="ico">🔁</span><div><b>自动回购</b><p>累计回购金达 0.1 BNB 每分钟自动回购，托价续航。</p></div></li>
+        </ul>
+      </div>
+      <div class="stats-panel">
+        <div class="stat"><div class="num">30,000,000</div><div class="lab">每轮托底代币 🔀</div></div>
+        <div class="stat"><div class="num">5%</div><div class="lab">买卖交易税</div></div>
+        <div class="stat"><div class="num">0.1 BNB</div><div class="lab">自动回购触发线</div></div>
+        <div class="stat"><div class="num">60 : 40</div><div class="lab">托底池 / 回购分配</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tokenomics">
+    <div class="sec-head">
+      <span class="sec-kicker">TOKENOMICS</span>
+      <h2>经济模型 · 5% 税的 <em>双引擎</em></h2>
+      <p>每一笔交易的税都被重新注入价值：一半托底，一半回购。</p>
+    </div>
+    <div class="card">
+      <div class="pie-row">
+        <div class="donut">
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#FF7A00"/><stop offset="1" stop-color="#F5A623"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#F5A623"/><stop offset="1" stop-color="#FFC93D"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring" cx="100" cy="100" r="80" fill="none" stroke="#FFF1DC" stroke-width="42"/>
+            <circle class="ring r1" cx="100" cy="100" r="80"/>
+            <circle class="ring r2" cx="100" cy="100" r="80"/>
+          </svg>
+          <div class="core"><b>5%</b><span>每笔交易税</span></div>
+        </div>
+        <div class="legend">
+          <div class="item">
+            <span class="dot" style="background:linear-gradient(90deg,#FF7A00,#F5A623)"></span>
+            <div><b>60% → 托底池</b><p>流入托底资金池，为三千万代币一轮的托底提供 BNB 支撑。</p></div>
+          </div>
+          <div class="item">
+            <span class="dot" style="background:linear-gradient(90deg,#F5A623,#FFC93D)"></span>
+            <div><b>40% → 自动回购</b><p>积累至 0.1 BNB 后每分钟自动回购代币，持续托起价格。</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="floor">
+    <div class="sec-head">
+      <span class="sec-kicker">FLOOR POOL</span>
+      <h2>托底池 · <em>三千万一轮</em></h2>
+      <p>每一轮托底三千万代币，用可计算的 BNB 支撑，透明到你心里。</p>
+    </div>
+
+    <div class="card floor-hero">
+      <p class="lead" style="font-size:17px;color:var(--brown)"><b style="color:var(--orange-deep)">托底价</b> = 本轮托底代币量 ÷ 托底池 BNB 数量</p>
+      <p style="color:var(--brown-soft);font-size:15px">例如托底池进入 10 BNB，则：<b style="color:var(--orange-deep)">30,000,000 ÷ 10 = 3,000,000 代币 / 1 BNB</b></p>
+
+      <div class="formula">
+        <span>本轮托底量</span><b>30,000,000 $MKY</b><span class="eq">÷</span>
+        <span>托底池 BNB</span><b id="fBnb">10</b><span class="eq">=</span>
+        <span>托底价</span><b id="fPrice">3,000,000</b><span>$MKY / 1 BNB</span>
+      </div>
+
+      <div class="calc">
+        <div class="panel">
+          <h3>🧮 实时算一算托底价</h3>
+          <label for="bnb">托底池内 BNB 数量</label>
+          <div class="input-wrap">
+            <input id="bnb" type="number" min="0.01" step="any" value="10" />
+            <span class="unit">BNB</span>
+          </div>
+          <div class="try-way">
+            <button data-bnb="1">1</button>
+            <button data-bnb="3">3</button>
+            <button data-bnb="10">10</button>
+            <button data-bnb="30">30</button>
+            <button data-bnb="100">100</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--brown-soft);margin-top:14px;opacity:.75">
+            当前一轮固定托底 30,000,000 代币，Price = 30,000,000 ÷ BNB。
+          </p>
+        </div>
+        <div class="result-box big">
+          <span class="lab">本轮托底价</span>
+          <div class="val" id="calcPrice">3,000,000</div>
+          <span class="desc" id="calcDesc">$MKY / 1 BNB = 每 1 BNB 可换取 300 万枚猴子币</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="text-align:center;margin:40px 0 6px;font-size:24px;font-weight:800">🍌 一轮托底的完整旅程</h3>
+    <div class="flow">
+      <div class="step"><span class="n">1</span><div class="ico">🏦</div><b>税入托底池</b><p>每笔 5% 税中的 60% 注入本轮的托底池。</p></div>
+      <span class="arrow"></span>
+      <div class="step"><span class="n">2</span><div class="ico">🔁</div><b>代币 ⇄ BNB</b><p>用户可用代币兑换托底池，按托底价获得相应 BNB。</p></div>
+      <span class="arrow"></span>
+      <div class="step"><span class="n">3</span><div class="ico">🔥</div><b>兑换即销毁</b><p>换出的代币全部进入黑洞地址永久销毁。</p></div>
+      <span class="arrow"></span>
+      <div class="step"><span class="n">4</span><div class="ico">🏁</div><b>开启新一轮</b><p>本轮三千万兑换完毕，自动进入下一轮三千万托底。</p></div>
+    </div>
+  </section>
+
+  <section id="buyback">
+    <div class="sec-head">
+      <span class="sec-kicker">AUTO BUYBACK</span>
+      <h2>40% 税 · <em>自动回购</em></h2>
+      <p>积累到了就出手，每分钟托价不停歇。</p>
+    </div>
+    <div class="buyback">
+      <div class="card">
+        <div class="bb-grid">
+          <div class="bb-item"><span class="ico">⏱️</span><div><b>每分钟检查</b><p>系统每分钟扫描一次回购账户余额。</p></div></div>
+          <div class="bb-item"><span class="ico">⚡</span><div><b>0.1 BNB 触发</b><p>回购金积累 ≥ 0.1 BNB 即触发自动回购。</p></div></div>
+          <div class="bb-item"><span class="ico">🛒</span><div><b>买入即销毁</b><p>回购获得的代币进入黑洞，进一步通缩。</p></div></div>
+          <div class="bb-item"><span class="ico">📈</span><div><b>持续托价</b><p>40% 税持续补充弹药，价格形成正向循环。</p></div></div>
+        </div>
+        <div class="counter">
+          ⏲️ 距离下次自动回购扫描
+          <span id="tick">00:59</span>
+        </div>
+        <p style="text-align:center;font-size:13px;color:var(--brown-soft);margin-top:8px">倒计时仅为前端演示，链上按固定节奏执行。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <div class="sec-head">
+      <span class="sec-kicker">ROADMAP</span>
+      <h2>猴子的 <em>冒险路线</em></h2>
+    </div>
+    <div class="roadmap">
+      <div class="card phase p1 done">
+        <span class="ph">PHASE 1</span>
+        <h3>🐣 破壳而出</h3>
+        <ul>
+          <li>合约上线 &amp; 完成审计</li>
+          <li>托底池首轮 3000 万启动</li>
+          <li>建立官网与社区</li>
+        </ul>
+      </div>
+      <div class="card phase p2">
+        <span class="ph">PHASE 2</span>
+        <h3>🍌 香蕉乐园</h3>
+        <ul>
+          <li>自动回购全面启动</li>
+          <li>多轮托底连续运行</li>
+          <li>上线 DEX 流动性 &amp; 做市</li>
+        </ul>
+      </div>
+      <div class="card phase p3">
+        <span class="ph">PHASE 3</span>
+        <h3>🚀 猴子登月</h3>
+        <ul>
+          <li>托底排行榜 &amp; 数据看板</li>
+          <li>社区治理投票</li>
+          <li>跨链拓展计划</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="community" class="community">
+    <span class="sec-kicker">JOIN US</span>
+    <h2 style="font-size:clamp(30px,5vw,44px);font-weight:900">🐵 和猴子一起攒 BNB</h2>
+    <p style="color:var(--brown-soft);margin-top:12px">加入社区，第一时间掌握托底与回购动态。</p>
+    <div class="socials">
+      <a href="#" aria-label="Telegram" title="Telegram">✈️</a>
+      <a href="#" aria-label="Twitter" title="Twitter">🐦</a>
+      <a href="#" aria-label="Discord" title="Discord">💬</a>
+      <a href="#" aria-label="Whitepaper" title="白皮书">📄</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div style="font-weight:800">猴子币 · MONKEY ($MKY)</div>
+  <button class="addr" id="contract" title="点击复制合约地址">合约地址 · 0x0000...0000</button>
+  <small>本页面为概念展示，不构成任何投资建议。Meme 有风险，入手需谨慎。 🍌</small>
+</footer>
+
+<script>
+  const toggle=document.getElementById('navToggle'),links=document.getElementById('navLinks');
+  toggle.addEventListener('click',()=>links.classList.toggle('open'));
+  const nav=document.querySelector('.nav-links');
+  const spy=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){nav.querySelectorAll('a').forEach(a=>a.classList.remove('active'));
+    nav.querySelector('a[href="#'+e.target.id+'"]')?.classList.add('active');}});},{rootMargin:'-45% 0px -50% 0px'});
+  ['about','tokenomics','floor','buyback','roadmap','community'].forEach(id=>spy.observe(document.getElementById(id)));
+
+  const ROUND=30000000;
+  const bnb=document.getElementById('bnb'),calcPrice=document.getElementById('calcPrice'),calcDesc=document.getElementById('calcDesc');
+  const fBnb=document.getElementById('fBnb'),fPrice=document.getElementById('fPrice');
+  const fmt=n=>n>=1e6?(n/1e6).toLocaleString('en-US')+' 万':n>=1e3?(n/1e3).toLocaleString('en-US')+' 千':Math.round(n).toLocaleString('en-US');
+  function calc(){
+    let v=parseFloat(bnb.value)||0; if(v<=0)v=0.01;
+    const price=ROUND/v;
+    calcPrice.textContent=fmt(price);
+    calcDesc.textContent='$MKY / 1 BNB = 每 1 BNB 可换取 '+fmt(price)+' 枚猴子币';
+    fBnb.textContent=v; fPrice.textContent=Math.round(price).toLocaleString('en-US');
+  }
+  bnb.addEventListener('input',calc);
+  document.querySelectorAll('.try-way button').forEach(b=>b.addEventListener('click',()=>{bnb.value=b.dataset.bnb;calc();}));
+  calc();
+
+  let left=59; const tick=document.getElementById('tick');
+  setInterval(()=>{left--;if(left<0)left=59;
+    tick.textContent=String(left).padStart(2,'0')+':00';},1000);
+
+  document.getElementById('contract').addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText('0x0000000000000000000000000000000000000000');
+      const el=document.getElementById('contract');el.textContent='✅ 已复制合约地址';setTimeout(()=>el.textContent='合约地址 · 0x0000...0000',1600);}catch(e){}
+  });
+</script>
+</body>
+</html>
