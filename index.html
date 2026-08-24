@@ -210,9 +210,6 @@
     border:1.5px solid rgba(255,154,0,.22);box-shadow:var(--shadow);transition:.3s;text-decoration:none}
   .socials a:hover{transform:translateY(-8px) rotate(6deg);background:var(--gold)}
   footer{border-top:1.5px solid rgba(255,154,0,.16);padding:34px 0 30px;margin-top:40px;text-align:center;color:var(--brown-soft)}
-  footer .addr{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid rgba(255,154,0,.2);
-    border-radius:999px;padding:8px 16px;font-size:13px;margin-top:14px;font-family:monospace;cursor:copy}
-  footer .addr:hover{border-color:var(--orange);color:var(--orange-deep)}
   footer small{display:block;margin-top:14px;font-size:12px;opacity:.7}
 
   @media(max-width:900px){
@@ -462,7 +459,6 @@
 
 <footer>
   <div style="font-weight:800">猴子币 · MONKEY ($MKY)</div>
-  <button class="addr" id="contract" title="点击复制合约地址">合约地址 · 0x0000...0000</button>
   <small>本页面为概念展示，不构成任何投资建议。Meme 有风险，入手需谨慎。 🍌</small>
 </footer>
 
@@ -492,11 +488,6 @@
   let left=59; const tick=document.getElementById('tick');
   setInterval(()=>{left--;if(left<0)left=59;
     tick.textContent=String(left).padStart(2,'0')+':00';},1000);
-
-  document.getElementById('contract').addEventListener('click',async()=>{
-    try{await navigator.clipboard.writeText('0x0000000000000000000000000000000000000000');
-      const el=document.getElementById('contract');el.textContent='✅ 已复制合约地址';setTimeout(()=>el.textContent='合约地址 · 0x0000...0000',1600);}catch(e){}
-  });
 </script>
 </body>
 </html>
