@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/snowball-api/:path*",
+      "destination": "http://36.151.145.15/snowball-api/:path*"
+    },
+    {
+      "source": "/((?!launchpad).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
