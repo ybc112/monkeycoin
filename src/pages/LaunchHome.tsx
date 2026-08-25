@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ethers } from "ethers";
 import {
   Flame,
-  Wallet,
   Rocket,
   Droplets,
   FireExtinguisher,
@@ -13,13 +12,12 @@ import {
   AlertCircle,
   ChevronRight,
   Sparkles,
-  TrendingUp,
   Search,
-  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useAppStore } from "@/store";
+import LaunchpadHeader from "@/components/LaunchpadHeader";
 import {
   type SnowballParams,
   type FeeBreakdown,
@@ -300,7 +298,7 @@ function SliderGroup({
 }
 
 export default function LaunchHome() {
-  const { account, isConnected, connect, connecting, signer } = useWallet();
+  const { account, isConnected, signer } = useWallet();
   const showToast = useAppStore((s) => s.showToast);
   const { copied, copy } = useCopy();
 
@@ -628,45 +626,8 @@ export default function LaunchHome() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--sb-bg)] pb-24">
-      {/* Header */}
-      <header className="sb-brand-header sticky top-0 z-30 border-b backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <a href="/" className="flex min-w-0 items-center gap-3">
-            <img
-              src="/0ee769b5412dfd0f4d0a14349ca7307e.jpg"
-              alt="Monkey logo"
-              className="h-11 w-11 shrink-0 rounded-xl border border-orange-300/50 object-cover shadow-lg shadow-orange-950/60"
-            />
-            <div className="min-w-0">
-              <h1 className="sb-brand-title text-base font-bold leading-tight md:text-lg">猴子币发射台 <span className="ml-1 text-[10px] font-black tracking-[0.22em] text-orange-300">MONKEY LAUNCHPAD</span></h1>
-              <p className="sb-brand-subtitle hidden text-xs sm:block">LP 单边燃烧 · Mint 募集 · 自动回购</p>
-            </div>
-          </a>
-
-          <div className="flex items-center gap-2">
-            <nav className="hidden items-center gap-1 md:flex">
-              <a href="#/" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border border-orange-300/50 px-3 text-sm font-bold" title="发射台主页"><Home className="h-4 w-4" /><span>发射台</span></a>
-              <a href="#/mint" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="Mint 发射"><Flame className="h-4 w-4" /><span>Mint</span></a>
-              <a href="#/mint-launches" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="Mint 已发射"><Rocket className="h-4 w-4" /><span>已发射</span></a>
-              <a href="#/trending" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="热搜代币榜"><TrendingUp className="h-4 w-4" /><span>热搜榜</span></a>
-            </nav>
-            <button
-              onClick={connect}
-              disabled={connecting || isConnected}
-              className={cn(
-                "sb-wallet flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition md:px-4",
-                isConnected
-                  ? ""
-                  : "sb-wallet-idle hover:bg-orange-600"
-              )}
-            >
-              {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-              <span className="hidden sm:inline">{isConnected ? shorten(account!) : "连接钱包"}</span>
-              <span className="sm:hidden">{isConnected ? shorten(account!) : "连接"}</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* 统一导航栏 */}
+      <LaunchpadHeader />
 
       {/* Hero / status strip */}
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-8">

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, Flame, Search, TrendingUp } from "lucide-react";
+import { ExternalLink, Flame, Search, TrendingUp } from "lucide-react";
 import { TRENDING_TOKENS } from "@/data/trendingTokens";
+import LaunchpadHeader from "@/components/LaunchpadHeader";
 
 const shortAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
 
@@ -20,21 +21,7 @@ export default function TrendingTokens() {
 
   return (
     <div className="min-h-screen bg-[var(--sb-bg)] pb-20">
-      <header className="sb-brand-header sticky top-0 z-30 border-b">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <a href="/" className="flex min-w-0 items-center gap-3">
-            <img src="/0ee769b5412dfd0f4d0a14349ca7307e.jpg" alt="Monkey logo" className="h-11 w-11 rounded-xl border border-orange-300/50 object-cover" />
-            <div className="min-w-0">
-              <div className="sb-brand-title truncate text-base font-bold">猴子币发射台</div>
-              <div className="text-[10px] font-black tracking-[0.2em] text-orange-300">MONKEY LAUNCHPAD</div>
-            </div>
-          </a>
-          <a href="#/" className="sb-wallet flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">返回发射台</span>
-          </a>
-        </div>
-      </header>
+      <LaunchpadHeader />
 
       <main className="mx-auto max-w-6xl px-4 pt-8">
         <section className="sb-ranking-hero relative overflow-hidden rounded-[28px] border border-orange-500/30 px-6 py-10 text-white sm:px-10">

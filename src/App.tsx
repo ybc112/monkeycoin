@@ -4,6 +4,7 @@ import MintLaunches from "@/pages/MintLaunches";
 import MintProjectDetail from "@/pages/MintProjectDetail";
 import TrendingTokens from "@/pages/TrendingTokens";
 import TokenManager from "@/components/TokenManager";
+import LaunchpadHeader from "@/components/LaunchpadHeader";
 import { useAppStore } from "@/store";
 import { useHashPath } from "@/lib/hashRouter";
 import { X } from "lucide-react";
@@ -34,13 +35,28 @@ export default function App() {
   const route = useHashPath();
 
   if (route.startsWith("mint-project/")) {
-    return <MintProjectDetail token={route.slice("mint-project/".length)} />;
+    return (
+      <>
+        <LaunchpadHeader />
+        <MintProjectDetail token={route.slice("mint-project/".length)} />
+      </>
+    );
   }
   if (route === "mint") {
-    return <MintLaunch />;
+    return (
+      <>
+        <LaunchpadHeader />
+        <MintLaunch />
+      </>
+    );
   }
   if (route === "mint-launches") {
-    return <MintLaunches />;
+    return (
+      <>
+        <LaunchpadHeader />
+        <MintLaunches />
+      </>
+    );
   }
   if (route === "trending") {
     return <TrendingTokens />;
