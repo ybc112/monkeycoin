@@ -37,9 +37,11 @@ const RETIRED_MINT_FACTORY_ADDRESSES = new Set([
   "0x09e6c8abcdddab2677c2be8673ff31afc1e27624",
 ]);
 export const DEFAULT_MINT_FEE_RECIPIENT = "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
-const DEFAULT_CREATION_FEE_BNB = "0.005";
-export const MINT_CREATION_FEE_TOKEN = ZeroAddress;
-export const MINT_CREATION_FEE_AMOUNT = 0n;
+// 部署费：支付 30,000 枚猴子币（0x0c1f...7777）并销毁，不再收取 0.005 BNB
+export const MINT_FEE_TOKEN_ADDRESS = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
+export const MINT_CREATION_FEE_TOKEN = MINT_FEE_TOKEN_ADDRESS;
+export const MINT_CREATION_FEE_AMOUNT = 30_000n * 10n ** 18n;
+const DEFAULT_CREATION_FEE_BNB = "0";
 
 function resolveMintFactoryAddress(value: string): string {
   const configured = value.trim();
@@ -270,7 +272,7 @@ export async function createMintLaunchToken(
       token.allowance(from, mintLaunchpadConfig.factoryAddress) as Promise<bigint>,
     ]);
     if (balance < MINT_CREATION_FEE_AMOUNT) {
-      throw new Error("创建需要先持有至少 15000 枚指定代币。");
+      throw new Error("创建需要先持有至少 30,000 枚猴子币（0x0c1f...7777），部署时销毁。");
     }
     if (allowance < MINT_CREATION_FEE_AMOUNT) {
       const approval = await token.approve(mintLaunchpadConfig.factoryAddress, MINT_CREATION_FEE_AMOUNT);
