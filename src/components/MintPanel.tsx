@@ -67,7 +67,7 @@ export default function MintPanel() {
 
             <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-[var(--sb-muted)]">
               <span>流程：</span>
-              {["用户 Mint 支付 BNB", "获得 $MKY", "部署销毁 30,000 枚", "募集完成加池开盘"].map((step, index) => (
+              {["用户支付 $MKY", "支付即销毁", "部署销毁 30,000 枚", "全网持续通缩"].map((step, index) => (
                 <span key={step} className="flex items-center gap-1.5 rounded-full border border-[var(--sb-border)] bg-white px-3 py-1.5 font-medium text-[var(--sb-text)]">
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--sb-gold)] text-[10px] font-black text-white">{index + 1}</span>
                   {step}
