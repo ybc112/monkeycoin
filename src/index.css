@@ -110,3 +110,106 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--sb-gold);
 }
+
+/* ── 标准 Mint 子系统（移植自 one-world）样式 ── */
+.page-fade-in {
+  animation: page-fade-in 300ms ease-out forwards;
+}
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.world-card {
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+.world-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.12);
+}
+.world-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s;
+}
+.world-input::placeholder { color: #94a3b8; }
+.world-input:focus {
+  border-color: rgba(255, 215, 0, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2);
+}
+.world-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.world-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(to right, #ffd700, #b8860b);
+  color: #000;
+  transition: all 0.2s;
+}
+.world-btn-primary:hover { filter: brightness(1.1); transform: scale(1.02); }
+.world-btn-primary:active { transform: scale(0.98); }
+.world-btn-primary:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+.world-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  transition: all 0.2s;
+}
+.world-btn-secondary:hover { border-color: rgba(255, 215, 0, 0.5); color: #0f172a; }
+.world-btn-ghost { color: #64748b; }
+.world-btn-ghost:hover { background: #f1f5f9; color: #0f172a; }
+.world-page-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+.world-page-subtitle { margin-top: 0.25rem; font-size: 0.875rem; color: #64748b; }
+.world-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+.world-empty-icon {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
 import LaunchHome from "@/pages/LaunchHome";
-import Mint from "@/pages/Mint";
+import MintLaunch from "@/pages/MintLaunch";
+import MintLaunches from "@/pages/MintLaunches";
+import MintProjectDetail from "@/pages/MintProjectDetail";
 import TrendingTokens from "@/pages/TrendingTokens";
 import TokenManager from "@/components/TokenManager";
 import { useAppStore } from "@/store";
+import { useHashPath } from "@/lib/hashRouter";
 import { X } from "lucide-react";
 
 function Toast() {
@@ -28,24 +30,20 @@ function Toast() {
   );
 }
 
-function useHashRoute() {
-  const [hash, setHash] = useState(() => window.location.hash);
-  useEffect(() => {
-    const onChange = () => setHash(window.location.hash);
-    window.addEventListener("hashchange", onChange);
-    return () => window.removeEventListener("hashchange", onChange);
-  }, []);
-  return hash.replace(/^#\/?/, "").split("?")[0];
-}
-
 export default function App() {
-  const route = useHashRoute();
+  const route = useHashPath();
 
-  if (route === "trending") {
-    return <TrendingTokens />;
+  if (route.startsWith("mint-project/")) {
+    return <MintProjectDetail token={route.slice("mint-project/".length)} />;
   }
   if (route === "mint") {
-    return <Mint />;
+    return <MintLaunch />;
+  }
+  if (route === "mint-launches") {
+    return <MintLaunches />;
+  }
+  if (route === "trending") {
+    return <TrendingTokens />;
   }
   return (
     <>

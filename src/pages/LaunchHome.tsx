@@ -20,8 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useAppStore } from "@/store";
-import MintPanel from "@/components/MintPanel";
-import BurnSection from "@/components/BurnSection";
 import {
   type SnowballParams,
   type FeeBreakdown,
@@ -648,7 +646,8 @@ export default function LaunchHome() {
           <div className="flex items-center gap-2">
             <nav className="hidden items-center gap-1 md:flex">
               <a href="#/" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border border-orange-300/50 px-3 text-sm font-bold" title="发射台主页"><Home className="h-4 w-4" /><span>发射台</span></a>
-              <a href="#/mint" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="Mint 募集"><Flame className="h-4 w-4" /><span>Mint</span></a>
+              <a href="#/mint" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="Mint 发射"><Flame className="h-4 w-4" /><span>Mint</span></a>
+              <a href="#/mint-launches" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="Mint 已发射"><Rocket className="h-4 w-4" /><span>已发射</span></a>
               <a href="#/trending" className="sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold" title="热搜代币榜"><TrendingUp className="h-4 w-4" /><span>热搜榜</span></a>
             </nav>
             <button
@@ -735,11 +734,7 @@ export default function LaunchHome() {
         </div>
       </section>
 
-      {/* Mint 募集发射（猴子币专属：部署销毁 30,000 枚） */}
-      <MintPanel />
-
-      {/* LP 单边燃烧 */}
-      <BurnSection />
+      {/* 标准 Mint 发射入口在顶部导航：#/mint、#/mint-launches */}
 
       {/* Deploy mode */}
       <section className="mx-auto max-w-6xl px-4 pb-6">

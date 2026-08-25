@@ -106,6 +106,9 @@ export function useWallet() {
   return {
     ...state,
     isConnected: !!state.account && state.chainId === CHAIN_ID,
+    isBSC: state.chainId === CHAIN_ID,
+    switchToBSC: connect,
+    connectWallet: connect,
     connect,
     disconnect,
     refresh,
