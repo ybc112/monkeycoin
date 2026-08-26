@@ -193,55 +193,16 @@
     .toast{font-size:12px;padding:10px 16px}
   }
 </style>
+<!-- 新增条件配置控件沿用原有米白/橙金主题 -->
 <style>
-  /* 工作台主题：对齐监控截图的浅灰背景、白色面板和紧凑信息密度 */
-  :root{--cream:#f4f6f8;--card:#fff;--gold:#16a36a;--gold-deep:#118052;--orange:#16a36a;--orange-deep:#0f7a4e;--brown:#1f2937;--brown-soft:#64748b;--muted:#94a3b8;--line:#e5e9ef;--shadow:0 8px 24px rgba(15,23,42,.08);--radius:12px}
-  body{background:#f4f6f8;color:#1f2937;font-family:Inter,'PingFang SC','Microsoft YaHei',system-ui,sans-serif}
-  .blobs{display:none}
-  nav{height:58px;padding:8px 24px;background:#fff;border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(15,23,42,.04)}
-  .brand img{width:34px;height:34px;border:1px solid #dbe3ec;box-shadow:none;animation:none;border-radius:9px}
-  .brand b{font-size:16px;letter-spacing:0;background:none;color:#1f2937}
-  .nav-links{gap:2px}
-  .nav-links a,.nav-links .nav-label{font-size:12px;padding:7px 10px;border-radius:7px;color:#64748b}
-  .nav-links a:hover{color:#0f7a4e;background:#ecfdf5}
-  .nav-links a.active{color:#0f7a4e;background:#ecfdf5;box-shadow:none}
-  .wrapper{max-width:1180px;padding:18px 18px 38px}
-  .pay-card{display:none}
-  .layout{grid-template-columns:360px minmax(0,1fr);gap:14px}
-  .panel{border:1px solid #e3e8ef;border-radius:12px;box-shadow:var(--shadow);padding:14px;background:#fff}
-  .panel-head{margin-bottom:12px;padding-bottom:11px;border-bottom:1px solid #eef1f5}
-  .panel-head h2{font-size:15px;color:#111827;gap:7px}
-  .panel-head h2 .ico{font-size:16px}
-  .group{margin-bottom:14px}
-  .group > .g-t{font-size:11px;letter-spacing:.2px;color:#475569;margin-bottom:8px}
-  .row{gap:7px;margin-bottom:8px}
-  .row label{font-size:12px;color:#64748b;min-width:82px}
-  .toggle{width:39px;height:22px;background:#cbd5e1}
-  .toggle::after{width:16px;height:16px;top:3px;left:3px}
-  .toggle.on{background:#22c55e}.toggle.on::after{left:20px}
-  .t-stat{font-size:12px}
-  .select,input[type=text],input[type=number]{max-width:100%;border:1px solid #dce3ea;background:#fff;border-radius:7px;padding:7px 9px;font-size:12px;color:#334155}
-  .select:focus,input:focus{border-color:#22a06b;box-shadow:0 0 0 3px rgba(34,160,107,.1)}
-  .chip{border:1px solid #dce3ea;border-radius:7px;padding:5px 9px;font-size:11px;color:#64748b;background:#fff}
-  .chip.on{border-color:#86d7b1;color:#087443;background:#ecfdf5}
-  .wallet{gap:8px;background:#f8fafc;border:1px solid #e8edf2;border-radius:8px;padding:8px 9px;margin-bottom:6px}
-  .wallet .dot{width:7px;height:7px;box-shadow:none}.wallet .addr{font-size:11px}.wallet .bal{font-size:10px}
-  .wallet .del{width:22px;height:22px;border-radius:6px;font-size:11px}
-  .add-wallet{border:1px dashed #cbd5e1;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#64748b}
-  .disabled-note{font-size:11px;background:#f8fafc;border:1px dashed #d7dee7;border-radius:8px;padding:7px 9px;color:#94a3b8}
-  .tag-lock{font-size:10px;color:#94a3b8;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px 7px}
-  .toolbar{gap:8px;margin-bottom:10px}.search{height:34px}
-  .tabs{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:2px}
-  .tabs button{padding:6px 11px;border-radius:5px;font-size:11px;color:#64748b}.tabs button.on{background:#e8f7ef;color:#087443;box-shadow:none}
-  .table{font-size:12px}.table th{font-size:10px;color:#94a3b8;padding:8px 9px;border-bottom:1px solid #eef1f5}.table td{padding:10px 9px;border-bottom:1px solid #f1f3f6}.table tr:hover td{background:#f8fafc}
-  .tk{gap:8px}.tk .av{width:28px;height:28px;font-size:13px;background:#e9f7ef}.tk .nm{font-size:12px;color:#1f2937}.tk .sy{font-size:10px}.tag{font-size:9px;padding:2px 5px}.tag.flap{background:#eff6ff;color:#2563eb}.tag.fm{background:#f5f3ff;color:#7c3aed}
-  .mini{font-size:10px;color:#64748b}.mini b{color:#334155}
-  .snipe-btn{background:#16a36a;border-radius:6px;padding:6px 11px;font-size:11px}.snipe-btn:hover{background:#118052;box-shadow:none}
-  .actions{gap:7px;margin-bottom:10px}.live{font-size:11px}.live.on{color:#16a36a}.live .dot{width:7px;height:7px}
-  .ghost-btn{border:1px solid #dce3ea;background:#fff;border-radius:6px;padding:6px 10px;font-size:11px;color:#64748b}.ghost-btn:hover{border-color:#16a36a;color:#0f7a4e}.ghost-btn.red{color:#dc2626}
-  .empty{padding:34px 14px;color:#94a3b8}.empty .big{font-size:30px}
-  footer{border-top:1px solid #e5e9ef;padding:22px 0 18px;margin-top:24px;color:#94a3b8;font-size:11px}
-  @media(max-width:900px){nav{padding:8px 12px}.wrapper{padding:12px 10px 28px}.layout{grid-template-columns:1fr;gap:10px}.panel{padding:12px}.panel-head h2{font-size:14px}.group{margin-bottom:12px}.row label{width:100%;font-size:11px}.select,input[type=text],input[type=number]{font-size:13px}.m-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:11px}.m-card .m-info span{font-size:10px;background:#f8fafc;border:1px solid #e8edf2;padding:4px 8px}.m-card .m-sub{font-size:10px}.snipe-btn{padding:7px 12px}}
+  .condition-box{border:1.5px solid var(--line);border-radius:12px;background:rgba(255,255,255,.58);padding:8px;margin-top:6px}
+  .condition-empty{font-size:12px;color:var(--muted);padding:7px 4px}
+  .condition-add{width:100%;border:1.5px dashed rgba(255,122,0,.35);border-radius:10px;background:rgba(255,255,255,.5);color:var(--orange-deep);padding:8px;font-size:12px;font-weight:700;cursor:pointer}
+  .condition-add:hover{background:#fff7e8;border-color:var(--orange)}
+  .condition-row{display:flex;gap:6px;align-items:center;margin-top:6px}.condition-row input,.condition-row select{min-width:0;flex:1}
+  .condition-remove{width:25px;height:25px;border:0;background:transparent;color:var(--muted);cursor:pointer}.condition-remove:hover{color:#e5484d}
+  .wallet-import{display:flex;gap:6px;margin-top:6px}.wallet-import textarea{flex:1;min-height:48px;resize:vertical;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:12px;color:var(--brown);background:var(--cream)}.wallet-import button{width:50px;border:0;border-radius:10px;background:#eadfca;color:var(--brown-soft);font-size:12px;font-weight:700;cursor:pointer}
+  .wallet-enable{border:0;background:#eaf7e8;color:#2e8b57;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer}.wallet-enable.off{background:#f1ead9;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -318,7 +279,9 @@
       <div class="group">
         <div class="g-t">👛 执行钱包 <span class="mini" id="walletCount">(2/10)</span></div>
         <div id="walletList"></div>
+        <div class="wallet-import"><textarea id="walletImport" placeholder="每行一个私钥，可批量添加"></textarea><button id="importWallet">导入</button></div>
         <button class="add-wallet" id="addWallet">＋ 添加执行钱包</button>
+        <button class="add-wallet" id="refreshBalance" style="margin-top:5px;color:#128052">↻ 刷新余额</button>
       </div>
 
       <div class="group">
@@ -331,6 +294,7 @@
 
       <div class="group">
         <div class="g-t">💰 买入参数</div>
+        <div class="row"><label>买入资产</label><select class="select" id="buyAsset"><option>Flap</option><option>BNB</option><option>FourMeme</option></select><input id="buyAssetAmt" type="number" value="1" style="max-width:100px"><span class="unit">每个币</span></div>
         <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span class="unit">BNB / 币</span></div>
         <div class="row"><label>Gas Price</label><input id="gasPrice" type="number" value="5"><span class="unit">Gwei</span></div>
         <div class="row"><label>Gas Limit</label><input id="gasLimit" type="number" value="800000"></div>
@@ -349,13 +313,12 @@
 
       <div class="group">
         <div class="g-t">🔍 条件过滤</div>
-        <div class="row"><label>排除 Symbol</label><input id="exSym" type="text" placeholder="如 scam, honeypot"></div>
-        <div class="row"><label>指定 Symbol</label><input id="fixSym" type="text" placeholder="仅狙击该 Symbol"></div>
-        <div class="row"><label>指定底池</label><input id="fixPool" type="text" placeholder="0x…（留空不限）"></div>
-        <div class="row"><label>Dev 首买</label><span class="chip" data-dev="1"><input type="checkbox"> 仅限 Dev 首买</span></div>
-        <div class="row"><label>买卖税率</label><input id="taxLimit" type="text" placeholder="如 ≤ 10% / 10%"></div>
-        <div class="row"><label>指定 Dev</label><input id="fixDev" type="text" placeholder="0x…（留空不限）"></div>
-        <div class="row"><label>工厂金库</label><input id="fixVault" type="text" placeholder="0x…（留空不限）"></div>
+        <div class="condition-section"><div class="g-t">排除代币 Symbol 条件 <span class="mini">?</span></div><div class="condition-box" id="excludeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="excludeConditions" data-label="Symbol">＋ 添加 Symbol 条件 (0/10)</button></div>
+        <div class="condition-section"><div class="g-t">指定代币 Symbol 条件 <span class="mini">?</span></div><div class="condition-box" id="includeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="includeConditions" data-label="Symbol">＋ 添加 Symbol 条件 (0/10)</button></div>
+        <div class="condition-section"><div class="g-t">只买指定底池 <span class="mini">?</span></div><div class="condition-box" id="poolConditions"><div class="condition-row"><select class="select"><option>Flap</option><option>FourMeme</option></select><button class="wallet-enable">只买</button><select class="select"><option>BNB池</option><option>USDT池</option></select><button class="condition-remove">×</button></div></div><button class="condition-add" data-target="poolConditions" data-label="底池">＋ 添加只买底池 (1/30)</button></div>
+        <div class="condition-section"><div class="g-t">创建时 Dev 首买入条件 <span class="mini">?</span></div><div class="condition-box" id="devBuyConditions"><div class="condition-row"><select class="select"><option>Flap</option><option>FourMeme</option></select><select class="select"><option>BNB</option><option>USDT</option></select><select class="select"><option>不低于</option><option>不高于</option></select><button class="condition-remove">×</button></div><input class="select" type="number" value="2" style="margin-top:6px"></div><button class="condition-add" data-target="devBuyConditions" data-label="Dev 首买">＋ 添加 Dev 首买条件 (1/30)</button></div>
+        <div class="condition-section"><div class="g-t">买卖税率条件 <span class="mini">?</span></div><div class="condition-box" id="taxConditions"><div class="condition-empty">暂无条件，默认不限制买卖税率</div></div><button class="condition-add" data-target="taxConditions" data-label="买卖税率">＋ 添加买卖税率条件 (0/8)</button></div>
+        <div class="condition-section"><div class="g-t">指定 Dev/工厂/金库 <span class="mini">?</span></div><div class="condition-box" id="addressConditions"><div class="condition-empty">暂无条件，默认不限制 Dev/工厂/金库</div></div><button class="condition-add" data-target="addressConditions" data-label="指定地址">＋ 添加指定 Dev/工厂/金库 (0/2)</button></div>
       </div>
     </div>
 
@@ -464,6 +427,7 @@
         <span class="dot"></span>
         <span class="addr">${w.addr}</span>
         <span class="bal">${w.bal}</span>
+        <button class="wallet-enable ${w.enabled===false?'off':''}" data-enable="${i}">${w.enabled===false?'启用':'启用'}</button>
         <button class="del" data-i="${i}">✕</button>
       </div>`).join('');
     $('walletCount').textContent=`(${wallets.length}/10)`;
@@ -472,6 +436,9 @@
       wallets.splice(Number(b.dataset.i),1);
       renderWallets();
       toast('已移除执行钱包','🗑️');
+    }));
+    walletList.querySelectorAll('[data-enable]').forEach(b=>b.addEventListener('click',()=>{
+      const index=Number(b.dataset.enable); wallets[index].enabled=wallets[index].enabled===false; renderWallets(); toast(wallets[index].enabled===false?'已停用执行钱包':'已启用执行钱包',wallets[index].enabled===false?'⏸':'▶️');
     }));
     $('addWallet').disabled=wallets.length>=10;
   }
@@ -483,6 +450,27 @@
     renderWallets();
     toast('已添加执行钱包（演示）','➕');
   });
+  $('importWallet').addEventListener('click',()=>{
+    const raw=$('walletImport').value.trim();
+    if(!raw){toast('请先输入私钥（演示模式不会发送到网络）','⚠️');return;}
+    const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const room=10-wallets.length;
+    lines.slice(0,room).forEach((_,i)=>wallets.push({addr:`0x导入钱包${wallets.length+1+i}…演示`,bal:'0.000 BNB',enabled:true}));
+    $('walletImport').value=''; renderWallets(); toast(`已导入 ${Math.min(lines.length,room)} 个执行钱包（演示）`,'📥');
+  });
+  $('refreshBalance').addEventListener('click',()=>{ wallets=wallets.map(w=>({...w,bal:(Math.random()*.08).toFixed(3)+' BNB'})); renderWallets(); toast('钱包余额已刷新（演示）','↻'); });
+
+  /* ── 截图式条件配置 ── */
+  document.querySelectorAll('.condition-add').forEach(button=>button.addEventListener('click',()=>{
+    const target=$(button.dataset.target); const count=target.querySelectorAll('.condition-row').length;
+    if(count>=10){toast('该条件已达到数量上限','⚠️');return;}
+    const row=document.createElement('div'); row.className='condition-row';
+    row.innerHTML=`<input class="select" type="text" placeholder="输入${button.dataset.label}"><button class="condition-remove" title="删除条件">×</button>`;
+    const empty=target.querySelector('.condition-empty'); if(empty) empty.remove(); target.appendChild(row);
+    row.querySelector('.condition-remove').addEventListener('click',()=>{row.remove(); if(!target.querySelector('.condition-row')) target.innerHTML='<div class="condition-empty">暂无条件，默认不限制</div>';});
+    toast(`已添加${button.dataset.label}条件`,'＋');
+  }));
+  document.querySelectorAll('.condition-remove').forEach(button=>button.addEventListener('click',()=>button.parentElement.remove()));
 
   /* ── 平台过滤 ── */
   const platState={flap:true,fm:true};
