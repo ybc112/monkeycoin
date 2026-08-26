@@ -2,6 +2,20 @@
 import { StrategyRepo, TokenRepo, PositionRepo } from "./database.mjs";
 import { getTokenInfo, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
 
+// 多钱包下单分配：优先选择持仓数量最少的启用钱包（负载均衡）
+export function pickBuyWallet({ strategy, enabledWallets = [] }) {
+  if (!enabledWallets.length) return null;
+  if (strategy.allowMultiWallet === false) return enabledWallets[0];
+  const open = PositionRepo.openList();
+  const counts = new Map();
+  for (const p of open) {
+    const key = String(p.wallet || "").toLowerCase();
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  const sorted = [...enabledWallets].sort((a, b) => (counts.get(a.toLowerCase()) || 0) - (counts.get(b.toLowerCase()) || 0));
+  return sorted[0];
+}
+
 // 判断底池币种是否匹配策略（BNB 特判：零地址或 WBNB）
 function matchQuote(strategy, label, addr) {
   const want = strategy.quoteTokens || ["BNB"];
@@ -118,11 +132,22 @@ export class StrategyEngine {
     if (strategy.poolMaxQuote != null && Number(rec.initialReserveQuote) > Number(strategy.poolMaxQuote))
       fail("pool_max", `初始底池 ${rec.initialReserveQuote} > ${strategy.poolMaxQuote}`);
 
-    // 4. Dev 首买金额
+    // 4. Dev 首买金额（策略字段 min/max 区间）
     if (strategy.devBuyMin != null && Number(rec.devBuyQuote) < Number(strategy.devBuyMin))
       fail("dev_buy_min", `Dev 首买 ${rec.devBuyQuote} < ${strategy.devBuyMin}（当前尚无足够 Dev 首买）`);
     if (strategy.devBuyMax != null && Number(rec.devBuyQuote) > Number(strategy.devBuyMax))
       fail("dev_buy_max", `Dev 首买 ${rec.devBuyQuote} > ${strategy.devBuyMax}`);
+    // 4b. 条件式 Dev 首买区间（type=dev_buy, operator=range, value=min, value2=max）
+    for (const c of (strategy.conditions || []).filter(c => c.type === "dev_buy")) {
+      if (c.operator === "range") {
+        if (Number(rec.devBuyQuote) < Number(c.value) || Number(rec.devBuyQuote) > Number(c.value2))
+          fail("dev_buy_range", `Dev 首买 ${rec.devBuyQuote} 不在区间 [${c.value}, ${c.value2}]`);
+      } else if (c.operator === "gte" && Number(rec.devBuyQuote) < Number(c.value)) {
+        fail("dev_buy_gte", `Dev 首买 ${rec.devBuyQuote} < ${c.value}`);
+      } else if (c.operator === "lte" && Number(rec.devBuyQuote) > Number(c.value)) {
+        fail("dev_buy_lte", `Dev 首买 ${rec.devBuyQuote} > ${c.value}`);
+      }
+    }
 
     // 5. 税率
     if (strategy.maxBuyTaxBps != null && rec.state.buyTaxBps > strategy.maxBuyTaxBps)

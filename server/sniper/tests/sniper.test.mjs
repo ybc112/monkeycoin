@@ -18,7 +18,9 @@ const { StrategyEngine } = await load("strategy-engine.mjs");
 const { computeGasPrice, applySlippage } = await load("transaction-builder.mjs");
 const { setEmergencyStop, isEmergencyStopped, runPreTradeChecks } = await load("risk-checker.mjs");
 const { NonceManager } = await load("nonce-manager.mjs");
-const { EventRepo, StrategyRepo, StateRepo } = await load("database.mjs");
+const { EventRepo, StrategyRepo, StateRepo, PositionRepo } = await load("database.mjs");
+const { pickBuyWallet } = await load("strategy-engine.mjs");
+const { PositionManager } = await load("position-manager.mjs");
 
 test("事件解析：5 类事件 topic hash 存在", () => {
   const iface = new Interface([
@@ -130,4 +132,45 @@ test("策略 CRUD 持久化", () => {
 // 清理
 process.on("exit", () => {
   try { fs.rmSync(tmpDb, { force: true }); } catch { /* ignore */ }
+});
+
+// ── 补充测试：多钱包分配 / 止盈止损 / 日亏损 ────────────────────────────────
+test("多钱包分配：优先持仓最少的钱包", () => {
+  const strategy = { allowMultiWallet: true };
+  const wallets = ["0xA1", "0xB2", "0xC3"];
+  // 无持仓：取第一个
+  assert.equal(pickBuyWallet({ strategy, enabledWallets: wallets }), "0xA1");
+  // 模拟 A1 已有 1 个持仓
+  PositionRepo.open({ token: "0x" + "AA".repeat(20), wallet: "0xA1", amountTokens: "1", entryPrice: "1", entryQuote: "1" });
+  assert.equal(pickBuyWallet({ strategy, enabledWallets: wallets }), "0xB2");
+});
+
+test("止盈/止损：价格达标触发卖出回调", async () => {
+  let triggered = null;
+  const pm = new PositionManager({ onTriggerSell: async (p, fraction, reason) => { triggered = { p, fraction, reason }; } });
+  PositionRepo.open({
+    token: "0x" + "BB".repeat(20), wallet: "0xA1", orderId: 1,
+    amountTokens: "1000000", entryPrice: "0.00001", entryQuote: "10",
+    takeProfitBps: 2000, stopLossBps: 1500, batchTotal: 2,
+  });
+  const open = PositionRepo.openList().find(x => x.token.startsWith("0x" + "BB"));
+  // 止盈：价格 +50% → 触发
+  await pm.checkTriggerForPosition(open, "0.000015");
+  assert.ok(triggered, "应触发卖出");
+  assert.ok(triggered.reason.includes("止盈"));
+  triggered = null;
+  // 止损：价格 -20% → 触发
+  const open2 = PositionRepo.openList().find(x => x.token.startsWith("0x" + "BB"));
+  await pm.checkTriggerForPosition(open2, "0.000008");
+  assert.ok(triggered, "应触发止损");
+  assert.ok(triggered.reason.includes("止损"));
+  pm.stopMonitor();
+});
+
+test("日亏损熔断统计", () => {
+  const pm = new PositionManager({});
+  PositionRepo.close(1, "1", "-0.3"); // 今日已实现 -0.3 BNB
+  const todayPnl = pm.dailyRealizedPnl();
+  assert.ok(todayPnl <= -0.3);
+  assert.equal(pm.checkDailyLossLimit(0.2), true); // 超 -0.2 熔断
 });

@@ -1,7 +1,7 @@
 // Flap 内盘狙击服务入口：HTTP API + 事件监听 + 策略引擎 + WS 推送 + 交易流水线
 import http from "node:http";
-import { isAddress, parseUnits } from "ethers";
-import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK } from "./config.mjs";
+import { isAddress, parseUnits, JsonRpcProvider, MaxUint256 } from "ethers";
+import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK, CHAIN_ID, RPC_HTTP_URLS, FLAP } from "./config.mjs";
 import { FlapMonitor } from "./flap-monitor.mjs";
 import { StrategyEngine } from "./strategy-engine.mjs";
 import { SniperWsServer } from "./websocket-server.mjs";
@@ -9,18 +9,48 @@ import { PositionManager } from "./position-manager.mjs";
 import { WalletVault } from "./wallet-vault.mjs";
 import { NonceManager } from "./nonce-manager.mjs";
 import { computeGasPrice, applySlippage, buildBuyTx, buildSellTx } from "./transaction-builder.mjs";
-import { simulateBuy, simulateSell } from "./transaction-simulator.mjs";
+import { simulateBuy, simulateSell, getTokenBalance } from "./transaction-simulator.mjs";
 import { runPreTradeChecks, isEmergencyStopped, setEmergencyStop } from "./risk-checker.mjs";
-import { getProvider } from "./flap-contracts.mjs";
+import { pickBuyWallet } from "./strategy-engine.mjs";
+import { getProvider, getTokenContract, quoteBuy, quoteTokenLabel } from "./flap-contracts.mjs";
 import {
   StrategyRepo, TokenRepo, EventRepo, OrderRepo, TransactionRepo,
   PositionRepo, StateRepo, Audit, closeDb,
 } from "./database.mjs";
 
 const ws = new SniperWsServer();
-const positions = new PositionManager();
-const vault = new WalletVault();
 const nonces = new NonceManager();
+const vault = new WalletVault();
+
+// 止盈/止损/分批卖出：由持仓监控触发
+const positions = new PositionManager({
+  onTriggerSell: async (position, fraction, reason) => {
+    await executeSellPipeline({ position, fraction, reason });
+  },
+});
+
+// 现价获取（quote per token）：用 0.01 BNB 买入报价反推
+async function getCurrentPrice(token) {
+  try {
+    const q = await quoteBuy(token, parseUnits("0.01", 18));
+    if (!q.ok || q.outputAmount <= 0n) return null;
+    return 0.01 / (Number(q.outputAmount) / 1e18); // BNB per token
+  } catch {
+    return null;
+  }
+}
+
+// 多 RPC 同时广播同一份已签名交易（nonce 固定，不会产生重复订单）
+async function broadcastRawToMultiple(signedRaw) {
+  let lastErr;
+  for (const url of RPC_HTTP_URLS) {
+    try {
+      const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1 });
+      return await p.broadcastTransaction(signedRaw);
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("广播失败");
+}
 
 // ── 事件 → 引擎 → WS ────────────────────────────────────────────────────────
 const engine = new StrategyEngine({
@@ -107,22 +137,32 @@ async function executeBuyPipeline({ strategy, token }) {
     OrderRepo.updateState(orderId, "SIGNING", {});
     ws.emit("transaction.pending", { orderId, token: token.token, to: tx.to, value: tx.value.toString() });
 
-    // 模式 B（自动钱包，默认关闭）
+    // 模式 B（自动钱包，默认关闭）：多钱包分配 + 签名广播
     if (vault.isEnabled()) {
-      const wallets = vault.list().filter(w => w.enabled);
-      const wallet = wallets[0];
+      const enabledWallets = vault.list().filter(w => w.enabled).map(w => w.address);
+      const wallet = pickBuyWallet({ strategy, enabledWallets });
       if (wallet) {
-        const signer = vault.getWallet(wallet.address);
-        const nonce = await nonces.nextNonce(wallet.address);
+        const signer = vault.getWallet(wallet);
+        const nonce = await nonces.nextNonce(wallet);
         const signed = await signer.sendTransaction({ to: tx.to, data: tx.data, value: tx.value, gasPrice: gas.raw, gasLimit: BigInt(GAS.BUY_GAS_LIMIT), nonce });
-        nonces.reserve(wallet.address);
-        OrderRepo.updateState(orderId, "BROADCASTING", { txHash: signed.hash, wallet: wallet.address });
-        TransactionRepo.insert({ orderId, token: token.token, side: "buy", nonce, from: wallet.address, to: tx.to, data: tx.data, value: tx.value.toString(), gasPrice: gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT, txHash: signed.hash, status: "pending" });
-        ws.emit("transaction.pending", { orderId, token: token.token, txHash: signed.hash });
-        signed.wait().then((receipt) => {
+        nonces.reserve(wallet);
+        OrderRepo.updateState(orderId, "BROADCASTING", { txHash: signed.hash, wallet });
+        TransactionRepo.insert({ orderId, token: token.token, side: "buy", nonce, from: wallet, to: tx.to, data: tx.data, value: tx.value.toString(), gasPrice: gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT, txHash: signed.hash, status: "pending" });
+        ws.emit("transaction.pending", { orderId, token: token.token, txHash: signed.hash, wallet });
+        signed.wait().then(async (receipt) => {
           OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
           TransactionRepo.updateStatus(receipt.hash, "confirmed");
+          // 开仓：按买入金额/成交数量记录，绑定止盈止损与分批
+          const amountTokens = sim.outputAmount;
+          const entryPrice = Number(tx.value) / Number(amountTokens || 1n);
+          positions.open({
+            token: token.token, tokenSymbol: token.symbol, wallet, orderId,
+            amountTokens: amountTokens.toString(), entryPrice: String(entryPrice), entryQuote: tx.value.toString(),
+            takeProfitBps: strategy.takeProfitBps, stopLossBps: strategy.stopLossBps,
+            batchTotal: strategy.sellBatches || 1,
+          });
           ws.emit("transaction.confirmed", { orderId, token: token.token, txHash: receipt.hash, block: receipt.blockNumber });
+          ws.emit("position.updated", { orderId, token: token.token, state: "open" });
         }).catch((err) => {
           OrderRepo.updateState(orderId, "FAILED", { matchedReason: String(err?.message || err) });
           ws.emit("transaction.failed", { orderId, token: token.token, reason: String(err?.message || err) });
@@ -235,7 +275,7 @@ async function handleBuy(res, body) {
 }
 
 async function handleSell(res, body) {
-  const { token, amount, wallet } = body;
+  const { token, amount, wallet, positionId, fraction } = body;
   if (!isAddress(token)) return json(res, 400, { ok: false, error: "token 无效" });
   const tokenAmount = parseUnits(String(amount || "1"), 18);
   const sim = await simulateSell({ token, tokenAmount, wallet: wallet || "0x0000000000000000000000000000000000000001" });
@@ -244,14 +284,99 @@ async function handleSell(res, body) {
   const minOut = applySlippage(sim.outputAmount, RISK.MAX_SLIPPAGE_BPS);
   const tx = await buildSellTx({ token, tokenAmount, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
   const orderId = OrderRepo.create({ token, side: "sell", state: "SIGNING", mode: "user", amountIn: tokenAmount.toString(), amountOut: sim.outputAmount.toString(), minOut: minOut.toString(), gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT });
-  return json(res, 200, { ok: true, orderId, unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT }, quote: sim.outputAmount.toString(), minOut: minOut.toString() });
+  return json(res, 200, { ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT }, quote: sim.outputAmount.toString(), minOut: minOut.toString() });
+}
+
+// ── 自动卖出流水线（止盈/止损/分批；模式B 自动签名广播） ────────────────────
+async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
+  const token = position.token;
+  const wallet = position.wallet;
+  if (!token || !wallet) return;
+  const { raw: balance } = await getTokenBalance(token, wallet);
+  if (balance <= 0n) return;
+  const amountToSell = (balance * BigInt(Math.max(1, Math.round(fraction * 100)))) / 100n;
+  if (amountToSell <= 0n) return;
+  const orderId = OrderRepo.create({ token, side: "sell", state: "MATCHING", mode: vault.isEnabled() ? "live" : "dry_run", matchedReason: reason || "自动卖出" });
+  ws.emit("transaction.simulated", { orderId, token, side: "sell", state: "MATCHING", reason: reason || "自动卖出" });
+
+  if (isEmergencyStopped()) {
+    OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: "紧急停止中" });
+    return;
+  }
+  const sim = await simulateSell({ token, tokenAmount: amountToSell, wallet });
+  if (!sim.ok) {
+    OrderRepo.updateState(orderId, "FAILED", { matchedReason: `卖出模拟失败: ${sim.error}` });
+    ws.emit("transaction.failed", { orderId, token, reason: sim.error });
+    return;
+  }
+  const gas = await computeGasPrice({});
+  if (gas.capped) {
+    OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: `Gas ${gas.gwei.toFixed(2)} 超上限 ${gas.cap}` });
+    return;
+  }
+  const minOut = applySlippage(sim.outputAmount, RISK.MAX_SLIPPAGE_BPS);
+  OrderRepo.updateState(orderId, "READY", { amountOut: sim.outputAmount.toString(), minOut: minOut.toString(), gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT });
+  ws.emit("transaction.simulated", { orderId, token, side: "sell", reason: reason || "自动卖出", outputAmount: sim.outputAmount.toString(), minOut: minOut.toString() });
+
+  // Dry Run / 未启用自动钱包 / 未开启 live：只模拟，不广播
+  if (DRY_RUN || !vault.isEnabled() || !ENABLE_LIVE_TRADING) {
+    OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: "未启用自动卖出（Dry Run / 未开 Live / 无自动钱包）" });
+    return;
+  }
+  try {
+    // 模式B 卖出前确保授权（approve Portal），否则真实卖出必然失败
+    const signer = vault.getWallet(wallet);
+    if (!signer) return;
+    const tc = getTokenContract(token);
+    const allowance = await tc.allowance(wallet, FLAP.PORTAL).catch(() => 0n);
+    if (allowance < amountToSell) {
+      const approveData = tc.interface.encodeFunctionData("approve", [FLAP.PORTAL, MaxUint256]);
+      const approveNonce = await nonces.nextNonce(wallet);
+      const approveSig = await signer.sendTransaction({ to: token, data: approveData, gasPrice: gas.raw, gasLimit: 120000n, nonce: approveNonce });
+      nonces.reserve(wallet);
+      Audit.log("sell", `模式B approve ${token} 授权 Portal（${approveSig.hash.slice(0, 10)}…）`);
+      await approveSig.wait();
+    }
+    const tx = await buildSellTx({ token, tokenAmount: amountToSell, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
+    const nonce = await nonces.nextNonce(wallet);
+    const signed = await signer.sendTransaction({ to: tx.to, data: tx.data, gasPrice: gas.raw, gasLimit: BigInt(GAS.SELL_GAS_LIMIT), nonce });
+    nonces.reserve(wallet);
+    OrderRepo.updateState(orderId, "BROADCASTING", { txHash: signed.hash, wallet });
+    TransactionRepo.insert({ orderId, token, side: "sell", nonce, from: wallet, to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT, txHash: signed.hash, status: "pending" });
+    ws.emit("transaction.pending", { orderId, token, txHash: signed.hash, side: "sell" });
+    signed.wait().then((receipt) => {
+      OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
+      TransactionRepo.updateStatus(receipt.hash, "confirmed");
+      const soldQuote = Number(sim.outputAmount) / 1e18;
+      const cost = (Number(position.entry_quote || 0) / 1e18) * fraction;
+      const pnl = soldQuote - cost;
+      const sold = Number(position.batch_sold || 0);
+      const total = Number(position.batch_total || 1);
+      if (sold + 1 >= total) positions.close({ positionId: position.id, realizedPnl: String(soldQuote), realizedPnlQuote: String(pnl) });
+      else positions.markBatchSold(position.id, pnl);
+      ws.emit("transaction.confirmed", { orderId, token, txHash: receipt.hash, block: receipt.blockNumber, side: "sell" });
+      ws.emit("position.updated", { positionId: position.id, state: sold + 1 >= total ? "closed" : "partial" });
+      // 日亏损熔断
+      if (positions.checkDailyLossLimit()) {
+        setEmergencyStop(true);
+        ws.emit("emergency.stopped", { ts: Date.now() });
+        Audit.log("system", "日亏损熔断触发，已紧急停止", "warn");
+      }
+    }).catch((err) => {
+      OrderRepo.updateState(orderId, "FAILED", { matchedReason: String(err?.message || err) });
+      ws.emit("transaction.failed", { orderId, token, reason: String(err?.message || err) });
+    });
+  } catch (err) {
+    OrderRepo.updateState(orderId, "FAILED", { matchedReason: `构建卖出失败: ${String(err?.message || err)}` });
+    ws.emit("transaction.failed", { orderId, token, reason: String(err?.message || err) });
+  }
 }
 
 async function handleBroadcast(res, body) {
   const { orderId, signedRaw } = body;
   if (!orderId || !signedRaw) return json(res, 400, { ok: false, error: "orderId 与 signedRaw 必填" });
   try {
-    const resp = await getProvider().broadcastTransaction(signedRaw);
+    const resp = await broadcastRawToMultiple(signedRaw);
     OrderRepo.updateState(orderId, "BROADCASTING", { txHash: resp.hash });
     ws.emit("transaction.pending", { orderId, txHash: resp.hash });
     resp.wait().then((receipt) => {
@@ -259,7 +384,7 @@ async function handleBroadcast(res, body) {
       TransactionRepo.updateStatus(receipt.hash, "confirmed");
       ws.emit("transaction.confirmed", { orderId, txHash: receipt.hash, block: receipt.blockNumber });
       if (body.token && body.amountTokens) {
-        positions.open({ token: body.token, wallet: body.wallet, orderId, amountTokens: body.amountTokens, entryPrice: body.entryPrice, entryQuote: body.entryQuote });
+        positions.open({ token: body.token, wallet: body.wallet, orderId, amountTokens: body.amountTokens, entryPrice: body.entryPrice, entryQuote: body.entryQuote, takeProfitBps: body.takeProfitBps, stopLossBps: body.stopLossBps, batchTotal: body.sellBatches || 1 });
         ws.emit("position.updated", { orderId, token: body.token, state: "open" });
       }
     }).catch((err) => {
@@ -285,6 +410,8 @@ function normalizeStrategy(b) {
     buyAmountQuote: b.buyAmountQuote ?? null, buyAmountPerWallet: b.buyAmountPerWallet ?? null,
     allowMultiWallet: b.allowMultiWallet !== false,
     maxPositions: b.maxPositions ?? null,
+    takeProfitBps: b.takeProfitBps ?? null, stopLossBps: b.stopLossBps ?? null,
+    sellBatches: b.sellBatches ?? null, maxTxBps: b.maxTxBps ?? null, maxWalletBps: b.maxWalletBps ?? null,
     gasPriceManualGwei: b.gasPriceManualGwei ?? null, gasMultiplier: b.gasMultiplier ?? null,
     maxGasPriceGwei: b.maxGasPriceGwei ?? null, slippageBps: b.slippageBps || 500,
     conditions: Array.isArray(b.conditions) ? b.conditions : [],
@@ -315,8 +442,9 @@ server.listen(SNIPER_PORT, () => {
   console.log(`[sniper] Flap 内盘狙击服务运行于 :${SNIPER_PORT}（WS /ws/sniper）`);
   console.log(`[sniper] DRY_RUN=${DRY_RUN} ENABLE_LIVE_TRADING=${ENABLE_LIVE_TRADING}`);
   if (DRY_RUN) console.log("[sniper] 当前 Dry Run 模式：仅监听与模拟，不发送真实交易");
+  positions.startMonitor({ getPrice: getCurrentPrice });
   monitor.start().catch((e) => console.error("[sniper] 启动监听失败:", e));
 });
 
-process.on("SIGINT", () => { monitor.stop(); closeDb(); process.exit(0); });
-process.on("SIGTERM", () => { monitor.stop(); closeDb(); process.exit(0); });
+process.on("SIGINT", () => { monitor.stop(); positions.stopMonitor(); closeDb(); process.exit(0); });
+process.on("SIGTERM", () => { monitor.stop(); positions.stopMonitor(); closeDb(); process.exit(0); });

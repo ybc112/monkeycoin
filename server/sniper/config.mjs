@@ -82,6 +82,11 @@ export const RISK = {
   DAILY_LOSS_LIMIT_BNB: Number(env.DAILY_LOSS_LIMIT_BNB || 0.2),
   MAX_POSITIONS: Number(env.MAX_POSITIONS || 10),
   MAX_WALLETS: 10,
+  // 止盈/止损/分批卖出默认（策略可覆盖）
+  TAKE_PROFIT_BPS: Number(env.TAKE_PROFIT_BPS || 2000), // 20%
+  STOP_LOSS_BPS: Number(env.STOP_LOSS_BPS || 1500), // 15%
+  SELL_BATCHES: Number(env.SELL_BATCHES || 3), // 分批卖出批次数
+  PRICE_POLL_MS: Number(env.PRICE_POLL_MS || 10000), // 持仓价格轮询
 };
 
 // ── 监听参数 ────────────────────────────────────────────────────────────────

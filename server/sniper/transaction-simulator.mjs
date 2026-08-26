@@ -39,7 +39,12 @@ export async function simulateSell({ token, tokenAmount, wallet, provider }) {
     const out = await portal.swapExactInput.staticCall(params, { from: wallet });
     return { ok: true, outputAmount: out, gasEstimate: gas, error: null };
   } catch (err) {
-    return { ok: false, error: String(err?.reason || err?.message || err) };
+    const msg = String(err?.reason || err?.message || err);
+    // Flap 卖出要求 permit 或 approve；未授权时给出明确指引
+    if (/insufficient allowance|ERC20: transfer amount exceeds allowance/i.test(msg)) {
+      return { ok: false, error: "卖出未授权：需先 approve 或提供 ERC-2612 permit 签名（模式A 由钱包自动处理）", needsApproval: true };
+    }
+    return { ok: false, error: msg };
   }
 }
 

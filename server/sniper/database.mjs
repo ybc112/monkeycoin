@@ -42,6 +42,11 @@ if (db) {
       buy_amount_per_wallet TEXT,
       allow_multi_wallet INTEGER NOT NULL DEFAULT 1,
       max_positions INTEGER,
+      take_profit_bps INTEGER,
+      stop_loss_bps INTEGER,
+      sell_batches INTEGER,
+      max_tx_bps INTEGER,
+      max_wallet_bps INTEGER,
       gas_price_manual_gwei REAL,
       gas_multiplier REAL,
       max_gas_price_gwei REAL,
@@ -139,6 +144,10 @@ if (db) {
       entry_price TEXT,
       entry_quote TEXT,
       current_price TEXT,
+      take_profit_bps INTEGER,
+      stop_loss_bps INTEGER,
+      batch_total INTEGER DEFAULT 1,
+      batch_sold INTEGER DEFAULT 0,
       realized_pnl TEXT,
       realized_pnl_quote TEXT,
       opened_at TEXT,
@@ -165,6 +174,24 @@ if (db) {
       message TEXT
     );
   `);
+  // 旧库字段迁移（幂等）
+  const ensureColumn = (table, column, ddl) => {
+    try {
+      const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+      if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+    } catch { /* ignore */ }
+  };
+  [
+    ["strategies", "take_profit_bps", "INTEGER"],
+    ["strategies", "stop_loss_bps", "INTEGER"],
+    ["strategies", "sell_batches", "INTEGER"],
+    ["strategies", "max_tx_bps", "INTEGER"],
+    ["strategies", "max_wallet_bps", "INTEGER"],
+    ["positions", "take_profit_bps", "INTEGER"],
+    ["positions", "stop_loss_bps", "INTEGER"],
+    ["positions", "batch_total", "INTEGER DEFAULT 1"],
+    ["positions", "batch_sold", "INTEGER DEFAULT 0"],
+  ].forEach(([t, c, d]) => ensureColumn(t, c, d));
 }
 
 // ── JSON 回退实现 ───────────────────────────────────────────────────────────
@@ -218,15 +245,17 @@ export const StrategyRepo = {
     const r = run(
       `INSERT INTO strategies (name,enabled,mode,platform,quote_tokens,pool_min_quote,pool_max_quote,
         dev_buy_min,dev_buy_max,max_buy_tax_bps,max_sell_tax_bps,buy_amount_quote,buy_amount_per_wallet,
-        allow_multi_wallet,max_positions,gas_price_manual_gwei,gas_multiplier,max_gas_price_gwei,
-        slippage_bps,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        allow_multi_wallet,max_positions,take_profit_bps,stop_loss_bps,sell_batches,max_tx_bps,max_wallet_bps,
+        gas_price_manual_gwei,gas_multiplier,max_gas_price_gwei,slippage_bps,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [data.name, data.enabled ? 1 : 0, data.mode || "dry_run", data.platform || "flap",
         JSON.stringify(data.quoteTokens || ["BNB"]), data.poolMinQuote ?? null, data.poolMaxQuote ?? null,
         data.devBuyMin ?? null, data.devBuyMax ?? null, data.maxBuyTaxBps ?? null, data.maxSellTaxBps ?? null,
         data.buyAmountQuote ?? null, data.buyAmountPerWallet ?? null, data.allowMultiWallet === false ? 0 : 1,
-        data.maxPositions ?? null, data.gasPriceManualGwei ?? null, data.gasMultiplier ?? null,
-        data.maxGasPriceGwei ?? null, data.slippageBps || 500, now(), now()]);
+        data.maxPositions ?? null, data.takeProfitBps ?? null, data.stopLossBps ?? null, data.sellBatches ?? null,
+        data.maxTxBps ?? null, data.maxWalletBps ?? null,
+        data.gasPriceManualGwei ?? null, data.gasMultiplier ?? null, data.maxGasPriceGwei ?? null,
+        data.slippageBps || 500, now(), now()]);
     const id = db ? Number(r.lastInsertRowid) : ((jsonStore._tables.strategies || []).length);
     if (Array.isArray(data.conditions)) {
       for (const c of data.conditions) run(
@@ -248,12 +277,13 @@ export const StrategyRepo = {
     if (db) {
       db.prepare(`UPDATE strategies SET name=?,enabled=?,mode=?,quote_tokens=?,pool_min_quote=?,pool_max_quote=?,
         dev_buy_min=?,dev_buy_max=?,max_buy_tax_bps=?,max_sell_tax_bps=?,buy_amount_quote=?,buy_amount_per_wallet=?,
-        allow_multi_wallet=?,max_positions=?,gas_price_manual_gwei=?,gas_multiplier=?,max_gas_price_gwei=?,
-        slippage_bps=?,updated_at=? WHERE id=?`).run(
+        allow_multi_wallet=?,max_positions=?,take_profit_bps=?,stop_loss_bps=?,sell_batches=?,max_tx_bps=?,max_wallet_bps=?,
+        gas_price_manual_gwei=?,gas_multiplier=?,max_gas_price_gwei=?,slippage_bps=?,updated_at=? WHERE id=?`).run(
         data.name, data.enabled ? 1 : 0, data.mode || "dry_run", JSON.stringify(data.quoteTokens || ["BNB"]),
         data.poolMinQuote ?? null, data.poolMaxQuote ?? null, data.devBuyMin ?? null, data.devBuyMax ?? null,
         data.maxBuyTaxBps ?? null, data.maxSellTaxBps ?? null, data.buyAmountQuote ?? null,
         data.buyAmountPerWallet ?? null, data.allowMultiWallet === false ? 0 : 1, data.maxPositions ?? null,
+        data.takeProfitBps ?? null, data.stopLossBps ?? null, data.sellBatches ?? null, data.maxTxBps ?? null, data.maxWalletBps ?? null,
         data.gasPriceManualGwei ?? null, data.gasMultiplier ?? null, data.maxGasPriceGwei ?? null,
         data.slippageBps || 500, now(), id);
       db.prepare(`DELETE FROM strategy_conditions WHERE strategy_id=?`).run(id);
@@ -340,15 +370,22 @@ export const TransactionRepo = {
 
 export const PositionRepo = {
   open(p) {
-    run(`INSERT INTO positions (token,wallet,order_id,state,amount_tokens,entry_price,entry_quote,opened_at)
-      VALUES (?,?,?,?,?,?,?,?)`,
-      [p.token, p.wallet ?? null, p.orderId ?? null, "open", p.amountTokens, p.entryPrice, p.entryQuote, now()]);
+    run(`INSERT INTO positions (token,wallet,order_id,state,amount_tokens,entry_price,entry_quote,
+      take_profit_bps,stop_loss_bps,batch_total,batch_sold,opened_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [p.token, p.wallet ?? null, p.orderId ?? null, "open", p.amountTokens, p.entryPrice, p.entryQuote,
+        p.takeProfitBps ?? null, p.stopLossBps ?? null, p.batchTotal ?? 1, p.batchSold ?? 0, now()]);
   },
   close(id, realizedPnl, realizedPnlQuote) {
     run(`UPDATE positions SET state='closed', realized_pnl=?, realized_pnl_quote=?, closed_at=? WHERE id=?`,
       [realizedPnl, realizedPnlQuote, now(), id]);
   },
   updatePrice(id, price) { run(`UPDATE positions SET current_price=? WHERE id=?`, [price, id]); },
+  // 记录已卖出批次
+  markBatchSold(id, sold, realizedPnlQuote) {
+    run(`UPDATE positions SET batch_sold=batch_sold+?, realized_pnl_quote=COALESCE(realized_pnl_quote,0)+? WHERE id=?`,
+      [sold, realizedPnlQuote ?? 0, id]);
+  },
   openList() { return all(`SELECT * FROM positions WHERE state='open'`); },
   all(limit = 100) { return all(`SELECT * FROM positions ORDER BY id DESC LIMIT ?`, [limit]); },
 };

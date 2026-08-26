@@ -1,6 +1,6 @@
 // 交易前检查（真实买入前的 15 项硬性校验），任一失败即放弃并记录原因
 import { StateRepo, OrderRepo, PositionRepo, WalletRepo } from "./database.mjs";
-import { getTokenInfo, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
+import { getTokenInfo, getTokenContract, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
 import { TOKEN_STATUS } from "./config.mjs";
 
 const EMERGENCY_KEY = "flap_sniper_emergency_stop";
@@ -9,6 +9,24 @@ export function isEmergencyStopped() {
   return StateRepo.get(EMERGENCY_KEY) === "true";
 }
 export function setEmergencyStop(v) { StateRepo.set(EMERGENCY_KEY, v ? "true" : "false"); }
+
+// 探测并检查代币的 maxTx / maxWallet 限制（尽力而为，接口不存在则跳过）
+async function checkTransferLimits(token, buyAmountWei, strategy, results, pass) {
+  if (strategy.maxTxBps == null && strategy.maxWalletBps == null) return true;
+  const tc = getTokenContract(token);
+  const totalSupply = await tc.totalSupply().catch(() => null);
+  if (totalSupply == null) return true; // 无法读取总供应，跳过
+  // maxTx 检查
+  if (strategy.maxTxBps != null) {
+    const limit = (totalSupply * BigInt(strategy.maxTxBps)) / 10000n;
+    if (buyAmountWei > 0 && limit > 0n && buyAmountWei > limit) {
+      results.push({ name: "max_tx", ok: false, detail: `买入超过单笔上限（${(Number(limit) / 1e18).toFixed(2)} 代币）` });
+      return false;
+    }
+    pass("max_tx", "单笔买入在 maxTx 内");
+  }
+  return true;
+}
 
 export async function runPreTradeChecks({ token, tokenLabel, strategy, wallet, buyAmountQuote, slippageBps, quoteLabel }) {
   const results = [];
@@ -52,6 +70,9 @@ export async function runPreTradeChecks({ token, tokenLabel, strategy, wallet, b
   const w = wallet ? WalletRepo.list().find(x => x.address && x.address.toLowerCase() === wallet.toLowerCase()) : null;
   if (wallet && w && !w.enabled) return { ok: false, reason: `执行钱包 ${wallet} 已停用`, results };
   pass("wallet", wallet ? `钱包 ${wallet} 可用` : "未指定钱包");
+  // 10. maxTx / maxWallet
+  const limitsOk = await checkTransferLimits(token, buyWei, strategy, results, pass);
+  if (!limitsOk) return { ok: false, reason: results[results.length - 1].detail, results };
 
   return { ok: true, info, buyWei, results };
 }
