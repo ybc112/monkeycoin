@@ -203,6 +203,7 @@
   .condition-remove{width:25px;height:25px;border:0;background:transparent;color:var(--muted);cursor:pointer}.condition-remove:hover{color:#e5484d}
   .wallet-import{display:flex;gap:6px;margin-top:6px}.wallet-import textarea{flex:1;min-height:48px;resize:vertical;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:12px;color:var(--brown);background:var(--cream)}.wallet-import button{width:50px;border:0;border-radius:10px;background:#eadfca;color:var(--brown-soft);font-size:12px;font-weight:700;cursor:pointer}
   .wallet-enable{border:0;background:#eaf7e8;color:#2e8b57;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer}.wallet-enable.off{background:#f1ead9;color:var(--muted)}
+  .security-note{margin-top:7px;border:1px solid rgba(229,72,77,.22);border-radius:10px;background:#fff8f6;color:#a0443f;padding:9px 10px;font-size:11px;line-height:1.55}
 </style>
 </head>
 <body>
@@ -238,7 +239,7 @@
       <div class="t2">内盘狙击 · 高级功能</div>
       <div class="t3">自动监控内盘新币 · 一键狙击 · 实时持仓管理</div>
     </div>
-    <div class="price">350,000 <small>猴子币 / 30天</small></div>
+    <div class="price">50,000 <small>猴子币 / 7天</small></div>
     <button class="pay-btn" id="payBtn"><span class="lock">🔒</span> 立即开通 · 暂时不开放</button>
   </div>
 
@@ -282,6 +283,7 @@
         <div class="wallet-import"><textarea id="walletImport" placeholder="每行一个私钥，可批量添加"></textarea><button id="importWallet">导入</button></div>
         <button class="add-wallet" id="addWallet">＋ 添加执行钱包</button>
         <button class="add-wallet" id="refreshBalance" style="margin-top:5px;color:#128052">↻ 刷新余额</button>
+        <div class="security-note">🔐 安全提示：执行钱包只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即停用并更换新的执行钱包/私钥；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
 
       <div class="group">
