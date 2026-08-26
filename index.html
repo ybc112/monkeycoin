@@ -217,7 +217,12 @@
       background:#fff;border:1.5px solid rgba(255,154,0,.2);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
     .nav-links.open{display:flex}
     .nav-toggle{display:block}
-    nav{align-items:center}
+    nav{align-items:center;gap:8px;padding:8px 10px;flex-wrap:nowrap}
+    .brand{flex-shrink:0;min-width:0}
+    .brand img{width:36px;height:36px}
+    .brand b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+    .btn.primary{flex-shrink:0;white-space:nowrap;margin-left:4px;padding:9px 12px;font-size:13px}
+    .nav-toggle{flex-shrink:0;font-size:22px}
     .about-grid,.pie-row,.calc,.bb-grid{grid-template-columns:1fr}
     .flow{grid-template-columns:1fr 1fr}
     .flow .arrow{display:none}
