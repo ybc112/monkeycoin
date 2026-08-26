@@ -299,13 +299,21 @@
       </div>
 
       <div class="group">
-        <div class="g-t">👛 执行钱包（模式 A：MetaMask 签名）</div>
+        <div class="g-t">👛 我的执行钱包（私钥仅存本机，绝不上传服务器）</div>
         <div class="wallet" id="connectedWallet" style="justify-content:space-between">
-          <span class="addr" id="walletAddr">未连接钱包</span>
-          <button class="ghost-btn" id="connectWallet" style="padding:6px 12px;font-size:11px">连接钱包</button>
+          <span class="addr" id="walletAddr">未设置钱包</span>
+          <button class="ghost-btn" id="connectWallet" style="padding:6px 12px;font-size:11px">连接 MetaMask</button>
         </div>
-        <div class="disabled-note">🔐 私钥只存在于你的浏览器钱包，后端不接触任何私钥。</div>
-        <div class="security-note">🔐 自动执行钱包只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即停用并更换新的执行钱包/私钥；私钥不要截图、发送给他人或提交到代码仓库。</div>
+        <div class="row" style="margin-top:8px">
+          <label>私钥</label>
+          <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥（仅浏览器本地）" style="flex:1">
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <label style="width:auto">记住到本机</label>
+          <span class="chip" id="rememberKey" style="margin-left:auto"><input type="checkbox"> localStorage 保存（不勾=仅本次会话）</span>
+        </div>
+        <div class="disabled-note" style="margin-top:6px">🔐 私钥只在你浏览器本地用于签名，发送到服务器的只有<b>已签名交易</b>，服务器无法接触私钥。请使用<b>只放少量、可承受损失 BNB</b>的独立钱包；用完可删除本机私钥。</div>
+        <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即删除本机私钥并更换执行钱包；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
 
       <div class="group">
@@ -398,8 +406,83 @@
   // ═════════════ 后端对接（真实数据，非 demo） ═════════════
   const SNIPER_API = new URLSearchParams(location.search).get("api") || "https://sniper-api.monkeycoin.top";
   const WS_URL = SNIPER_API.replace(/^http/, "ws") + "/ws/sniper";
-
+  const BSC_RPC = "https://bsc-rpc.publicnode.com";
+  const KEY_STORE = "monkey_sniper_privkey";
   const $ = id => document.getElementById(id);
+
+  // ── 执行钱包（用户自管：私钥仅浏览器本地签名，绝不上传服务器） ──────────
+  let ethersMod = null;
+  async function loadEthers() {
+    if (!ethersMod) ethersMod = await import("https://esm.sh/ethers@6.13.5");
+    return ethersMod;
+  }
+  let localWallet = null; // ethers Wallet（内存；仅用户勾选“记住”才写 localStorage）
+  function applyWallet(addr) {
+    $("walletAddr").textContent = addr ? addr.slice(0, 6) + "…" + addr.slice(-4) : "未设置钱包";
+    if (!addr) $("privKeyInput").value = "";
+  }
+  // 启动时若本机保存过私钥，自动加载
+  (async () => {
+    try {
+      const saved = localStorage.getItem(KEY_STORE);
+      if (saved) {
+        const { Wallet } = await loadEthers();
+        localWallet = new Wallet(saved.trim());
+        applyWallet(localWallet.address);
+        toast("已从本机加载执行钱包", "👛");
+      }
+    } catch { /* 私钥失效则忽略 */ }
+  })();
+
+  $("privKeyInput").addEventListener("change", async () => {
+    const pk = $("privKeyInput").value.trim();
+    if (!pk) { return; }
+    try {
+      const { Wallet } = await loadEthers();
+      localWallet = new Wallet(pk);
+      applyWallet(localWallet.address);
+      if ($("rememberKey").classList.contains("on")) localStorage.setItem(KEY_STORE, pk);
+      else localStorage.removeItem(KEY_STORE);
+      toast("已加载执行钱包（私钥仅本机）", "👛");
+    } catch (e) { toast("私钥无效", "❌"); }
+  });
+  $("rememberKey").addEventListener("click", () => {
+    $("rememberKey").classList.toggle("on");
+    const on = $("rememberKey").classList.contains("on");
+    if (!on) localStorage.removeItem(KEY_STORE);
+  });
+
+  $("connectWallet").addEventListener("click", async () => {
+    if (!window.ethereum) { toast("未检测到 MetaMask", "⚠️"); return; }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts?.length) { applyWallet(accounts[0]); toast("已连接 MetaMask", "👛"); }
+    } catch (e) { toast(String(e.message || e), "⚠️"); }
+  });
+
+  // 用执行钱包签名 unsignedTx 并广播（服务器只收到已签名交易，接触不到私钥）
+  async function signAndBroadcast({ orderId, unsignedTx, extra }) {
+    let signedRaw;
+    if (localWallet) {
+      const { JsonRpcProvider } = await loadEthers();
+      const provider = new JsonRpcProvider(BSC_RPC, 56);
+      const nonce = await provider.getTransactionCount(localWallet.address, "pending");
+      signedRaw = await localWallet.signTransaction({
+        to: unsignedTx.to, data: unsignedTx.data, value: unsignedTx.value,
+        gasPrice: unsignedTx.gasPrice, gasLimit: unsignedTx.gasLimit,
+        chainId: 56, nonce, type: 0,
+      });
+    } else if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (!accounts?.length) throw new Error("未授权钱包");
+      signedRaw = await window.ethereum.request({ method: "eth_signTransaction", params: [{ ...unsignedTx, from: accounts[0] }] });
+    } else {
+      throw new Error("未设置执行钱包：请粘贴私钥或连接 MetaMask");
+    }
+    const r = await api("/api/sniper/broadcast", { method: "POST", body: JSON.stringify({ orderId, signedRaw, ...extra }) });
+    return r;
+  }
+
   const toastWrap = $("toastWrap");
   function toast(msg, ic = "🔔") {
     const el = document.createElement("div");
@@ -470,7 +553,21 @@
       case "strategy.matched": toast(`策略命中 ${data.symbol || ""}`, "🎯"); loadOrders(); break;
       case "strategy.rejected": loadOrders(); break;
       case "transaction.simulated": loadOrders(); break;
-      case "transaction.pending": loadOrders(); break;
+      case "transaction.pending":
+        if (data.requiresSignature && data.unsignedTx) {
+          toast(`收到待签名${data.side === "sell" ? "卖出" : "买入"}，正在用本机钱包签名…`, "✍️");
+          try {
+            const extra = data.side === "sell"
+              ? { side: "sell", positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
+              : {};
+            const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra });
+            toast(`已广播${data.side === "sell" ? "卖出" : "买入"} ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+          } catch (e) {
+            toast(`自动签名失败: ${String(e.message || e)}（请确认已设置执行钱包）`, "⚠️");
+          }
+        }
+        loadOrders();
+        break;
       case "transaction.confirmed": toast(`交易已确认 ${(data.txHash || "").slice(0, 10)}…`, "✅"); loadOrders(); loadPositions(); loadTokens(); break;
       case "transaction.failed": toast(`交易失败: ${data.reason || ""}`, "❌"); loadOrders(); break;
       case "position.updated": loadPositions(); break;
@@ -551,30 +648,27 @@
 
   // ── 狙击买入（模式 A：MetaMask 签名，后端只组装交易） ────────────────────
   async function snipe(token, symbol) {
-    if (!window.ethereum) { toast("请安装 MetaMask 等钱包插件", "⚠️"); return; }
     try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts?.length) return;
-      const wallet = accounts[0];
       const strategyId = await ensureStrategy();
       toast(`正在构建买入 ${symbol || ""}…`, "⏳");
-      const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value, wallet }) });
-      // 让钱包签名并广播（eth_sendTransaction 由钱包完成签名+发送，后端不接触私钥）
-      const tx = { to: r.unsignedTx.to, data: r.unsignedTx.data, value: r.unsignedTx.value, gasPrice: r.unsignedTx.gasPrice, gasLimit: r.unsignedTx.gasLimit };
-      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [tx] });
-      toast(`已发送买入，等待确认 ${txHash.slice(0, 10)}…`, "⛏️");
+      const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value }) });
+      if (!r.ok) { toast("买入被拒: " + (r.error || ""), "⚠️"); return; }
+      // 预计获得 token 数作为开仓依据（确认后以链上为准）
+      const amountTokens = r.quote;
+      const value = BigInt(r.unsignedTx.value || "0");
+      const entryPrice = Number(value) / 1e18 / (Number(amountTokens) / 1e18 || 1);
+      let walletAddr = localWallet ? localWallet.address : "";
+      if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
+      const out = await signAndBroadcast({
+        orderId: r.orderId, unsignedTx: r.unsignedTx,
+        extra: { side: "buy", token, wallet: walletAddr, amountTokens, entryPrice: String(entryPrice), entryQuote: r.unsignedTx.value },
+      });
+      toast(`已广播买入 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
       loadOrders();
     } catch (e) {
       toast("买入失败: " + String(e.message || e), "❌");
     }
   }
-  $("connectWallet").addEventListener("click", async () => {
-    if (!window.ethereum) { toast("未检测到钱包插件", "⚠️"); return; }
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts?.length) { $("walletAddr").textContent = accounts[0].slice(0, 6) + "…" + accounts[0].slice(-4); toast("钱包已连接", "👛"); }
-    } catch (e) { toast(String(e.message || e), "⚠️"); }
-  });
 
   // ── 策略保存（把当前 UI 配置提交到后端） ──────────────────────────────────
   async function ensureStrategy() {
@@ -656,7 +750,7 @@
       $("posWrap").innerHTML = list.length ? `
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th>代币</th><th>钱包</th><th>数量</th><th>买入价</th><th>状态</th></tr></thead>
+            <thead><tr><th>代币</th><th>钱包</th><th>数量</th><th>买入价</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>${list.map(p => `
               <tr>
                 <td><span class="mini"><b>${short(p.token)}</b></span></td>
@@ -664,11 +758,32 @@
                 <td><span class="mini">${p.amount_tokens ? (Number(p.amount_tokens) / 1e18).toFixed(2) : "-"}</span></td>
                 <td><span class="mini">${p.entry_quote ? (Number(p.entry_quote) / 1e18).toFixed(4) : "-"}</span></td>
                 <td><span class="mini" style="color:${p.state === "open" ? "#128052" : "#a99b85"};font-weight:800">${p.state === "open" ? "持仓中" : "已平仓"}</span></td>
+                <td>${p.state === "open" ? `<button class="snipe-btn sell-now" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)" data-token="${p.token}" data-pos="${p.id}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}">卖出</button>` : '<span class="mini">已结算</span>'}</td>
               </tr>`).join("")}</tbody>
           </table>
         </div>` : `<div class="empty"><div class="big">🐵</div><div>暂无${list === open ? "持仓" : "历史"}记录</div></div>`;
+      document.querySelectorAll(".sell-now").forEach(b => b.addEventListener("click", () => sellPosition(b.dataset.token, b.dataset.pos, b.dataset.amt, b.dataset.entry)));
     } catch (e) {
       $("posWrap").innerHTML = `<div class="empty">无法加载持仓</div>`;
+    }
+  }
+
+  // ── 手动卖出（用户本机签名） ─────────────────────────────────────────────
+  async function sellPosition(token, positionId, amountTokens, entryQuote) {
+    if (!token || !positionId) return;
+    if (!localWallet && !window.ethereum) { toast("请先设置执行钱包（粘贴私钥或连接 MetaMask）", "⚠️"); return; }
+    try {
+      toast("构建卖出…", "⏳");
+      const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: (Number(amountTokens) / 1e18).toFixed(6) }) });
+      if (!r.ok) { toast("卖出被拒: " + (r.error || ""), "⚠️"); return; }
+      const out = await signAndBroadcast({
+        orderId: r.orderId, unsignedTx: r.unsignedTx,
+        extra: { side: "sell", positionId: Number(positionId), fraction: 1, quoteOut: r.quote, entryQuote },
+      });
+      toast(`已广播卖出 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+      loadOrders(); loadPositions();
+    } catch (e) {
+      toast("卖出失败: " + String(e.message || e), "❌");
     }
   }
   $("posTabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {

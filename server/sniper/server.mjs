@@ -319,53 +319,20 @@ async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
   OrderRepo.updateState(orderId, "READY", { amountOut: sim.outputAmount.toString(), minOut: minOut.toString(), gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT });
   ws.emit("transaction.simulated", { orderId, token, side: "sell", reason: reason || "自动卖出", outputAmount: sim.outputAmount.toString(), minOut: minOut.toString() });
 
-  // Dry Run / 未启用自动钱包 / 未开启 live：只模拟，不广播
-  if (DRY_RUN || !vault.isEnabled() || !ENABLE_LIVE_TRADING) {
-    OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: "未启用自动卖出（Dry Run / 未开 Live / 无自动钱包）" });
+  // Dry Run / 未开启 live：只模拟，不广播
+  if (DRY_RUN || !ENABLE_LIVE_TRADING) {
+    OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: "未开启 Live 交易（Dry Run）" });
     return;
   }
   try {
-    // 模式B 卖出前确保授权（approve Portal），否则真实卖出必然失败
-    const signer = vault.getWallet(wallet);
-    if (!signer) return;
-    const tc = getTokenContract(token);
-    const allowance = await tc.allowance(wallet, FLAP.PORTAL).catch(() => 0n);
-    if (allowance < amountToSell) {
-      const approveData = tc.interface.encodeFunctionData("approve", [FLAP.PORTAL, MaxUint256]);
-      const approveNonce = await nonces.nextNonce(wallet);
-      const approveSig = await signer.sendTransaction({ to: token, data: approveData, gasPrice: gas.raw, gasLimit: 120000n, nonce: approveNonce });
-      nonces.reserve(wallet);
-      Audit.log("sell", `模式B approve ${token} 授权 Portal（${approveSig.hash.slice(0, 10)}…）`);
-      await approveSig.wait();
-    }
+    // 用户自管钱包模式：构建卖出交易 → WS 推送，等用户在浏览器签名后回传广播
     const tx = await buildSellTx({ token, tokenAmount: amountToSell, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
-    const nonce = await nonces.nextNonce(wallet);
-    const signed = await signer.sendTransaction({ to: tx.to, data: tx.data, gasPrice: gas.raw, gasLimit: BigInt(GAS.SELL_GAS_LIMIT), nonce });
-    nonces.reserve(wallet);
-    OrderRepo.updateState(orderId, "BROADCASTING", { txHash: signed.hash, wallet });
-    TransactionRepo.insert({ orderId, token, side: "sell", nonce, from: wallet, to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT, txHash: signed.hash, status: "pending" });
-    ws.emit("transaction.pending", { orderId, token, txHash: signed.hash, side: "sell" });
-    signed.wait().then((receipt) => {
-      OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
-      TransactionRepo.updateStatus(receipt.hash, "confirmed");
-      const soldQuote = Number(sim.outputAmount) / 1e18;
-      const cost = (Number(position.entry_quote || 0) / 1e18) * fraction;
-      const pnl = soldQuote - cost;
-      const sold = Number(position.batch_sold || 0);
-      const total = Number(position.batch_total || 1);
-      if (sold + 1 >= total) positions.close({ positionId: position.id, realizedPnl: String(soldQuote), realizedPnlQuote: String(pnl) });
-      else positions.markBatchSold(position.id, pnl);
-      ws.emit("transaction.confirmed", { orderId, token, txHash: receipt.hash, block: receipt.blockNumber, side: "sell" });
-      ws.emit("position.updated", { positionId: position.id, state: sold + 1 >= total ? "closed" : "partial" });
-      // 日亏损熔断
-      if (positions.checkDailyLossLimit()) {
-        setEmergencyStop(true);
-        ws.emit("emergency.stopped", { ts: Date.now() });
-        Audit.log("system", "日亏损熔断触发，已紧急停止", "warn");
-      }
-    }).catch((err) => {
-      OrderRepo.updateState(orderId, "FAILED", { matchedReason: String(err?.message || err) });
-      ws.emit("transaction.failed", { orderId, token, reason: String(err?.message || err) });
+    OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "等待用户钱包签名卖出" });
+    ws.emit("transaction.pending", {
+      orderId, token, side: "sell", requiresSignature: true,
+      positionId: position.id, fraction,
+      unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
+      amountTokens: amountToSell.toString(), quoteOut: sim.outputAmount.toString(),
     });
   } catch (err) {
     OrderRepo.updateState(orderId, "FAILED", { matchedReason: `构建卖出失败: ${String(err?.message || err)}` });
@@ -379,12 +346,28 @@ async function handleBroadcast(res, body) {
   try {
     const resp = await broadcastRawToMultiple(signedRaw);
     OrderRepo.updateState(orderId, "BROADCASTING", { txHash: resp.hash });
-    ws.emit("transaction.pending", { orderId, txHash: resp.hash });
+    ws.emit("transaction.pending", { orderId, txHash: resp.hash, side: body.side });
     resp.wait().then((receipt) => {
       OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
       TransactionRepo.updateStatus(receipt.hash, "confirmed");
-      ws.emit("transaction.confirmed", { orderId, txHash: receipt.hash, block: receipt.blockNumber });
-      if (body.token && body.amountTokens) {
+      ws.emit("transaction.confirmed", { orderId, txHash: receipt.hash, block: receipt.blockNumber, side: body.side });
+      if (body.side === "sell" && body.positionId) {
+        // 卖出确认：平仓或记批次 + 盈亏 + 日亏损熔断
+        const soldQuote = Number(body.quoteOut || 0) / 1e18;
+        const cost = (Number(body.entryQuote || 0) / 1e18) * Number(body.fraction || 1);
+        const pnl = soldQuote - cost;
+        const pos = PositionRepo.all(1000).find(p => p.id === Number(body.positionId));
+        const sold = Number(pos?.batch_sold || 0);
+        const total = Number(pos?.batch_total || 1);
+        if (sold + 1 >= total) positions.close({ positionId: body.positionId, realizedPnl: String(soldQuote), realizedPnlQuote: String(pnl) });
+        else positions.markBatchSold(body.positionId, pnl);
+        ws.emit("position.updated", { positionId: body.positionId, state: sold + 1 >= total ? "closed" : "partial" });
+        if (positions.checkDailyLossLimit()) {
+          setEmergencyStop(true);
+          ws.emit("emergency.stopped", { ts: Date.now() });
+          Audit.log("system", "日亏损熔断触发，已紧急停止", "warn");
+        }
+      } else if (body.token && body.amountTokens) {
         positions.open({ token: body.token, wallet: body.wallet, orderId, amountTokens: body.amountTokens, entryPrice: body.entryPrice, entryQuote: body.entryQuote, takeProfitBps: body.takeProfitBps, stopLossBps: body.stopLossBps, batchTotal: body.sellBatches || 1 });
         ws.emit("position.updated", { orderId, token: body.token, state: "open" });
       }
