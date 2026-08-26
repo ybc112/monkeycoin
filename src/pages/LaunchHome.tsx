@@ -117,10 +117,10 @@ function Card({ children, className, title, icon: Icon, number }: any) {
 
 // 税费分配环形图
 const RING_COLORS = {
-  reward: "#F2703A",
-  liquidity: "#5B8DB8",
-  burn: "#D93025",
-  fund: "#8E6BB3",
+  reward: "#3B82F6",
+  liquidity: "#14B8A6",
+  burn: "#EF4444",
+  fund: "#8B5CF6",
 };
 
 const RING_LEGEND = [
@@ -236,7 +236,7 @@ function InputGroup({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            "w-full rounded-xl border bg-white/80 px-4 py-2.5 text-sm outline-none transition",
+            "w-full rounded-xl border bg-[var(--sb-card)] px-4 py-2.5 text-sm outline-none transition",
             "placeholder:text-[var(--sb-muted)]/60",
             error
               ? "border-[var(--sb-red)] focus:border-[var(--sb-red)] focus:ring-2 focus:ring-[var(--sb-red)]/10"
@@ -290,7 +290,7 @@ function SliderGroup({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--sb-border)] accent-[var(--sb-gold)] disabled:opacity-50"
+        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--sb-border)] accent-blue-500 disabled:opacity-50"
       />
       {hint && <p className="text-xs text-[var(--sb-muted)]">{hint}</p>}
     </div>
@@ -610,11 +610,11 @@ export default function LaunchHome() {
     return (
       <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--sb-border)]">
         <div className="flex h-full w-full">
-          <div style={{ width: `${(fee.platformFee / total) * 100}%` }} className="bg-[var(--sb-red)]" />
-          <div style={{ width: `${(fee.rewardFee / total) * 100}%` }} className="bg-[var(--sb-gold)]" />
-          <div style={{ width: `${(fee.liquidityFee / total) * 100}%` }} className="bg-blue-400" />
-          <div style={{ width: `${(fee.burnFee / total) * 100}%` }} className="bg-orange-400" />
-          <div style={{ width: `${(fee.fundFee / total) * 100}%` }} className="bg-emerald-400" />
+          <div style={{ width: `${(fee.platformFee / total) * 100}%` }} className="bg-red-500" />
+          <div style={{ width: `${(fee.rewardFee / total) * 100}%` }} className="bg-blue-500" />
+          <div style={{ width: `${(fee.liquidityFee / total) * 100}%` }} className="bg-cyan-500" />
+          <div style={{ width: `${(fee.burnFee / total) * 100}%` }} className="bg-violet-500" />
+          <div style={{ width: `${(fee.fundFee / total) * 100}%` }} className="bg-emerald-500" />
         </div>
       </div>
     );
@@ -653,7 +653,7 @@ export default function LaunchHome() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="sb-flame-mark h-9 w-9"><Flame className="h-5 w-5" /></span>
                 <h2 className="sb-hero-title text-2xl font-black tracking-tight lg:text-3xl">猴子币发射台</h2>
-                <span className="rounded-md bg-orange-200/20 px-2 py-0.5 text-[10px] font-bold text-orange-200">LAUNCH / BURN / MINT</span>
+                <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-300">LAUNCH / BURN / MINT</span>
               </div>
               <p className="sb-hero-copy mt-1.5 text-sm">
                 一键创建带 LP 单边燃烧机制的 meme 币：自动烧池、自动回流、持币分红、Mint 募集
@@ -701,7 +701,7 @@ export default function LaunchHome() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="sb-hero-stat rounded-xl border p-3 text-center transition-colors hover:border-orange-200/60"
+                className="sb-hero-stat rounded-xl border p-3 text-center transition-colors hover:border-blue-400/40"
               >
                 <div className="sb-hero-stat-label text-xs">{item.label}</div>
                 <div className="sb-hero-stat-value mt-1 text-sm font-bold">{item.value}</div>
@@ -728,7 +728,7 @@ export default function LaunchHome() {
                 "rounded-2xl border p-6 text-left transition",
                 deployMode === mode.key
                   ? "border-[var(--sb-gold)] bg-[var(--sb-gold-light)]"
-                  : "border-[var(--sb-border)] bg-white hover:border-[var(--sb-gold)]/50"
+                  : "border-[var(--sb-border)] bg-[var(--sb-card)] hover:border-[var(--sb-gold)]/50"
               )}
             >
               <div className="mb-2 flex items-center gap-2">
@@ -833,7 +833,7 @@ export default function LaunchHome() {
 
           <Card title="交易税配置" icon={Droplets} number="03">
             {taxError && <p className="mb-4 text-sm text-[var(--sb-red)]">{taxError}</p>}
-            <div className="mb-6 rounded-xl border border-[var(--sb-border)] bg-white/70 p-4">
+            <div className="mb-6 rounded-xl border border-[var(--sb-border)] bg-[var(--sb-card)] p-4">
               <InputGroup
                 label="分红币合约地址"
                 value={params.rewardToken}
@@ -1006,12 +1006,12 @@ export default function LaunchHome() {
                 type="number"
                 hint="0 ~ 3"
               />
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--sb-border)] bg-white/80 p-3 md:col-span-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--sb-border)] bg-[var(--sb-card)] p-3 md:col-span-2">
                 <input
                   type="checkbox"
                   checked={params.enableOffTrade}
                   onChange={(e) => setParams((p) => ({ ...p, enableOffTrade: e.target.checked }))}
-                  className="h-4 w-4 accent-[var(--sb-gold)]"
+                  className="h-4 w-4 accent-blue-500"
                 />
                 <span className="text-sm text-[var(--sb-text)]">启用 off-trade 控制（未 launch 前禁止交易）</span>
               </label>
@@ -1026,7 +1026,7 @@ export default function LaunchHome() {
               <TaxRing fee={fees?.buy ?? null} label="买入税" totalTaxBps={params.totalBuyTax} loading={feesLoading} />
               <TaxRing fee={fees?.sell ?? null} label="卖出税" totalTaxBps={params.totalSellTax} loading={feesLoading} />
             </div>
-            <div className="mb-5 grid grid-cols-1 gap-1.5 rounded-xl bg-[var(--sb-bg)]/60 p-3 text-xs text-[var(--sb-muted)] sm:grid-cols-2">
+            <div className="mb-5 grid grid-cols-1 gap-1.5 rounded-xl bg-[var(--sb-card)] p-3 text-xs text-[var(--sb-muted)] sm:grid-cols-2">
               {RING_LEGEND.map((item) => (
                 <div key={item.key} className="flex items-center gap-2">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
@@ -1116,7 +1116,7 @@ export default function LaunchHome() {
                   "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition",
                   mining || !canCreate || !factoryInfo
                     ? "cursor-not-allowed bg-[var(--sb-muted)]"
-                    : "bg-gradient-to-r from-[var(--sb-gold)] to-orange-500 hover:shadow-lg"
+                    : "bg-gradient-to-r blue-500 to-cyan-500 hover:shadow-lg"
                 )}
               >
                 {mining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -1153,7 +1153,7 @@ export default function LaunchHome() {
                 <Search className="h-4 w-4" /> 查询状态
               </button>
               {manageInfo && (
-                <div className="space-y-2 rounded-xl bg-[var(--sb-bg)] p-3 text-xs text-[var(--sb-muted)]">
+                <div className="space-y-2 rounded-xl bg-[var(--sb-card)] p-3 text-xs text-[var(--sb-muted)]">
                   <div className="flex items-center justify-between">
                     <span>Owner</span>
                     <span className="font-mono font-medium text-[var(--sb-text)]">{shorten(manageInfo.owner)}</span>
@@ -1175,7 +1175,7 @@ export default function LaunchHome() {
                 onClick={() => handleLaunch(manageToken.trim())}
                 disabled={launching || !manageInfo || manageInfo.launched}
                 className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--sb-gold)] to-orange-500 py-2.5 text-sm font-bold text-white transition hover:shadow-lg",
+                  "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r blue-500 to-cyan-500 py-2.5 text-sm font-bold text-white transition hover:shadow-lg",
                   (launching || !manageInfo || manageInfo.launched) && "cursor-not-allowed opacity-60"
                 )}
               >
@@ -1212,12 +1212,12 @@ export default function LaunchHome() {
       {/* Result modal */}
       {result && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-3xl bg-[var(--sb-card)] p-6 shadow-2xl">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sb-gold-light)] text-[var(--sb-gold)]">
               <Check className="h-7 w-7" />
             </div>
             <h3 className="mb-2 text-xl font-bold text-[var(--sb-text)]">代币创建成功</h3>
-            <div className="mb-4 space-y-2 rounded-xl bg-[var(--sb-bg)] p-4 text-sm">
+            <div className="mb-4 space-y-2 rounded-xl bg-[var(--sb-card)] p-4 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[var(--sb-muted)]">合约地址</span>
                 <button onClick={() => copy(result.tokenAddress)} className="flex items-center gap-1 break-all font-mono text-[var(--sb-text)] hover:text-[var(--sb-gold)]">
@@ -1248,7 +1248,7 @@ export default function LaunchHome() {
                 onClick={() => handleLaunch(result.tokenAddress)}
                 disabled={launching}
                 className={cn(
-                  "mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--sb-gold)] to-orange-500 py-3 text-sm font-bold text-white transition hover:shadow-lg",
+                  "mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r blue-500 to-cyan-500 py-3 text-sm font-bold text-white transition hover:shadow-lg",
                   launching && "cursor-not-allowed opacity-60"
                 )}
               >

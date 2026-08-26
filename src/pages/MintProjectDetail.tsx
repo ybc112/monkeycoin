@@ -195,7 +195,7 @@ export default function MintProjectDetail({ token }: { token: string }) {
         </div>
       )}
 
-      <section className="rounded-2xl border border-[#E2E8F0] bg-white/80 p-5 lg:p-6">
+      <section className="rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 lg:p-6">
         <div className="flex items-start gap-4">
           {project.avatar ? (
             <img
@@ -296,7 +296,7 @@ export default function MintProjectDetail({ token }: { token: string }) {
       </section>
 
       {!project.finalized && (
-        <section className="mt-6 rounded-2xl border border-[#E2E8F0] bg-white/80 p-5 lg:p-6">
+        <section className="mt-6 rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 lg:p-6">
           <div className="flex items-center gap-2">
             <Rocket className="h-5 w-5 text-[#FFD700]" />
             <h2 className="text-lg font-bold text-[#0F172A]">参与 Mint</h2>
@@ -328,7 +328,7 @@ export default function MintProjectDetail({ token }: { token: string }) {
       )}
 
       {isCreator && !project.finalized && (
-        <section className="mt-6 rounded-2xl border border-[#E2E8F0] bg-white/80 p-5 lg:p-6">
+        <section className="mt-6 rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 lg:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#FFD700]" />

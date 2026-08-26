@@ -94,7 +94,7 @@ export default function MintLaunches() {
 
   return (
     <div className="page-fade-in mx-auto max-w-7xl px-4 py-6 lg:py-8">
-      <section className="rounded-2xl border border-[#E2E8F0] bg-white/80 p-5 lg:p-6">
+      <section className="rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -166,9 +166,9 @@ export default function MintLaunches() {
           {filtered.map((project) => (
             <div
               key={project.token}
-              className="group relative overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white/80 p-5 transition-all hover:border-[#FFD700]/30 hover:shadow-[0_0_24px_rgba(208,255,0,0.08)]"
+              className="group relative overflow-hidden rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 transition-all hover:border-[var(--sb-gold)]/30 hover:shadow-[0_0_24px_rgba(59,130,246,0.08)]"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/5 via-transparent to-[#00B4D8]/5 opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--sb-gold)]/8 via-transparent to-cyan-500/8 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative">
                 <div className="flex items-start gap-3">
                   {project.avatar ? (
