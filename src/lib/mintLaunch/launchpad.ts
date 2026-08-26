@@ -26,15 +26,16 @@ const configuredVanitySuffix = String(import.meta.env.VITE_MINT_VANITY_SUFFIX ??
   .trim()
   .replace(/^0x/i, "")
   .toLowerCase();
-const DEFAULT_APP_BACKEND_URL = "https://api.kimi-vault.com";
+const DEFAULT_APP_BACKEND_URL = "https://mint-api.monkeycoin.top";
 const configuredBackendUrl =
   String(import.meta.env.VITE_MINT_BACKEND_URL ?? "").trim() || DEFAULT_APP_BACKEND_URL;
 
-export const DEFAULT_MINT_FACTORY_ADDRESS = "0x25f756494580274a40C60072C0302260B4ED1F08";
+export const DEFAULT_MINT_FACTORY_ADDRESS = "0x21c5AEedFba6ad7820229E4f067F3234f215337d";
 const RETIRED_MINT_FACTORY_ADDRESSES = new Set([
   "0x084c85f7cf1d9cf3d638ef75b1561e464884dfbc",
   "0xaa9b9c5f065fa4de891988c47b0432c8a156f3b0",
   "0x09e6c8abcdddab2677c2be8673ff31afc1e27624",
+  "0x25f756494580274a40C60072C0302260B4ED1F08",
 ]);
 export const DEFAULT_MINT_FEE_RECIPIENT = "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
 // 部署费：支付 30,000 枚猴子币（0x0c1f...7777）并销毁，不再收取 0.005 BNB
