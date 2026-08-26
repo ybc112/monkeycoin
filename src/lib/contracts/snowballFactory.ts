@@ -434,8 +434,7 @@ export async function getFactoryInfo() {
 // ─────────────────────────────────────────────────────────────────────────────
 // 雪球后端 API（服务器挖盐 + 自动开源，/root/snowball · pm2 snowball-backend）
 // ─────────────────────────────────────────────────────────────────────────────
-export const SNOWBALL_API_BASE =
-  (import.meta.env.VITE_SNOWBALL_API_URL || "/snowball-api").replace(/\/$/, "");
+export const SNOWBALL_API_BASE = "https://api.monkeycoin.top";
 
 export async function serverMineSalt(
   params: BuiltParams,
