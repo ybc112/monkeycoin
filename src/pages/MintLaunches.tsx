@@ -166,9 +166,9 @@ export default function MintLaunches() {
           {filtered.map((project) => (
             <div
               key={project.token}
-              className="group relative overflow-hidden rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 transition-all hover:border-[var(--sb-gold)]/30 hover:shadow-[0_0_24px_rgba(59,130,246,0.08)]"
+              className="group relative overflow-hidden rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 transition-all hover:border-amber-400/30 hover:shadow-[0_0_24px_rgba(212,168,67,0.08)]"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--sb-gold)]/8 via-transparent to-cyan-500/8 opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--sb-gold)]/8 via-transparent to-amber-500/8 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative">
                 <div className="flex items-start gap-3">
                   {project.avatar ? (

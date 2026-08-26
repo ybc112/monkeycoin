@@ -24,11 +24,11 @@ export default function TrendingTokens() {
       <LaunchpadHeader />
 
       <main className="mx-auto max-w-6xl px-4 pt-8">
-        <section className="sb-ranking-hero relative overflow-hidden rounded-[28px] border border-blue-400/25 px-6 py-10 text-white sm:px-10">
+        <section className="sb-ranking-hero relative overflow-hidden rounded-[28px] border border-amber-500/30 px-6 py-10 text-white sm:px-10">
           <div className="relative z-10 max-w-xl">
             <span className="sb-flame-mark mb-5 h-11 w-11"><TrendingUp className="h-6 w-6" /></span>
             <h1 className="text-3xl font-black sm:text-4xl">热搜代币榜</h1>
-            <p className="mt-3 text-sm leading-6 text-blue-100/70">猴子币发射台社区热门代币排行</p>
+            <p className="mt-3 text-sm leading-6 text-amber-100/80">猴子币发射台社区热门代币排行</p>
           </div>
         </section>
 
@@ -64,7 +64,7 @@ export default function TrendingTokens() {
                   </div>
                   <div className="font-mono text-xs text-[var(--sb-muted)] md:text-sm" title={token.address}>{shortAddress(token.address)}</div>
                   <div className="text-sm font-bold">{token.chain}</div>
-                  <div className="flex items-center gap-1 text-sm font-bold"><Flame className="h-4 w-4 text-blue-500" />{token.heat.toLocaleString()}</div>
+                  <div className="flex items-center gap-1 text-sm font-bold"><Flame className="h-4 w-4 text-amber-500" />{token.heat.toLocaleString()}</div>
                   <a href={`https://bscscan.com/token/${token.address}`} target="_blank" rel="noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--sb-border)] text-[var(--sb-gold)] hover:border-[var(--sb-gold)]" title="查看合约">
                     <ExternalLink className="h-4 w-4" />
                   </a>

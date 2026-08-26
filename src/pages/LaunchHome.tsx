@@ -117,10 +117,10 @@ function Card({ children, className, title, icon: Icon, number }: any) {
 
 // 税费分配环形图
 const RING_COLORS = {
-  reward: "#3B82F6",
-  liquidity: "#14B8A6",
-  burn: "#EF4444",
-  fund: "#8B5CF6",
+  reward: "#D4A843",
+  liquidity: "#5B8DB8",
+  burn: "#C62828",
+  fund: "#8E6BB3",
 };
 
 const RING_LEGEND = [
@@ -290,7 +290,7 @@ function SliderGroup({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--sb-border)] accent-blue-500 disabled:opacity-50"
+        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--sb-border)] accent-[var(--sb-gold)] disabled:opacity-50"
       />
       {hint && <p className="text-xs text-[var(--sb-muted)]">{hint}</p>}
     </div>
@@ -610,11 +610,11 @@ export default function LaunchHome() {
     return (
       <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--sb-border)]">
         <div className="flex h-full w-full">
-          <div style={{ width: `${(fee.platformFee / total) * 100}%` }} className="bg-red-500" />
-          <div style={{ width: `${(fee.rewardFee / total) * 100}%` }} className="bg-blue-500" />
-          <div style={{ width: `${(fee.liquidityFee / total) * 100}%` }} className="bg-cyan-500" />
-          <div style={{ width: `${(fee.burnFee / total) * 100}%` }} className="bg-violet-500" />
-          <div style={{ width: `${(fee.fundFee / total) * 100}%` }} className="bg-emerald-500" />
+          <div style={{ width: `${(fee.platformFee / total) * 100}%` }} className="bg-[var(--sb-red)]" />
+          <div style={{ width: `${(fee.rewardFee / total) * 100}%` }} className="bg-[var(--sb-gold)]" />
+          <div style={{ width: `${(fee.liquidityFee / total) * 100}%` }} className="bg-blue-400" />
+          <div style={{ width: `${(fee.burnFee / total) * 100}%` }} className="bg-orange-400" />
+          <div style={{ width: `${(fee.fundFee / total) * 100}%` }} className="bg-emerald-400" />
         </div>
       </div>
     );
@@ -653,7 +653,7 @@ export default function LaunchHome() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="sb-flame-mark h-9 w-9"><Flame className="h-5 w-5" /></span>
                 <h2 className="sb-hero-title text-2xl font-black tracking-tight lg:text-3xl">猴子币发射台</h2>
-                <span className="rounded-md bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold text-blue-300">LAUNCH / BURN / MINT</span>
+                <span className="rounded-md bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">LAUNCH / BURN / MINT</span>
               </div>
               <p className="sb-hero-copy mt-1.5 text-sm">
                 一键创建带 LP 单边燃烧机制的 meme 币：自动烧池、自动回流、持币分红、Mint 募集
@@ -701,7 +701,7 @@ export default function LaunchHome() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="sb-hero-stat rounded-xl border p-3 text-center transition-colors hover:border-blue-400/40"
+                className="sb-hero-stat rounded-xl border p-3 text-center transition-colors hover:border-amber-400/40"
               >
                 <div className="sb-hero-stat-label text-xs">{item.label}</div>
                 <div className="sb-hero-stat-value mt-1 text-sm font-bold">{item.value}</div>
@@ -1011,7 +1011,7 @@ export default function LaunchHome() {
                   type="checkbox"
                   checked={params.enableOffTrade}
                   onChange={(e) => setParams((p) => ({ ...p, enableOffTrade: e.target.checked }))}
-                  className="h-4 w-4 accent-blue-500"
+                  className="h-4 w-4 accent-[var(--sb-gold)]"
                 />
                 <span className="text-sm text-[var(--sb-text)]">启用 off-trade 控制（未 launch 前禁止交易）</span>
               </label>
@@ -1116,7 +1116,7 @@ export default function LaunchHome() {
                   "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition",
                   mining || !canCreate || !factoryInfo
                     ? "cursor-not-allowed bg-[var(--sb-muted)]"
-                    : "bg-gradient-to-r blue-500 to-cyan-500 hover:shadow-lg"
+                    : "bg-gradient-to-r from-[var(--sb-gold)] to-amber-500 hover:shadow-lg"
                 )}
               >
                 {mining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -1175,7 +1175,7 @@ export default function LaunchHome() {
                 onClick={() => handleLaunch(manageToken.trim())}
                 disabled={launching || !manageInfo || manageInfo.launched}
                 className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r blue-500 to-cyan-500 py-2.5 text-sm font-bold text-white transition hover:shadow-lg",
+                  "flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--sb-gold)] to-amber-500 py-2.5 text-sm font-bold text-white transition hover:shadow-lg",
                   (launching || !manageInfo || manageInfo.launched) && "cursor-not-allowed opacity-60"
                 )}
               >
@@ -1248,7 +1248,7 @@ export default function LaunchHome() {
                 onClick={() => handleLaunch(result.tokenAddress)}
                 disabled={launching}
                 className={cn(
-                  "mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r blue-500 to-cyan-500 py-3 text-sm font-bold text-white transition hover:shadow-lg",
+                  "mb-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--sb-gold)] to-amber-500 py-3 text-sm font-bold text-white transition hover:shadow-lg",
                   launching && "cursor-not-allowed opacity-60"
                 )}
               >

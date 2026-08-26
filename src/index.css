@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  /* 深海军蓝 + 科技蓝/青绿主题 */
-  --sb-bg: #0B1121;
-  --sb-card: #F8FAFC;
-  --sb-gold: #3B82F6;        /* 科技蓝（主色） */
-  --sb-gold-light: rgba(59, 130, 246, 0.1);
-  --sb-red: #EF4444;
-  --sb-text: #1E293B;
-  --sb-muted: #64748B;
-  --sb-border: #E2E8F0;
-  --sb-success: #22C55E;
+  /* 暖黄浅色主题 — 与官网统一 */
+  --sb-bg: #FEF9F0;
+  --sb-card: #FFFFFF;
+  --sb-gold: #D4A843;        /* 暖金（主色） */
+  --sb-gold-light: rgba(212, 168, 67, 0.12);
+  --sb-red: #C62828;
+  --sb-text: #2D2416;
+  --sb-muted: #8B7D6B;
+  --sb-border: #E8DDD0;
+  --sb-success: #2E8B57;
 }
 
 html,
@@ -26,45 +26,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Monkey brand layer — 科技蓝主题 */
+/* Monkey brand layer — 暖金浅色主题 */
 .sb-brand-header {
-  background: #0a1628;
-  border-color: rgba(59, 130, 246, 0.25);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: #2D2014;
+  border-color: rgba(212, 168, 67, 0.35);
+  box-shadow: 0 8px 24px rgba(45, 32, 20, 0.14);
 }
 
 .sb-brand-header .sb-brand-title { color: #fff; }
-.sb-brand-header .sb-brand-subtitle { color: rgba(148, 163, 184, 0.72); }
-.sb-brand-header .sb-wallet { border-color: rgba(59, 130, 246, 0.25); background: rgba(255, 255, 255, 0.06); color: #fff; }
-.sb-brand-header .sb-wallet-idle { background: #3B82F6; color: #fff; }
+.sb-brand-header .sb-brand-subtitle { color: rgba(232, 221, 208, 0.72); }
+.sb-brand-header .sb-wallet { border-color: rgba(212, 168, 67, 0.28); background: rgba(255, 255, 255, 0.08); color: #fff; }
+.sb-brand-header .sb-wallet-idle { background: #D4A843; color: #fff; }
 
 .sb-brand-hero {
   position: relative;
   overflow: hidden;
   isolation: isolate;
   min-height: 270px;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(212, 168, 67, 0.36);
   border-radius: 28px;
-  background-color: #0d1b3e;
+  background-color: #3D2E1A;
   background-image: url('/0ee769b5412dfd0f4d0a14349ca7307e.jpg');
   background-position: center 42%;
   background-size: cover;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 48px rgba(45, 32, 20, 0.2);
 }
 
 .sb-brand-hero::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: rgba(11, 17, 33, 0.7);
+  background: rgba(45, 32, 20, 0.66);
   content: "";
 }
 
 .sb-brand-hero .sb-hero-title { color: #fff; text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35); }
-.sb-brand-hero .sb-hero-copy { color: rgba(191, 219, 254, 0.82); }
-.sb-brand-hero .sb-hero-meta { color: rgba(147, 197, 253, 0.68); }
-.sb-brand-hero .sb-hero-stat { border-color: rgba(59, 130, 246, 0.2); background: rgba(15, 23, 42, 0.6); }
-.sb-brand-hero .sb-hero-stat-label { color: rgba(147, 197, 253, 0.7); }
+.sb-brand-hero .sb-hero-copy { color: rgba(245, 235, 220, 0.82); }
+.sb-brand-hero .sb-hero-meta { color: rgba(220, 208, 190, 0.68); }
+.sb-brand-hero .sb-hero-stat { border-color: rgba(212, 168, 67, 0.25); background: rgba(45, 32, 20, 0.42); }
+.sb-brand-hero .sb-hero-stat-label { color: rgba(220, 208, 190, 0.7); }
 .sb-brand-hero .sb-hero-stat-value { color: #fff; }
 
 .sb-flame-mark {
@@ -72,23 +72,23 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #3B82F6;
+  background: #D4A843;
   color: #fff;
-  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.14), 0 8px 20px rgba(59, 130, 246, 0.32);
+  box-shadow: 0 0 0 6px rgba(212, 168, 67, 0.14), 0 8px 20px rgba(212, 168, 67, 0.32);
 }
 
 .sb-ranking-hero {
-  background-color: #0d1b3e;
+  background-color: #3D2E1A;
   background-image: url('/0ee769b5412dfd0f4d0a14349ca7307e.jpg');
   background-position: center 38%;
   background-size: cover;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 18px 48px rgba(45, 32, 20, 0.18);
 }
 
 .sb-ranking-hero::before {
   position: absolute;
   inset: 0;
-  background: rgba(11, 17, 33, 0.72);
+  background: rgba(45, 32, 20, 0.72);
   content: "";
 }
 

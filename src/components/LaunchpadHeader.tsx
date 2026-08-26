@@ -23,12 +23,12 @@ export default function LaunchpadHeader() {
           <img
             src="/0ee769b5412dfd0f4d0a14349ca7307e.jpg"
             alt="Monkey logo"
-            className="h-11 w-11 shrink-0 rounded-xl border border-blue-400/30 object-cover shadow-lg shadow-blue-950/40"
+            className="h-11 w-11 shrink-0 rounded-xl border border-amber-400/40 object-cover shadow-lg shadow-amber-950/40"
           />
           <div className="min-w-0">
             <h1 className="sb-brand-title text-base font-bold leading-tight md:text-lg">
               猴子币发射台{" "}
-              <span className="ml-1 text-[10px] font-black tracking-[0.22em] text-blue-300">
+              <span className="ml-1 text-[10px] font-black tracking-[0.22em] text-amber-300">
                 MONKEY LAUNCHPAD
               </span>
             </h1>
@@ -47,7 +47,7 @@ export default function LaunchpadHeader() {
                   href={`#/${item.path}`}
                   className={cn(
                     "sb-wallet flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold",
-                    active && "border-blue-400/40",
+                    active && "border-amber-400/40",
                   )}
                   title={item.label}
                 >
@@ -62,7 +62,7 @@ export default function LaunchpadHeader() {
             disabled={connecting || isConnected}
             className={cn(
               "sb-wallet flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition md:px-4",
-              isConnected ? "" : "sb-wallet-idle hover:bg-blue-600",
+              isConnected ? "" : "sb-wallet-idle hover:bg-amber-600",
             )}
           >
             {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}

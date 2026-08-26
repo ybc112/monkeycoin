@@ -57,15 +57,15 @@ const avatarMaxSourceBytes = 1024 * 1024;
 const avatarCanvasSize = 256;
 
 const sectionCard =
-  "rounded-2xl border border-[#E2E8F0] bg-white p-5 lg:p-6 transition-all duration-200 hover:border-[#CBD5E1]";
+  "rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)] p-5 lg:p-6 transition-all duration-200 hover:border-[var(--sb-gold)]/30";
 const sectionCardGlow =
-  "relative overflow-hidden before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-[#FFD700]/8 before:via-transparent before:to-[#00B4D8]/8 before:pointer-events-none";
-const sectionTitle = "flex items-center gap-2 text-base font-semibold text-[#0F172A]";
+  "relative overflow-hidden before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-[var(--sb-gold)]/8 before:via-transparent before:to-amber-500/8 before:pointer-events-none";
+const sectionTitle = "flex items-center gap-2 text-base font-semibold text-[var(--sb-text)]";
 const sectionNumber =
-  "flex h-5 w-5 items-center justify-center rounded-md bg-[#FFD700]/15 text-[11px] font-bold text-[#B8860B]";
-const labelClass = "mb-1.5 block text-xs font-medium text-[#64748B]";
+  "flex h-5 w-5 items-center justify-center rounded-md bg-[var(--sb-gold-light)] text-[11px] font-bold text-[var(--sb-gold)]";
+const labelClass = "mb-1.5 block text-xs font-medium text-[var(--sb-muted)]";
 const gradientText =
-  "bg-gradient-to-r from-[#B8860B] via-[#FFD700] to-[#00B4D8] bg-clip-text text-transparent";
+  "bg-gradient-to-r from-[var(--sb-gold)] via-amber-400 to-amber-300 bg-clip-text text-transparent";
 
 function shortAddress(address: string) {
   return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
