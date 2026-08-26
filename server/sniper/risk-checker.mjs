@@ -1,7 +1,7 @@
 // 交易前检查（真实买入前的 15 项硬性校验），任一失败即放弃并记录原因
 import { StateRepo, OrderRepo, PositionRepo, WalletRepo } from "./database.mjs";
 import { getTokenInfo, getTokenContract, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
-import { TOKEN_STATUS } from "./config.mjs";
+import { TOKEN_STATUS, RISK } from "./config.mjs";
 
 const EMERGENCY_KEY = "flap_sniper_emergency_stop";
 
@@ -70,7 +70,18 @@ export async function runPreTradeChecks({ token, tokenLabel, strategy, wallet, b
   const w = wallet ? WalletRepo.list().find(x => x.address && x.address.toLowerCase() === wallet.toLowerCase()) : null;
   if (wallet && w && !w.enabled) return { ok: false, reason: `执行钱包 ${wallet} 已停用`, results };
   pass("wallet", wallet ? `钱包 ${wallet} 可用` : "未指定钱包");
-  // 10. maxTx / maxWallet
+  // 10. 每日买入限额（防失控）
+  if (RISK.DAILY_BUY_LIMIT_BNB > 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    const spent = OrderRepo.list(1000)
+      .filter(o => o.side === "buy" && (o.created_at || "").startsWith(today) && ["BROADCASTING", "CONFIRMED", "PENDING"].includes(o.state))
+      .reduce((s, o) => s + Number(o.amount_in || 0) / 1e18, 0);
+    const buyBnb = Number(buyAmountQuote || 0);
+    if (spent + buyBnb > RISK.DAILY_BUY_LIMIT_BNB)
+      return { ok: false, reason: `今日已买入 ${spent.toFixed(4)} BNB，加本次 ${buyBnb} 超日限额 ${RISK.DAILY_BUY_LIMIT_BNB}`, results };
+    pass("daily_limit", `今日买入 ${spent.toFixed(4)}/${RISK.DAILY_BUY_LIMIT_BNB} BNB`);
+  }
+  // 11. maxTx / maxWallet
   const limitsOk = await checkTransferLimits(token, buyWei, strategy, results, pass);
   if (!limitsOk) return { ok: false, reason: results[results.length - 1].detail, results };
 
