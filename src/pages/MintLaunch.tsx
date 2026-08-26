@@ -276,7 +276,7 @@ export default function MintLaunch() {
 
   if (result) {
     return (
-      <div className="page-fade-in mx-auto max-w-3xl px-4 py-10">
+      <div className="page-fade-in mx-auto max-w-3xl px-4 py-10 pb-28">
         <div className={cn(sectionCard, sectionCardGlow, "relative text-center")}>
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#00B4D8]/10 blur-3xl" />
           <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-[#FFD700]/10 blur-3xl" />
@@ -328,7 +328,7 @@ export default function MintLaunch() {
   }
 
   return (
-    <div className="page-fade-in mx-auto max-w-7xl px-4 py-6 lg:py-8">
+    <div className="page-fade-in mx-auto max-w-7xl px-4 py-6 pb-28 lg:py-8">
       {/* Hero / status strip */}
       <section className={cn(sectionCard, sectionCardGlow, "relative mb-6 overflow-hidden")}>
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#00B4D8]/10 blur-3xl" />

@@ -93,7 +93,7 @@ export default function MintLaunches() {
   }, [wallet.account, refreshKey]);
 
   return (
-    <div className="page-fade-in mx-auto max-w-7xl px-3 py-4 lg:py-6 sm:px-4">
+    <div className="page-fade-in mx-auto max-w-7xl px-3 py-4 pb-28 lg:py-6 sm:px-4">
       <section className="rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-4 lg:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>

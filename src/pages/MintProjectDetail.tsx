@@ -158,7 +158,7 @@ export default function MintProjectDetail({ token }: { token: string }) {
 
   if (status === "error" || !project) {
     return (
-      <div className="page-fade-in mx-auto max-w-3xl px-4 py-8">
+      <div className="page-fade-in mx-auto max-w-3xl px-4 py-8 pb-28">
         <button onClick={goBack} className="world-btn-secondary mb-4">
           <ArrowLeft className="h-4 w-4" />
           返回
@@ -173,7 +173,7 @@ export default function MintProjectDetail({ token }: { token: string }) {
   const mintCost = (BigInt(project.mintPriceWei || "0") * BigInt(mintQuantity || "0")).toString();
 
   return (
-    <div className="page-fade-in mx-auto max-w-3xl px-4 py-6 lg:py-8">
+    <div className="page-fade-in mx-auto max-w-3xl px-4 py-6 pb-28 lg:py-8">
       <div className="mb-6 flex items-center justify-between">
         <button onClick={goBack} className="world-btn-secondary">
           <ArrowLeft className="h-4 w-4" />
