@@ -115,6 +115,9 @@
   .ghost-btn.red:hover{border-color:#e5484d;background:rgba(229,72,77,.05)}
   .ghost-btn:disabled{cursor:not-allowed;opacity:.5}
 
+  /* 手机端卡片列表（桌面隐藏） */
+  .m-list{display:none}
+
   .toast-wrap{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
   .toast{background:#3B2F2F;color:#fff;font-size:13px;font-weight:700;padding:11px 20px;border-radius:999px;box-shadow:0 16px 34px -14px rgba(0,0,0,.4);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;max-width:88vw}
   .toast .ic{color:var(--gold)}
@@ -130,9 +133,52 @@
     .nav-links{display:none;position:absolute;top:60px;left:8px;right:8px;flex-direction:column;gap:4px;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
     .nav-links.open{display:flex}
     .nav-toggle{display:block}
-    .pay-card{padding:20px}
-    .table-wrap{overflow-x:auto}
-    .table{min-width:760px}
+    .wrapper{padding:18px 14px 48px}
+    .panel{padding:16px}
+    .panel-head{margin-bottom:14px;padding-bottom:12px}
+    .group{margin-bottom:16px}
+
+    .pay-card{flex-direction:column;align-items:flex-start;gap:14px;padding:20px 18px}
+    .pay-card .t2{font-size:22px}
+    .pay-card .t3{font-size:12.5px}
+    .pay-card .price{font-size:28px}
+    .pay-card .price small{font-size:13px}
+    .pay-btn{width:100%;justify-content:center;padding:13px 18px;font-size:14px}
+
+    .row{gap:8px;margin-bottom:10px}
+    .row label{min-width:0;width:100%;font-size:12.5px;margin-bottom:2px}
+    .select,input[type=text],input[type=number]{max-width:100%;flex:1;font-size:14px}
+    .g-t{font-size:12px;letter-spacing:.5px}
+    .disabled-note{font-size:11.5px}
+
+    .wallet{padding:9px 10px}
+    .wallet .addr{font-size:11.5px}
+    .wallet .bal{font-size:10.5px}
+
+    .tabs button{padding:6px 12px;font-size:12px}
+    .toolbar{gap:8px}
+    .search{min-width:0}
+
+    /* 桌面表格隐藏，显示卡片 */
+    .table-wrap{display:none}
+    .m-list{display:flex;flex-direction:column;gap:10px}
+    .m-card{background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:14px}
+    .m-card .m-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .m-card .m-info{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .m-card .m-info span{font-size:11.5px;font-weight:700;color:var(--brown-soft);background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 10px;white-space:nowrap}
+    .m-card .m-info span b{color:var(--brown)}
+    .m-card .m-sub{font-size:11px;color:var(--muted);margin-top:9px;font-weight:600}
+    .m-card .pct{font-weight:900;font-size:16px}
+    .m-card .snipe-btn{padding:8px 16px}
+    .sell-wide{width:100%;margin-top:10px;padding:10px}
+
+    .empty{padding:34px 16px}
+    .actions{gap:8px}
+    .live{font-size:12px}
+    .ghost-btn{padding:7px 14px;font-size:12px}
+
+    .toast-wrap{top:62px}
+    .toast{font-size:12px;padding:10px 16px}
   }
 </style>
 </head>
@@ -223,14 +269,14 @@
 
       <div class="group">
         <div class="g-t">💰 买入参数</div>
-        <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">BNB / 币</span></div>
-        <div class="row"><label>Gas Price</label><input id="gasPrice" type="number" value="5"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
+        <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span class="unit">BNB / 币</span></div>
+        <div class="row"><label>Gas Price</label><input id="gasPrice" type="number" value="5"><span class="unit">Gwei</span></div>
         <div class="row"><label>Gas Limit</label><input id="gasLimit" type="number" value="800000"></div>
       </div>
 
       <div class="group">
         <div class="g-t">📤 卖出参数</div>
-        <div class="row"><label>卖出 Gas</label><input id="sellGas" type="number" value="5"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
+        <div class="row"><label>卖出 Gas</label><input id="sellGas" type="number" value="5"><span class="unit">Gwei</span></div>
         <div class="row"><label>卖出 Limit</label><input id="sellLimit" type="number" value="500000"></div>
         <div class="row">
           <label>策略模式</label>
@@ -273,8 +319,9 @@
             </thead>
             <tbody id="sniperRows"></tbody>
           </table>
-          <div class="empty" id="marketEmpty" style="display:none"><div class="big">📭</div><div>没有符合条件的代币，换个筛选试试</div></div>
         </div>
+        <div class="m-list" id="mList"></div>
+        <div class="empty" id="marketEmpty" style="display:none"><div class="big">📭</div><div>没有符合条件的代币，换个筛选试试</div></div>
       </div>
 
       <div class="panel">
@@ -415,7 +462,10 @@
     {av:'🐷',nm:'Piggy Bank',sy:'$PIGY',plat:'flap',buy:'0.02 BNB',dev:'0x0D1E…aaaa',buyTax:'6%',sellTax:'6%',lp:'6%',mk:'0x5A6B…cc'},
   ];
   let marketFilter='all';
-  const sniperRows=$('sniperRows'),marketEmpty=$('marketEmpty'),listCount=$('listCount');
+  const sniperRows=$('sniperRows'),mList=$('mList'),marketEmpty=$('marketEmpty'),listCount=$('listCount');
+  function cardTag(t){
+    return `<span class="tag ${t.plat}">${t.plat==='flap'?'Flap':'FourMeme'}</span>`;
+  }
   function renderList(){
     const q=($('searchInput').value||'').trim().toLowerCase();
     const list=demo.filter(t=>{
@@ -426,15 +476,29 @@
     });
     sniperRows.innerHTML=list.map(t=>`
       <tr>
-        <td><div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} <span class="tag ${t.plat}">${t.plat==='flap'?'Flap':'FourMeme'}</span></div></div></div></td>
+        <td><div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} ${cardTag(t)}</div></div></div></td>
         <td><span class="mini"><b>${t.buy}</b><br/>Dev ${t.dev}</span></td>
         <td><span class="mini">买 <b>${t.buyTax}</b> · 卖 <b>${t.sellTax}</b><br/>LP <b>${t.lp}</b></span></td>
         <td><span class="mini"><b>${t.mk}</b></span></td>
         <td><button class="snipe-btn">🎯 狙击</button></td>
       </tr>`).join('');
+    mList.innerHTML=list.map(t=>`
+      <div class="m-card">
+        <div class="m-top">
+          <div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} ${cardTag(t)}</div></div></div>
+          <button class="snipe-btn">🎯 狙击</button>
+        </div>
+        <div class="m-info">
+          <span>买入 <b>${t.buy}</b></span>
+          <span>买税 <b>${t.buyTax}</b></span>
+          <span>卖税 <b>${t.sellTax}</b></span>
+          <span>LP <b>${t.lp}</b></span>
+        </div>
+        <div class="m-sub">Dev ${t.dev} · 营销 ${t.mk}</div>
+      </div>`).join('');
     listCount.textContent=`(${list.length})`;
     marketEmpty.style.display=list.length?'none':'block';
-    sniperRows.querySelectorAll('.snipe-btn').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.snipe-btn').forEach(b=>b.addEventListener('click',()=>{
       toast('内盘狙击交易未开放，开通会员后启用','🔒');
     }));
   }
@@ -488,12 +552,25 @@
               <td><div class="tk"><div class="av">${p.av}</div><div><div class="nm">${p.nm}</div><div class="sy">${p.sy}</div></div></div></td>
               <td><span class="mini">${p.qty}</span></td>
               <td><span class="mini">${p.buy}</span></td>
-              <td><span class="mini">${p.now??p.sell}</span></td>
+              <td><span class="mini">${p.now?p.now:p.sell}</span></td>
               <td><span class="mini" style="color:${p.win?'#2ecc71':'#e5484d'};font-weight:800">${p.pct}</span></td>
               <td>${posTab==='open'?`<button class="snipe-btn sell-btn" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)">卖出</button>`:'<span class="mini">已结算</span>'}</td>
             </tr>`).join('')}</tbody>
         </table>
-      </div>`;
+      </div>
+      <div class="m-list">${list.map(p=>`
+        <div class="m-card">
+          <div class="m-top">
+            <div class="tk"><div class="av">${p.av}</div><div><div class="nm">${p.nm}</div><div class="sy">${p.sy}</div></div></div>
+            <span class="pct" style="color:${p.win?'#2ecc71':'#e5484d'}">${p.pct}</span>
+          </div>
+          <div class="m-info">
+            <span>数量 <b>${p.qty}</b></span>
+            <span>买 <b>${p.buy}</b></span>
+            <span>${posTab==='open'?'现':'卖'} <b>${p.now?p.now:p.sell}</b></span>
+          </div>
+          ${posTab==='open'?`<button class="snipe-btn sell-btn sell-wide" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)">卖出</button>`:''}
+        </div>`).join('')}</div>`;
     posWrap.querySelectorAll('.sell-btn').forEach(b=>b.addEventListener('click',()=>toast('卖出功能暂未开放（演示）','🔒')));
   }
   renderPos();
