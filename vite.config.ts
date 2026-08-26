@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         main: path.resolve(import.meta.dirname, 'index.html'),
         launchpad: path.resolve(import.meta.dirname, 'launchpad.html'),
+        sniper: path.resolve(import.meta.dirname, 'sniper.html'),
       },
     },
   },

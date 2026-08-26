@@ -1,4 +1,4 @@
-import { Flame, Home, Loader2, Rocket, TrendingUp, Wallet } from "lucide-react";
+import { Crosshair, Flame, Home, Loader2, Rocket, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useHashPath } from "@/lib/hashRouter";
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { path: "mint", label: "Mint", icon: Flame, short: "Mint" },
   { path: "mint-launches", label: "已发射", icon: Rocket, short: "已发" },
   { path: "trending", label: "热搜榜", icon: TrendingUp, short: "热搜" },
+  { path: "sniper", label: "内盘狙击", icon: Crosshair, short: "狙击", external: "sniper.html" },
 ];
 
 const shorten = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -41,11 +42,11 @@ export default function LaunchpadHeader() {
             <nav className="hidden items-center gap-1 md:flex">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
-                const active = route === item.path || (item.path === "" && route === "");
+                const active = !item.external && (route === item.path || (item.path === "" && route === ""));
                 return (
                   <a
                     key={item.path}
-                    href={`#/${item.path}`}
+                    href={item.external ?? `#/${item.path}`}
                     className={cn(
                       "sb-wallet flex h-9 items-center gap-1 rounded-lg border px-1.5 text-[10px] font-bold sm:h-10 sm:gap-1.5 sm:rounded-xl sm:px-2 lg:gap-2 lg:px-3 lg:text-sm",
                       active && "border-amber-400/40",
@@ -79,7 +80,7 @@ export default function LaunchpadHeader() {
       {/* 手机端底部 Tab 导航 */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sb-border)] bg-[var(--sb-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-4 gap-1 px-2 py-1.5">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.external).map((item) => {
             const Icon = item.icon;
             const active = route === item.path || (item.path === "" && route === "");
             return (
