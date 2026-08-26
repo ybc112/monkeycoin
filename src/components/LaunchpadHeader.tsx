@@ -4,10 +4,10 @@ import { useWallet } from "@/hooks/useWallet";
 import { useHashPath } from "@/lib/hashRouter";
 
 const NAV_ITEMS = [
-  { path: "", label: "发射台", icon: Home },
-  { path: "mint", label: "Mint", icon: Flame },
-  { path: "mint-launches", label: "已发射", icon: Rocket },
-  { path: "trending", label: "热搜榜", icon: TrendingUp },
+  { path: "", label: "发射台", icon: Home, short: "发射" },
+  { path: "mint", label: "Mint", icon: Flame, short: "Mint" },
+  { path: "mint-launches", label: "已发射", icon: Rocket, short: "已发" },
+  { path: "trending", label: "热搜榜", icon: TrendingUp, short: "热搜" },
 ];
 
 const shorten = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -26,7 +26,7 @@ export default function LaunchpadHeader() {
             className="h-11 w-11 shrink-0 rounded-xl border border-amber-400/40 object-cover shadow-lg shadow-amber-950/40"
           />
           <div className="min-w-0 shrink">
-            <h1 className="sb-brand-title flex items-baseline gap-1 text-sm font-bold leading-tight sm:text-base md:text-lg">
+            <h1 className="sb-brand-title flex items-baseline gap-1 text-base font-bold leading-tight md:text-lg">
               <span className="whitespace-nowrap">猴子币发射台</span>
               <span className="hidden text-[10px] font-black tracking-[0.22em] text-amber-300 sm:inline">
                 MONKEY LAUNCHPAD
@@ -46,12 +46,15 @@ export default function LaunchpadHeader() {
                   key={item.path}
                   href={`#/${item.path}`}
                   className={cn(
-                    "sb-wallet flex h-10 items-center gap-1.5 rounded-xl border px-2 text-xs font-bold lg:gap-2 lg:px-3 lg:text-sm",
+                    "sb-wallet flex h-9 items-center gap-1 rounded-lg border px-1.5 text-[10px] font-bold sm:h-10 sm:gap-1.5 sm:rounded-xl sm:px-2 lg:gap-2 lg:px-3 lg:text-sm",
                     active && "border-amber-400/40",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  <span className="whitespace-nowrap">{item.label}</span>
+                  <span className="whitespace-nowrap text-[10px] lg:text-xs">
+                    <span className="sm:hidden">{item.short}</span>
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </span>
                 </a>
               );
             })}
