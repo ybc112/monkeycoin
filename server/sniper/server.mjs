@@ -186,7 +186,7 @@ async function executeBuyPipeline({ strategy, token }) {
 // ── HTTP 服务器 ─────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   try {
-    setCors(res);
+    setCors(res, req);
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const path = url.pathname;
@@ -403,8 +403,12 @@ function normalizeStrategy(b) {
 }
 
 // ── 辅助 ────────────────────────────────────────────────────────────────────
-function setCors(res) {
-  res.setHeader("access-control-allow-origin", CORS_ORIGIN.includes("*") ? "*" : CORS_ORIGIN[0] || "*");
+function setCors(res, req) {
+  const origin = req?.headers?.origin;
+  const allowed = CORS_ORIGIN.includes("*")
+    ? "*"
+    : (origin && CORS_ORIGIN.includes(origin) ? origin : CORS_ORIGIN[0] || "*");
+  res.setHeader("access-control-allow-origin", allowed);
   res.setHeader("access-control-allow-methods", "GET,POST,PUT,OPTIONS");
   res.setHeader("access-control-allow-headers", "content-type,authorization");
 }
