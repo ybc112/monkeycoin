@@ -67,21 +67,21 @@
   .t-stat{font-size:13.5px;font-weight:800}
   .select,input[type=text],input[type=number]{width:100%;max-width:210px;border:1.5px solid var(--line);background:var(--cream);border-radius:12px;padding:9px 12px;font-size:13.5px;color:var(--brown);font-family:inherit;outline:none;transition:.2s}
   .select:focus,input:focus{border-color:var(--orange);box-shadow:0 0 0 4px rgba(255,122,0,.1)}
-  .chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;color:var(--brown-soft);cursor:pointer;transition:.2s;background:var(--cream)}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;color:var(--brown-soft);cursor:pointer;transition:.2s;background:var(--cream);user-select:none}
   .chip.on{border-color:var(--orange);color:#fff;background:linear-gradient(90deg,var(--orange),var(--gold-deep))}
-  .chip input{display:none}
   .wallet{display:flex;align-items:center;gap:10px;background:var(--cream);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
   .wallet .dot{width:10px;height:10px;border-radius:50%;background:#2ecc71;box-shadow:0 0 0 4px rgba(46,204,113,.18);flex-shrink:0}
   .wallet .addr{font-family:monospace;font-size:12.5px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wallet .bal{font-size:11.5px;color:var(--brown-soft);font-weight:600}
   .wallet .del{width:26px;height:26px;border-radius:8px;background:rgba(255,80,80,.1);color:#e5484d;border:none;cursor:pointer;font-weight:800;flex-shrink:0}
-  .add-wallet{width:100%;border:1.5px dashed var(--line);border-radius:14px;background:transparent;padding:10px;color:var(--brown-soft);font-weight:700;font-size:13px;cursor:pointer;transition:.2s}
+  .add-wallet{width:100%;border:1.5px dashed var(--line);border-radius:14px;background:transparent;padding:10px;color:var(--brown-soft);font-weight:700;font-size:13px;cursor:pointer;transition:.2s;font-family:inherit}
   .add-wallet:hover{border-color:var(--orange);color:var(--orange-deep)}
+  .add-wallet:disabled{cursor:not-allowed;opacity:.5}
   .tag-lock{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);background:#F1EAD9;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-weight:700}
   .disabled-note{font-size:12px;color:var(--muted);background:#F6F0E3;border:1px dashed var(--line);border-radius:12px;padding:9px 12px;line-height:1.5;margin-top:6px}
 
   .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .search{flex:1;min-width:180px;max-width:none;position:relative}
+  .search{flex:1;min-width:180px;max-width:none}
   .tabs{display:inline-flex;background:var(--cream);border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:2px}
   .tabs button{border:none;background:transparent;padding:7px 16px;border-radius:999px;font-weight:800;font-size:13px;color:var(--brown-soft);cursor:pointer;font-family:inherit;transition:.2s}
   .tabs button.on{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;box-shadow:0 6px 16px -8px var(--orange)}
@@ -98,19 +98,27 @@
   .tag.fm{background:rgba(255,122,0,.14);color:var(--orange-deep)}
   .mini{font-size:11.5px;color:var(--brown-soft);font-weight:600}
   .mini b{color:var(--brown);font-weight:800}
-  .snipe-btn{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:not-allowed;font-family:inherit;opacity:.55}
-  .snipe-btn .l{font-size:11px;margin-right:2px}
+  .snipe-btn{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.2s}
+  .snipe-btn:hover{transform:translateY(-1px);box-shadow:0 8px 16px -8px var(--orange)}
+  .snipe-btn:disabled{cursor:not-allowed;opacity:.45;transform:none;box-shadow:none}
   .empty{text-align:center;padding:44px 16px;color:var(--muted)}
   .empty .big{font-size:42px;margin-bottom:10px}
   .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .live{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:#2ecc71}
-  .live .dot{width:9px;height:9px;border-radius:50%;background:#2ecc71;animation:pulse 1.6s infinite}
+  .live{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--muted)}
+  .live.on{color:#2ecc71}
+  .live .dot{width:9px;height:9px;border-radius:50%;background:currentColor}
+  .live.on .dot{animation:pulse 1.6s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.4)}50%{box-shadow:0 0 0 7px rgba(46,204,113,0)}}
   .ghost-btn{border:1.5px solid var(--line);background:var(--card);color:var(--brown-soft);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit}
   .ghost-btn:hover{border-color:var(--orange);color:var(--orange-deep)}
   .ghost-btn.red{color:#e5484d}
   .ghost-btn.red:hover{border-color:#e5484d;background:rgba(229,72,77,.05)}
-  .ghost-btn:disabled,.btn[disabled]{cursor:not-allowed;opacity:.5}
+  .ghost-btn:disabled{cursor:not-allowed;opacity:.5}
+
+  .toast-wrap{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+  .toast{background:#3B2F2F;color:#fff;font-size:13px;font-weight:700;padding:11px 20px;border-radius:999px;box-shadow:0 16px 34px -14px rgba(0,0,0,.4);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;max-width:88vw}
+  .toast .ic{color:var(--gold)}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.95)}to{opacity:1;transform:none}}
 
   footer{border-top:1.5px solid var(--line);padding:30px 0 26px;margin-top:40px;text-align:center;color:var(--brown-soft)}
   footer small{display:block;margin-top:12px;font-size:12px;opacity:.75}
@@ -130,6 +138,7 @@
 </head>
 <body>
 <div class="blobs" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="toast-wrap" id="toastWrap"></div>
 
 <nav>
   <a class="brand" href="/">
@@ -182,69 +191,63 @@
         </div>
         <div class="row">
           <label>提示方式</label>
-          <span class="chip on"><input type="checkbox" checked> 页面提示</span>
-          <span class="chip"><input type="checkbox"> 音效</span>
+          <span class="chip on" data-alert="page"><input type="checkbox" checked> 页面提示</span>
+          <span class="chip" data-alert="sound"><input type="checkbox"> 音效</span>
         </div>
         <div class="row">
           <label>策略模板</label>
-          <select class="select" disabled><option>默认模板（未保存）</option></select>
+          <select class="select" id="tplSelect">
+            <option>默认模板</option>
+            <option>低税快狙</option>
+            <option>稳健长持</option>
+            <option>高价速抛</option>
+          </select>
+          <button class="ghost-btn" id="tplSave" style="padding:7px 12px">保存</button>
         </div>
-        <div class="disabled-note">💡 开通会员后可保存多套策略模板，随时一键切换。</div>
+        <div class="disabled-note">💡 开通会员后策略模板自动同步到账号，随时一键切换。</div>
       </div>
 
       <div class="group">
-        <div class="g-t">👛 执行钱包</div>
-        <div class="wallet">
-          <span class="dot"></span>
-          <span class="addr">0x21c5…t337d</span>
-          <span class="bal">0.000 BNB</span>
-          <button class="del">✕</button>
-        </div>
-        <div class="wallet">
-          <span class="dot"></span>
-          <span class="addr">0x436f…D5843bb</span>
-          <span class="bal">0.000 BNB</span>
-          <button class="del">✕</button>
-        </div>
-        <button class="add-wallet" disabled>＋ 添加执行钱包 (1/10)</button>
+        <div class="g-t">👛 执行钱包 <span class="mini" id="walletCount">(2/10)</span></div>
+        <div id="walletList"></div>
+        <button class="add-wallet" id="addWallet">＋ 添加执行钱包</button>
       </div>
 
       <div class="group">
         <div class="g-t">🎛️ 平台过滤</div>
         <div class="row">
-          <span class="chip on"><input type="checkbox" checked> Flap</span>
-          <span class="chip on"><input type="checkbox" checked> FourMeme</span>
+          <span class="chip on" data-plat="flap"><input type="checkbox" checked> Flap</span>
+          <span class="chip on" data-plat="fm"><input type="checkbox" checked> FourMeme</span>
         </div>
       </div>
 
       <div class="group">
         <div class="g-t">💰 买入参数</div>
-        <div class="row"><label>买入金额</label><input type="number" value="0.05" disabled><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">BNB / 币</span></div>
-        <div class="row"><label>Gas Price</label><input type="number" value="5" disabled><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
-        <div class="row"><label>Gas Limit</label><input type="number" value="800000" disabled></div>
+        <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">BNB / 币</span></div>
+        <div class="row"><label>Gas Price</label><input id="gasPrice" type="number" value="5"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
+        <div class="row"><label>Gas Limit</label><input id="gasLimit" type="number" value="800000"></div>
       </div>
 
       <div class="group">
         <div class="g-t">📤 卖出参数</div>
-        <div class="row"><label>卖出 Gas</label><input type="number" value="5" disabled><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
-        <div class="row"><label>卖出 Limit</label><input type="number" value="500000" disabled></div>
+        <div class="row"><label>卖出 Gas</label><input id="sellGas" type="number" value="5"><span style="font-size:12.5px;color:var(--brown-soft);font-weight:700">Gwei</span></div>
+        <div class="row"><label>卖出 Limit</label><input id="sellLimit" type="number" value="500000"></div>
         <div class="row">
           <label>策略模式</label>
-          <span class="tag-lock">已关闭</span>
-          <span class="mini" style="min-width:0">（狙击后手动/自动卖出未开启）</span>
+          <span class="chip" data-mode="auto"><input type="checkbox"> 自动卖出</span>
+          <span class="chip on" data-mode="manual"><input type="checkbox" checked> 手动</span>
         </div>
       </div>
 
       <div class="group">
         <div class="g-t">🔍 条件过滤</div>
-        <div class="row"><label>排除 Symbol</label><input type="text" placeholder="如 scam, honeypot" disabled></div>
-        <div class="row"><label>指定 Symbol</label><input type="text" placeholder="仅狙击该 Symbol" disabled></div>
-        <div class="row"><label>指定底池</label><input type="text" placeholder="0x…（留空不限）" disabled></div>
-        <div class="row"><label>Dev 首买</label><span class="chip"><input type="checkbox"> 仅限 Dev 首买</span></div>
-        <div class="row"><label>买卖税率</label><input type="text" placeholder="如 ≤ 10% / 10%" disabled></div>
-        <div class="row"><label>指定 Dev</label><input type="text" placeholder="0x…（留空不限）" disabled></div>
-        <div class="row"><label>工厂金库</label><input type="text" placeholder="0x…（留空不限）" disabled></div>
-        <div class="disabled-note">🔒 以上条件配置需开通会员后生效。</div>
+        <div class="row"><label>排除 Symbol</label><input id="exSym" type="text" placeholder="如 scam, honeypot"></div>
+        <div class="row"><label>指定 Symbol</label><input id="fixSym" type="text" placeholder="仅狙击该 Symbol"></div>
+        <div class="row"><label>指定底池</label><input id="fixPool" type="text" placeholder="0x…（留空不限）"></div>
+        <div class="row"><label>Dev 首买</label><span class="chip" data-dev="1"><input type="checkbox"> 仅限 Dev 首买</span></div>
+        <div class="row"><label>买卖税率</label><input id="taxLimit" type="text" placeholder="如 ≤ 10% / 10%"></div>
+        <div class="row"><label>指定 Dev</label><input id="fixDev" type="text" placeholder="0x…（留空不限）"></div>
+        <div class="row"><label>工厂金库</label><input id="fixVault" type="text" placeholder="0x…（留空不限）"></div>
       </div>
     </div>
 
@@ -252,16 +255,16 @@
     <div>
       <div class="panel" style="margin-bottom:22px">
         <div class="panel-head">
-          <h2><span class="ico">📡</span> 最近内盘代币</h2>
-          <div class="tabs">
-            <button class="on">混合</button>
-            <button>Flap</button>
-            <button>FourMeme</button>
+          <h2><span class="ico">📡</span> 最近内盘代币 <span class="mini" id="listCount"></span></h2>
+          <div class="tabs" id="marketTabs">
+            <button class="on" data-filter="all">混合</button>
+            <button data-filter="flap">Flap</button>
+            <button data-filter="fm">FourMeme</button>
           </div>
         </div>
         <div class="toolbar">
-          <input class="search" type="text" placeholder="🔍 搜索 Symbol / 代币名 / 地址" disabled>
-          <button class="ghost-btn" disabled>刷新</button>
+          <input class="search" id="searchInput" type="text" placeholder="🔍 搜索 Symbol / 代币名 / 地址">
+          <button class="ghost-btn" id="refreshBtn">🔄 刷新</button>
         </div>
         <div class="table-wrap">
           <table class="table">
@@ -270,23 +273,24 @@
             </thead>
             <tbody id="sniperRows"></tbody>
           </table>
+          <div class="empty" id="marketEmpty" style="display:none"><div class="big">📭</div><div>没有符合条件的代币，换个筛选试试</div></div>
         </div>
       </div>
 
       <div class="panel">
         <div class="panel-head">
           <h2><span class="ico">💼</span> 我的持仓</h2>
-          <div class="tabs">
-            <button class="on">持仓中</button>
-            <button>历史</button>
+          <div class="tabs" id="posTabs">
+            <button class="on" data-pos="open">持仓中</button>
+            <button data-pos="history">历史</button>
           </div>
         </div>
         <div class="actions">
-          <span class="live"><span class="dot"></span> 实时监控中</span>
-          <button class="ghost-btn" disabled>⏸ 暂停</button>
-          <button class="ghost-btn red" disabled>批量卖出</button>
+          <span class="live on" id="liveStat"><span class="dot"></span> 实时监控中</span>
+          <button class="ghost-btn" id="pauseBtn">⏸ 暂停</button>
+          <button class="ghost-btn red" id="batchSellBtn">批量卖出</button>
         </div>
-        <div class="empty"><div class="big">🐵</div><div>暂无持仓 · 开通会员并启动狙击后自动显示</div></div>
+        <div id="posWrap"></div>
       </div>
     </div>
 
@@ -299,17 +303,105 @@
 </footer>
 
 <script>
-  const toggleBtn=document.getElementById('navToggle'),links=document.getElementById('navLinks');
+  const $=id=>document.getElementById(id);
+  const toastWrap=$('toastWrap');
+  function toast(msg,ic='🔔'){
+    const el=document.createElement('div');
+    el.className='toast';
+    el.innerHTML=`<span class="ic">${ic}</span><span>${msg}</span>`;
+    toastWrap.appendChild(el);
+    setTimeout(()=>{el.style.transition='opacity .3s, transform .3s';el.style.opacity='0';el.style.transform='translateY(-8px)';setTimeout(()=>el.remove(),300)},2600);
+  }
+
+  const toggleBtn=$('navToggle'),links=$('navLinks');
   toggleBtn.addEventListener('click',()=>links.classList.toggle('open'));
 
-  const master=document.getElementById('masterToggle'),masterStat=document.getElementById('masterStat');
-  master.addEventListener('click',()=>{});
-  master.addEventListener('click',()=>alert('内盘狙击功能暂未开放，敬请期待。'));
-
-  document.getElementById('payBtn').addEventListener('click',()=>{
-    alert('内盘狙击会员暂未开放，敬请期待。');
+  /* ── 总开关 ── */
+  const master=$('masterToggle'),masterStat=$('masterStat');
+  let masterOn=false;
+  master.addEventListener('click',()=>{
+    masterOn=!masterOn;
+    master.classList.toggle('on',masterOn);
+    masterStat.textContent=masterOn?'已开启':'未开启';
+    masterStat.style.color=masterOn?'var(--orange-deep)':'inherit';
+    toast(masterOn?'狙击已开启（演示模式 · 真实交易未开放）':'狙击已关闭',masterOn?'▶️':'⏹');
   });
 
+  /* ── 开通（始终锁定） ── */
+  $('payBtn').addEventListener('click',()=>toast('内盘狙击会员暂未开放，敬请期待。','🔒'));
+
+  /* ── 提示方式 chips ── */
+  document.querySelectorAll('[data-alert]').forEach(c=>{
+    c.addEventListener('click',()=>{
+      c.classList.toggle('on');
+      toast(c.classList.contains('on')?`已开启${c.textContent.trim()}`:`已关闭${c.textContent.trim()}`);
+    });
+  });
+
+  /* ── 策略模板 ── */
+  $('tplSave').addEventListener('click',()=>{
+    toast(`策略模板「${$('tplSelect').value}」已保存（演示）`,'💾');
+  });
+
+  /* ── 执行钱包 ── */
+  let wallets=[
+    {addr:'0x21c5AEed…t337d',bal:'0.042 BNB'},
+    {addr:'0x436fB324…D5843bb',bal:'0.018 BNB'},
+  ];
+  const walletList=$('walletList');
+  function renderWallets(){
+    walletList.innerHTML=wallets.map((w,i)=>`
+      <div class="wallet">
+        <span class="dot"></span>
+        <span class="addr">${w.addr}</span>
+        <span class="bal">${w.bal}</span>
+        <button class="del" data-i="${i}">✕</button>
+      </div>`).join('');
+    $('walletCount').textContent=`(${wallets.length}/10)`;
+    walletList.querySelectorAll('.del').forEach(b=>b.addEventListener('click',()=>{
+      if(wallets.length<=1){toast('至少保留 1 个执行钱包','⚠️');return;}
+      wallets.splice(Number(b.dataset.i),1);
+      renderWallets();
+      toast('已移除执行钱包','🗑️');
+    }));
+    $('addWallet').disabled=wallets.length>=10;
+  }
+  renderWallets();
+  $('addWallet').addEventListener('click',()=>{
+    if(wallets.length>=10){toast('执行钱包已达上限 10 个','⚠️');return;}
+    const seed=Math.random().toString(16).slice(2,6);
+    wallets.push({addr:`0x${seed}…新钱包${wallets.length}`,bal:'0.000 BNB'});
+    renderWallets();
+    toast('已添加执行钱包（演示）','➕');
+  });
+
+  /* ── 平台过滤 ── */
+  const platState={flap:true,fm:true};
+  document.querySelectorAll('[data-plat]').forEach(c=>{
+    c.addEventListener('click',()=>{
+      c.classList.toggle('on');
+      platState[c.dataset.plat]=c.classList.contains('on');
+      renderList();
+    });
+  });
+
+  /* ── 策略模式 ── */
+  document.querySelectorAll('[data-mode]').forEach(c=>{
+    c.addEventListener('click',()=>{
+      const on=c.classList.contains('on');
+      c.classList.toggle('on',!on);
+      toast(on?'已切换到手动模式':'已切换到自动卖出模式',on?'✋':'⚡');
+    });
+  });
+  /* ── Dev 首买 ── */
+  document.querySelectorAll('[data-dev]').forEach(c=>{
+    c.addEventListener('click',()=>{
+      c.classList.toggle('on');
+      toast(c.classList.contains('on')?'已开启 仅限 Dev 首买':'已关闭 Dev 首买限制');
+    });
+  });
+
+  /* ── 市场监控 ── */
   const demo=[
     {av:'🐵',nm:'Monkey King',sy:'$MK',plat:'flap',buy:'0.04 BNB',dev:'0x1F57…7777',buyTax:'5%',sellTax:'5%',lp:'5%',mk:'0x436f…bb'},
     {av:'🦊',nm:'Fox Flip',sy:'$FLIP',plat:'fm',buy:'0.03 BNB',dev:'0x8A12…4444',buyTax:'8%',sellTax:'10%',lp:'8%',mk:'0x1A2B…cc'},
@@ -319,17 +411,114 @@
     {av:'🐸',nm:'Frog Pepe',sy:'$PEPEF',plat:'flap',buy:'0.03 BNB',dev:'0x2B3C…5555',buyTax:'7%',sellTax:'7%',lp:'7%',mk:'0x6A7B…aa'},
     {av:'🐻',nm:'Bear Bull',sy:'$BRBL',plat:'fm',buy:'0.04 BNB',dev:'0x9A0B…3333',buyTax:'5%',sellTax:'9%',lp:'5%',mk:'0x4D5E…bb'},
     {av:'🐯',nm:'Tiger Roar',sy:'$TGER',plat:'flap',buy:'0.05 BNB',dev:'0x3F4E…1111',buyTax:'9%',sellTax:'9%',lp:'9%',mk:'0x8A9B…cc'},
+    {av:'🐼',nm:'Panda Coin',sy:'$PNDA',plat:'fm',buy:'0.07 BNB',dev:'0x6C7D…6666',buyTax:'3%',sellTax:'5%',lp:'3%',mk:'0x2E3F…dd'},
+    {av:'🐷',nm:'Piggy Bank',sy:'$PIGY',plat:'flap',buy:'0.02 BNB',dev:'0x0D1E…aaaa',buyTax:'6%',sellTax:'6%',lp:'6%',mk:'0x5A6B…cc'},
   ];
-  const rows=demo.map(t=>`
-    <tr>
-      <td><div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy}</div></div></div></td>
-      <td><span class="mini"><b>${t.buy}</b><br/>Dev ${t.dev}</span></td>
-      <td><span class="mini">买 <b>${t.buyTax}</b> · 卖 <b>${t.sellTax}</b><br/>LP <b>${t.lp}</b></span></td>
-      <td><span class="mini"><b>${t.mk}</b></span></td>
-      <td><button class="snipe-btn"><span class="l">🔒</span>狙击</button></td>
-    </tr>`).join('');
-  document.getElementById('sniperRows').innerHTML=rows;
-  document.querySelectorAll('.snipe-btn').forEach(b=>b.addEventListener('click',()=>alert('内盘狙击功能暂未开放，敬请期待。')));
+  let marketFilter='all';
+  const sniperRows=$('sniperRows'),marketEmpty=$('marketEmpty'),listCount=$('listCount');
+  function renderList(){
+    const q=($('searchInput').value||'').trim().toLowerCase();
+    const list=demo.filter(t=>{
+      if(!platState[t.plat])return false;
+      if(marketFilter!=='all'&&t.plat!==marketFilter)return false;
+      if(q&&!(t.nm.toLowerCase().includes(q)||t.sy.toLowerCase().includes(q)||t.dev.toLowerCase().includes(q)))return false;
+      return true;
+    });
+    sniperRows.innerHTML=list.map(t=>`
+      <tr>
+        <td><div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} <span class="tag ${t.plat}">${t.plat==='flap'?'Flap':'FourMeme'}</span></div></div></div></td>
+        <td><span class="mini"><b>${t.buy}</b><br/>Dev ${t.dev}</span></td>
+        <td><span class="mini">买 <b>${t.buyTax}</b> · 卖 <b>${t.sellTax}</b><br/>LP <b>${t.lp}</b></span></td>
+        <td><span class="mini"><b>${t.mk}</b></span></td>
+        <td><button class="snipe-btn">🎯 狙击</button></td>
+      </tr>`).join('');
+    listCount.textContent=`(${list.length})`;
+    marketEmpty.style.display=list.length?'none':'block';
+    sniperRows.querySelectorAll('.snipe-btn').forEach(b=>b.addEventListener('click',()=>{
+      toast('内盘狙击交易未开放，开通会员后启用','🔒');
+    }));
+  }
+  renderList();
+
+  $('marketTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    $('marketTabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    marketFilter=b.dataset.filter;
+    renderList();
+  }));
+
+  $('searchInput').addEventListener('input',renderList);
+  $('refreshBtn').addEventListener('click',()=>{
+    for(const t of demo){
+      t.buy=(Math.random()*0.06+0.02).toFixed(2)+' BNB';
+      t.buyTax=(Math.floor(Math.random()*8)+3)+'%';
+      t.sellTax=(Math.floor(Math.random()*8)+3)+'%';
+    }
+    renderList();
+    toast('市场数据已刷新（演示）','🔄');
+  });
+
+  /* ── 持仓 ── */
+  const positions=[
+    {av:'🐵',nm:'Monkey King',sy:'$MK',qty:'12,400,000',buy:'0.05',now:'0.068',pct:'+36%',win:true},
+    {av:'🐶',nm:'Shiba Next',sy:'$SHIB2',qty:'8,200,000',buy:'0.04',now:'0.031',pct:'-22%',win:false},
+  ];
+  const history=[
+    {av:'🦊',nm:'Fox Flip',sy:'$FLIP',qty:'5,000,000',buy:'0.03',sell:'0.047',pct:'+56%',win:true},
+    {av:'🐱',nm:'Catcoin X',sy:'$CATX',qty:'9,900,000',buy:'0.02',sell:'0.011',pct:'-45%',win:false},
+  ];
+  const posWrap=$('posWrap');
+  let posTab='open';
+  function renderPos(){
+    if(!masterOn){
+      posWrap.innerHTML=`<div class="empty"><div class="big">🐵</div><div>开启总开关并狙击后，持仓将显示在这里</div></div>`;
+      return;
+    }
+    const list=posTab==='open'?positions:history;
+    if(!list.length){
+      posWrap.innerHTML=`<div class="empty"><div class="big">📭</div><div>暂无${posTab==='open'?'持仓':'历史'}记录</div></div>`;
+      return;
+    }
+    posWrap.innerHTML=`
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>代币</th><th>数量</th><th>${posTab==='open'?'买入价':'买入'}</th><th>${posTab==='open'?'现价':'卖出'}</th><th>盈亏</th><th>操作</th></tr></thead>
+          <tbody>${list.map(p=>`
+            <tr>
+              <td><div class="tk"><div class="av">${p.av}</div><div><div class="nm">${p.nm}</div><div class="sy">${p.sy}</div></div></div></td>
+              <td><span class="mini">${p.qty}</span></td>
+              <td><span class="mini">${p.buy}</span></td>
+              <td><span class="mini">${p.now??p.sell}</span></td>
+              <td><span class="mini" style="color:${p.win?'#2ecc71':'#e5484d'};font-weight:800">${p.pct}</span></td>
+              <td>${posTab==='open'?`<button class="snipe-btn sell-btn" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)">卖出</button>`:'<span class="mini">已结算</span>'}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    posWrap.querySelectorAll('.sell-btn').forEach(b=>b.addEventListener('click',()=>toast('卖出功能暂未开放（演示）','🔒')));
+  }
+  renderPos();
+  $('posTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    $('posTabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    posTab=b.dataset.pos;
+    renderPos();
+  }));
+
+  /* ── 实时 / 暂停 ── */
+  let running=true;
+  const liveStat=$('liveStat'),pauseBtn=$('pauseBtn');
+  function setRunning(v){
+    running=v;
+    liveStat.classList.toggle('on',v);
+    liveStat.innerHTML=v?'<span class="dot"></span> 实时监控中':'<span class="dot"></span> 已暂停';
+    pauseBtn.textContent=v?'⏸ 暂停':'▶ 继续';
+  }
+  pauseBtn.addEventListener('click',()=>{
+    setRunning(!running);
+    toast(running?'已恢复实时监控':'已暂停监控','⏯️');
+  });
+
+  $('batchSellBtn').addEventListener('click',()=>toast('批量卖出暂未开放（演示）','🔒'));
 </script>
 </body>
 </html>
