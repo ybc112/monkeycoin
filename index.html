@@ -76,6 +76,17 @@
   .btn.ghost{color:var(--orange-deep);border:1.6px solid var(--orange);background:#fff}
   .btn.ghost:hover{background:var(--orange);color:#fff}
   .nav-toggle{display:none;margin-left:auto;background:none;border:0;font-size:26px;color:var(--brown);cursor:pointer}
+  .dropdown{position:relative;margin-left:6px;flex-shrink:0}
+  .dropdown .caret{font-size:11px;margin-left:2px;opacity:.85}
+  .drop-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:196px;background:#fff;
+    border:1.5px solid rgba(255,154,0,.22);border-radius:18px;padding:8px;box-shadow:0 24px 50px -18px rgba(122,62,0,.35);
+    display:none;flex-direction:column;gap:2px;z-index:50;transform-origin:top right}
+  .dropdown:hover .drop-menu{display:flex;animation:dropIn .22s ease}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+  .drop-menu a{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;font-weight:600;font-size:14.5px;
+    color:var(--brown);text-decoration:none;transition:.2s;white-space:nowrap}
+  .drop-menu a:hover{background:rgba(255,122,0,.1);color:var(--orange-deep)}
+  .nav-links .nav-group-label,.nav-links .nav-mobile-launch{display:none}
 
   header.hero{text-align:center;padding:86px 0 40px;position:relative}
   .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,201,61,.25);border:1.5px solid var(--gold);
@@ -217,6 +228,9 @@
       background:#fff;border:1.5px solid rgba(255,154,0,.2);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
     .nav-links.open{display:flex}
     .nav-toggle{display:block}
+    .nav-links .nav-group-label,.nav-links .nav-mobile-launch{display:block}
+    .nav-links .nav-group-label{margin:10px 12px 2px;padding-top:10px;border-top:1.5px dashed rgba(255,154,0,.28);
+      font-size:12px;font-weight:800;letter-spacing:2px;color:var(--gold-deep)}
     nav{align-items:center;gap:8px;padding:8px 10px;flex-wrap:nowrap}
     .brand{flex-shrink:0;min-width:0}
     .brand img{width:36px;height:36px}
@@ -248,9 +262,22 @@
     <a href="#buyback">自动回购</a>
     <a href="#roadmap">路线</a>
     <a href="#community">社区</a>
+    <span class="nav-group-label">🚀 发射台</span>
+    <a class="nav-mobile-launch" href="launchpad.html">🛠️ 发射台</a>
+    <a class="nav-mobile-launch" href="launchpad.html#/mint">🔥 Mint</a>
+    <a class="nav-mobile-launch" href="launchpad.html#/mint-launches">🚀 已发射</a>
+    <a class="nav-mobile-launch" href="launchpad.html#/trending">📈 热搜</a>
   </div>
   <button class="nav-toggle" id="navToggle" aria-label="菜单">☰</button>
-  <a class="btn primary" href="launchpad.html" style="margin-left:6px">🚀 发射台</a>
+  <div class="dropdown" id="launchDropdown">
+    <button class="btn primary" type="button" aria-haspopup="true" aria-expanded="false" style="margin-left:6px">🚀 发射台 <span class="caret">▾</span></button>
+    <div class="drop-menu">
+      <a href="launchpad.html">🛠️ 发射台</a>
+      <a href="launchpad.html#/mint">🔥 Mint</a>
+      <a href="launchpad.html#/mint-launches">🚀 已发射</a>
+      <a href="launchpad.html#/trending">📈 热搜</a>
+    </div>
+  </div>
 </nav>
 
 <div class="wrapper" id="top">
@@ -471,6 +498,20 @@
 <script>
   const toggle=document.getElementById('navToggle'),links=document.getElementById('navLinks');
   toggle.addEventListener('click',()=>links.classList.toggle('open'));
+  links.addEventListener('click',(e)=>{if(e.target.closest('a')){links.classList.remove('open');}});
+  const dd=document.getElementById('launchDropdown');
+  if(dd){
+    const ddBtn=dd.querySelector('.btn'),ddMenu=dd.querySelector('.drop-menu');
+    ddBtn.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const isOpen=ddMenu.style.display==='flex';
+      ddMenu.style.display=isOpen?'':'flex';
+      ddBtn.setAttribute('aria-expanded',String(!isOpen));
+    });
+    document.addEventListener('click',(e)=>{
+      if(!dd.contains(e.target)){ddMenu.style.display='';ddBtn.setAttribute('aria-expanded','false');}
+    });
+  }
   const nav=document.querySelector('.nav-links');
   const spy=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){nav.querySelectorAll('a').forEach(a=>a.classList.remove('active'));
     nav.querySelector('a[href="#'+e.target.id+'"]')?.classList.add('active');}});},{rootMargin:'-45% 0px -50% 0px'});
