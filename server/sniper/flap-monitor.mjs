@@ -1,7 +1,7 @@
 // Flap 事件实时监听：WS newHeads + HTTP eth_getLogs 兜底
 // 断线自动重连 / RPC 轮换 / 心跳 / 去重 / 已处理块持久化 / 回滚处理
 import { WebSocketProvider, JsonRpcProvider } from "ethers";
-import { FLAP, MONITOR, CHAIN_ID, RPC_HTTP_URLS, RPC_WS_URLS, LOGS_RPC_URLS } from "./config.mjs";
+import { FLAP, MONITOR, CHAIN_ID, RPC_HTTP_URLS, RPC_WS_URLS, LOGS_RPC_URLS, fetchOptionsFor } from "./config.mjs";
 import { getProviderByUrl } from "./flap-contracts.mjs";
 import { parseLog, EVENT_TOPICS } from "./event-parser.mjs";
 import { StateRepo, EventRepo, Audit } from "./database.mjs";
@@ -33,7 +33,7 @@ export class FlapMonitor {
     const last = this.getLastProcessed();
     if (!last) {
       // 首次启动：从最新块往前回看一段，抓最近的创建
-      const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID);
+      const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
       const latest = await prov.getBlockNumber();
       this.setLastProcessed(Math.max(0, latest - 200));
       this.latestBlock = latest;
@@ -96,7 +96,7 @@ export class FlapMonitor {
     if (!this.running) return;
     this._httpPollTimer = setTimeout(async () => {
       try {
-        const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID);
+        const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
         const latest = await prov.getBlockNumber();
         if (latest > this.latestBlock) this._onNewHead(latest);
       } catch { /* 下次轮询再试 */ }

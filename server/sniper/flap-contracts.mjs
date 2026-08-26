@@ -1,6 +1,6 @@
 // Flap Portal 合约封装：ABI、代币状态读取、报价（所有签名来自官方文档，主网验证）
 import { Contract, JsonRpcProvider, ZeroAddress, getAddress, formatUnits, parseUnits } from "ethers";
-import { FLAP, CHAIN_ID, RPC_HTTP_URLS } from "./config.mjs";
+import { FLAP, CHAIN_ID, RPC_HTTP_URLS, fetchOptionsFor } from "./config.mjs";
 
 // ── ABI（精确字段顺序，见 docs.flap.sh + IPortal.sol） ─────────────────────
 export const PORTAL_ABI = [
@@ -37,7 +37,7 @@ export const TOKEN_ABI = [
 ];
 
 // ── RPC 轮换 provider ───────────────────────────────────────────────────────
-const providers = RPC_HTTP_URLS.map(u => new JsonRpcProvider(u, CHAIN_ID, { batchMaxCount: 1 }));
+const providers = RPC_HTTP_URLS.map(u => new JsonRpcProvider(u, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() }));
 let providerIdx = 0;
 export function getProvider() {
   for (let i = 0; i < providers.length; i += 1) {
@@ -53,7 +53,7 @@ export async function rotateProvider() {
 // 按 URL 缓存的 provider 池（供事件扫描复用，避免反复网络检测）
 const providerPool = new Map();
 export function getProviderByUrl(url) {
-  if (!providerPool.has(url)) providerPool.set(url, new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1 }));
+  if (!providerPool.has(url)) providerPool.set(url, new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() }));
   return providerPool.get(url);
 }
 export const getPortal = (p = getProvider()) => new Contract(FLAP.PORTAL, PORTAL_ABI, p);

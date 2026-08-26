@@ -1,8 +1,14 @@
 // Flap 内盘狙击 · 配置中心（唯一权威来源）
 // 合约地址/ABI/事件均来自官方文档 docs.flap.sh 与主网验证实现（2026-08），禁止猜测替换
 import "dotenv/config";
+import { HttpsProxyAgent } from "https-proxy-agent";
 
 const env = process.env;
+
+// 服务器走本地代理访问公网 RPC（与 monkeycoin-backend 一致）
+const PROXY_URL = env.HTTPS_PROXY || env.HTTP_PROXY || "";
+export const HTTP_AGENT = PROXY_URL ? new HttpsProxyAgent(PROXY_URL) : null;
+export const fetchOptionsFor = () => (HTTP_AGENT ? { fetchOptions: { agent: HTTP_AGENT } } : {});
 
 // ── 链与 RPC ────────────────────────────────────────────────────────────────
 export const CHAIN_ID = Number(env.CHAIN_ID || 56);

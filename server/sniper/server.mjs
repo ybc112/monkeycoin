@@ -13,6 +13,7 @@ import { simulateBuy, simulateSell, getTokenBalance } from "./transaction-simula
 import { runPreTradeChecks, isEmergencyStopped, setEmergencyStop } from "./risk-checker.mjs";
 import { pickBuyWallet } from "./strategy-engine.mjs";
 import { getProvider, getTokenContract, quoteBuy, quoteTokenLabel } from "./flap-contracts.mjs";
+import { fetchOptionsFor } from "./config.mjs";
 import {
   StrategyRepo, TokenRepo, EventRepo, OrderRepo, TransactionRepo,
   PositionRepo, StateRepo, Audit, closeDb,
@@ -45,7 +46,7 @@ async function broadcastRawToMultiple(signedRaw) {
   let lastErr;
   for (const url of RPC_HTTP_URLS) {
     try {
-      const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1 });
+      const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
       return await p.broadcastTransaction(signedRaw);
     } catch (e) { lastErr = e; }
   }
