@@ -13,6 +13,9 @@ dist-ssr
 .playwright-cli/
 *.local
 .env
+.ssh/
+build/
+server/artifacts/
 
 # Editor directories and files
 .vscode/*

@@ -1,0 +1,15 @@
+{
+  "name": "monkeycoin-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "monkeycoin-backend.mjs",
+  "scripts": {
+    "start": "node monkeycoin-backend.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.5",
+    "https-proxy-agent": "^7.0.5"
+  }
+}
