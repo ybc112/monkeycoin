@@ -50,6 +50,8 @@ export const FACTORY_ABI = [
   "function previewFees(uint256 totalBuyTax, uint256 totalSellTax, uint256 rewardShare, uint256 liquidityShare, uint256 burnShare, uint256 fundShare) pure returns ((uint256 platformFee,uint256 rewardFee,uint256 liquidityFee,uint256 burnFee,uint256 fundFee) buy, (uint256 platformFee,uint256 rewardFee,uint256 liquidityFee,uint256 burnFee,uint256 fundFee) sell)",
   `function buildParams(${LAUNCH_PARAMS_TUPLE} params, bool withLiquidity) view returns (string[], address[], uint256[], bool[])`,
   "function creationFee() external view returns (uint256)",
+  "function creationFeeToken() external view returns (address)",
+  "function creationFeeTokenAmount() external view returns (uint256)",
   "function DEFAULT_REWARD_TOKEN() external view returns (address)",
   "function feeRecipient() external view returns (address)",
   "function router() external view returns (address)",
@@ -336,6 +338,7 @@ export async function createToken(
   creationFee: string
 ) {
   const factory = getFactoryContract(signer);
+  await ensureFeeTokenAllowance(signer);
   const launchParams = buildLaunchParams(params);
   const tx = await factory.createToken(launchParams, salt, { value: creationFee });
   const receipt = await tx.wait();
@@ -360,6 +363,7 @@ export async function createTokenAndAddLiquidity(
   liquidityBnb: string
 ) {
   const factory = getFactoryContract(signer);
+  await ensureFeeTokenAllowance(signer);
   const launchParams = buildLaunchParams(params);
   const totalValue = (BigInt(creationFee) + BigInt(liquidityBnb)).toString();
   const tx = await factory.createTokenAndAddLiquidity(
@@ -382,13 +386,35 @@ export async function createTokenAndAddLiquidity(
   return { receipt, tokenAddress: event?.args?.token, txHash: tx.hash };
 }
 
+// 部署费为费用代币（如 30,000 $MKY 销毁）时，先给 Factory 授权划扣
+const FEE_TOKEN_ABI = [
+  "function allowance(address owner,address spender) view returns (uint256)",
+  "function approve(address spender,uint256 amount) returns (bool)",
+];
+export async function ensureFeeTokenAllowance(signer: Signer): Promise<void> {
+  const factory = getFactoryContract(signer);
+  const factoryAddr = await factory.getAddress();
+  const feeToken = (await factory.creationFeeToken()) as string;
+  const feeAmount = (await factory.creationFeeTokenAmount()) as bigint;
+  if (feeToken === ethers.ZeroAddress || feeAmount <= 0n) return;
+  const from = await signer.getAddress();
+  const token = new ethers.Contract(feeToken, FEE_TOKEN_ABI, signer);
+  const allowance = (await token.allowance(from, factoryAddr)) as bigint;
+  if (allowance < feeAmount) {
+    const tx = await token.approve(factoryAddr, feeAmount);
+    await tx.wait();
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 读操作：Factory 信息
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getFactoryInfo() {
   const factory = getFactoryContract();
-  const [createFee, rewardToken, feeRecipient, requiredSuffix, router] = await Promise.all([
+  const [createFee, createFeeToken, createFeeTokenAmount, rewardToken, feeRecipient, requiredSuffix, router] = await Promise.all([
     factory.creationFee(),
+    factory.creationFeeToken(),
+    factory.creationFeeTokenAmount(),
     factory.DEFAULT_REWARD_TOKEN(),
     factory.feeRecipient(),
     factory.requiredTokenSuffix(),
@@ -396,6 +422,8 @@ export async function getFactoryInfo() {
   ]);
   return {
     createFee: createFee.toString(),
+    createFeeToken,
+    createFeeTokenAmount: createFeeTokenAmount.toString(),
     rewardToken,
     feeRecipient,
     requiredSuffix: requiredSuffix.toString(),

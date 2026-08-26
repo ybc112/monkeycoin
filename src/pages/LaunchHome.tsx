@@ -297,6 +297,14 @@ function SliderGroup({
   );
 }
 
+function creationFeeText(fi: { createFee: string; createFeeTokenAmount: string } | null): string {
+  if (!fi) return "--";
+  if (BigInt(fi.createFeeTokenAmount || "0") > 0n) {
+    return `${Number(ethers.formatUnits(fi.createFeeTokenAmount, 18)).toLocaleString("en-US")} $MKY（销毁）`;
+  }
+  return `${ethers.formatEther(fi.createFee)} BNB`;
+}
+
 export default function LaunchHome() {
   const { account, isConnected, signer } = useWallet();
   const showToast = useAppStore((s) => s.showToast);
@@ -306,6 +314,8 @@ export default function LaunchHome() {
   const [params, setParams] = useState<SnowballParams>(DEFAULT_PARAMS);
   const [factoryInfo, setFactoryInfo] = useState<{
     createFee: string;
+    createFeeToken: string;
+    createFeeTokenAmount: string;
     rewardToken: string;
     feeRecipient: string;
     requiredSuffix: string;
@@ -666,7 +676,13 @@ export default function LaunchHome() {
             {[
               {
                 label: "创建费",
-                value: factoryInfo ? `${ethers.formatEther(factoryInfo.createFee)} BNB` : factoryStatus === "loading" ? "读取中…" : "--",
+                value: factoryInfo && BigInt(factoryInfo.createFeeTokenAmount || "0") > 0n
+                  ? `${Number(ethers.formatUnits(factoryInfo.createFeeTokenAmount, 18)).toLocaleString("en-US")} $MKY（销毁）`
+                  : factoryInfo
+                    ? `${ethers.formatEther(factoryInfo.createFee)} BNB`
+                    : factoryStatus === "loading"
+                      ? "读取中…"
+                      : "--",
               },
               {
                 label: "靓号后缀",
@@ -1186,8 +1202,8 @@ export default function LaunchHome() {
             </button>
             <p className="text-center text-xs text-[var(--sb-muted)]">
               {deployMode === "launch"
-                ? `需支付 ${factoryInfo ? ethers.formatEther(factoryInfo.createFee) : "--"} BNB 创建费 + ${liquidityBnb} BNB 加池`
-                : `需支付 ${factoryInfo ? ethers.formatEther(factoryInfo.createFee) : "--"} BNB 创建费`}
+                ? `需支付 ${creationFeeText(factoryInfo)} 创建费 + ${liquidityBnb} BNB 加池`
+                : `需支付 ${creationFeeText(factoryInfo)} 创建费`}
             </p>
           </div>
         </div>
