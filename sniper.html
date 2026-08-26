@@ -40,7 +40,7 @@
 
   .wrapper{max-width:1200px;margin:0 auto;padding:26px 20px 60px;width:100%;min-width:0;overflow-x:hidden}
 
-  .pay-card{position:relative;overflow:hidden;border-radius:var(--radius);background:linear-gradient(135deg,#3B2F2F,#6B3518);color:#fff;padding:26px 30px;display:flex;align-items:center;gap:22px;justify-content:space-between;flex-wrap:wrap;box-shadow:var(--shadow);margin-bottom:26px;width:100%;min-width:0}
+  .pay-card{position:relative;overflow:hidden;border-radius:var(--radius);background:linear-gradient(135deg,#3B2F2F,#6B3518);color:#fff;padding:26px 30px;display:flex;align-items:center;gap:22px;justify-content:space-between;flex-wrap:wrap;box-shadow:var(--shadow);margin-bottom:18px;width:100%;min-width:0}
   .pay-card::before{content:"";position:absolute;top:-50%;right:-10%;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(255,201,61,.35),transparent 65%)}
   .pay-card .t1{font-size:12.5px;letter-spacing:2px;font-weight:800;color:var(--gold)}
   .pay-card .t2{font-size:clamp(22px,3vw,30px);font-weight:900;margin:6px 0 4px}
@@ -49,6 +49,21 @@
   .pay-card .price small{font-size:15px}
   .pay-btn{background:rgba(255,255,255,.14);border:1.5px solid var(--gold);color:var(--gold);padding:13px 26px;border-radius:999px;font-weight:800;font-size:15px;cursor:not-allowed;display:inline-flex;align-items:center;gap:8px}
   .pay-btn .lock{font-size:15px}
+
+  .status-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:20px;box-shadow:var(--shadow);font-size:12.5px;font-weight:700}
+  .status-bar .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.on{background:#2ecc71;box-shadow:0 0 0 4px rgba(46,204,113,.2);animation:pulse 1.6s infinite}
+  .dot.off{background:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.15)}
+  .dot.wait{background:var(--gold)}
+  .status-bar .item{display:inline-flex;align-items:center;gap:6px;color:var(--brown-soft)}
+  .status-bar .item b{color:var(--brown)}
+  .status-bar .sp{flex:1}
+  .status-btn{border:1.5px solid var(--line);background:#fff;color:var(--brown-soft);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+  .status-btn:hover{border-color:var(--orange);color:var(--orange-deep)}
+  .status-btn.red{color:#e5484d;border-color:rgba(229,72,77,.4)}
+  .status-btn.red:hover{background:rgba(229,72,77,.06)}
+  .status-btn.green{color:#128052;border-color:rgba(18,128,82,.4)}
+  .status-btn.green:hover{background:rgba(18,128,82,.06)}
 
   .layout{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px;align-items:start;width:100%;min-width:0}
   .layout > *{min-width:0}
@@ -81,6 +96,15 @@
   .add-wallet:disabled{cursor:not-allowed;opacity:.5}
   .tag-lock{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);background:#F1EAD9;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-weight:700}
   .disabled-note{font-size:12px;color:var(--muted);background:#F6F0E3;border:1px dashed var(--line);border-radius:12px;padding:9px 12px;line-height:1.5;margin-top:6px}
+  .security-note{margin-top:7px;border:1px solid rgba(229,72,77,.22);border-radius:10px;background:#fff8f6;color:#a0443f;padding:9px 10px;font-size:11px;line-height:1.55}
+  .condition-box{border:1.5px solid var(--line);border-radius:12px;background:rgba(255,255,255,.58);padding:8px;margin-top:6px}
+  .condition-empty{font-size:12px;color:var(--muted);padding:7px 4px}
+  .condition-add{width:100%;border:1.5px dashed rgba(255,122,0,.35);border-radius:10px;background:rgba(255,255,255,.5);color:var(--orange-deep);padding:8px;font-size:12px;font-weight:700;cursor:pointer}
+  .condition-add:hover{background:#fff7e8;border-color:var(--orange)}
+  .condition-row{display:flex;gap:6px;align-items:center;margin-top:6px}.condition-row input,.condition-row select{min-width:0;flex:1}
+  .condition-remove{width:25px;height:25px;border:0;background:transparent;color:var(--muted);cursor:pointer}.condition-remove:hover{color:#e5484d}
+  .wallet-import{display:flex;gap:6px;margin-top:6px}.wallet-import textarea{flex:1;min-height:48px;resize:vertical;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:12px;color:var(--brown);background:var(--cream)}.wallet-import button{width:50px;border:0;border-radius:10px;background:#eadfca;color:var(--brown-soft);font-size:12px;font-weight:700;cursor:pointer}
+  .wallet-enable{border:0;background:#eaf7e8;color:#2e8b57;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer}.wallet-enable.off{background:#f1ead9;color:var(--muted)}
 
   .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
   .search{flex:1;min-width:180px;max-width:none}
@@ -117,7 +141,6 @@
   .ghost-btn.red:hover{border-color:#e5484d;background:rgba(229,72,77,.05)}
   .ghost-btn:disabled{cursor:not-allowed;opacity:.5}
 
-  /* 手机端卡片列表（桌面隐藏） */
   .m-list{display:none}
   .table-wrap{overflow-x:auto;min-width:0;max-width:100%}
   .m-card{min-width:0;max-width:100%}
@@ -148,30 +171,25 @@
     .panel-head h2{font-size:16px;flex-shrink:1;min-width:0}
     .panel-head .tabs{flex-shrink:0;max-width:100%;overflow-x:auto}
     .group{margin-bottom:16px}
-
     .pay-card{flex-direction:column;align-items:flex-start;gap:14px;padding:20px 18px}
     .pay-card .t2{font-size:22px}
     .pay-card .t3{font-size:12.5px}
     .pay-card .price{font-size:28px;word-break:break-word;white-space:normal}
     .pay-card .price small{font-size:13px}
     .pay-btn{width:100%;justify-content:center;padding:13px 18px;font-size:14px}
-
+    .status-bar{gap:8px;padding:10px 12px;font-size:11.5px}
     .row{gap:8px;margin-bottom:10px;min-width:0}
     .row label{min-width:0;width:100%;font-size:12.5px;margin-bottom:2px;word-break:break-word}
     .select,input[type=text],input[type=number]{max-width:100%;flex:1;min-width:0;font-size:14px}
     .row .unit{flex-shrink:0;font-size:12px}
     .g-t{font-size:12px;letter-spacing:.5px}
     .disabled-note{font-size:11.5px}
-
     .wallet{padding:9px 10px}
     .wallet .addr{font-size:11.5px}
     .wallet .bal{font-size:10.5px}
-
     .tabs button{padding:6px 12px;font-size:12px}
     .toolbar{gap:8px}
     .search{min-width:0}
-
-    /* 桌面表格隐藏，显示卡片 */
     .table-wrap{display:none}
     .m-list{display:flex;flex-direction:column;gap:10px}
     .m-card{background:var(--cream);border:1.5px solid var(--line);border-radius:16px;padding:14px}
@@ -183,27 +201,13 @@
     .m-card .pct{font-weight:900;font-size:16px}
     .m-card .snipe-btn{padding:8px 16px}
     .sell-wide{width:100%;margin-top:10px;padding:10px}
-
     .empty{padding:34px 16px}
     .actions{gap:8px}
     .live{font-size:12px}
     .ghost-btn{padding:7px 14px;font-size:12px}
-
     .toast-wrap{top:62px}
     .toast{font-size:12px;padding:10px 16px}
   }
-</style>
-<!-- 新增条件配置控件沿用原有米白/橙金主题 -->
-<style>
-  .condition-box{border:1.5px solid var(--line);border-radius:12px;background:rgba(255,255,255,.58);padding:8px;margin-top:6px}
-  .condition-empty{font-size:12px;color:var(--muted);padding:7px 4px}
-  .condition-add{width:100%;border:1.5px dashed rgba(255,122,0,.35);border-radius:10px;background:rgba(255,255,255,.5);color:var(--orange-deep);padding:8px;font-size:12px;font-weight:700;cursor:pointer}
-  .condition-add:hover{background:#fff7e8;border-color:var(--orange)}
-  .condition-row{display:flex;gap:6px;align-items:center;margin-top:6px}.condition-row input,.condition-row select{min-width:0;flex:1}
-  .condition-remove{width:25px;height:25px;border:0;background:transparent;color:var(--muted);cursor:pointer}.condition-remove:hover{color:#e5484d}
-  .wallet-import{display:flex;gap:6px;margin-top:6px}.wallet-import textarea{flex:1;min-height:48px;resize:vertical;border:1.5px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:12px;color:var(--brown);background:var(--cream)}.wallet-import button{width:50px;border:0;border-radius:10px;background:#eadfca;color:var(--brown-soft);font-size:12px;font-weight:700;cursor:pointer}
-  .wallet-enable{border:0;background:#eaf7e8;color:#2e8b57;border-radius:6px;padding:3px 7px;font-size:10px;font-weight:700;cursor:pointer}.wallet-enable.off{background:#f1ead9;color:var(--muted)}
-  .security-note{margin-top:7px;border:1px solid rgba(229,72,77,.22);border-radius:10px;background:#fff8f6;color:#a0443f;padding:9px 10px;font-size:11px;line-height:1.55}
 </style>
 </head>
 <body>
@@ -237,10 +241,22 @@
     <div>
       <div class="t1">🎯 MONKEY SNIPER · 会员开通</div>
       <div class="t2">内盘狙击 · 高级功能</div>
-      <div class="t3">自动监控内盘新币 · 一键狙击 · 实时持仓管理</div>
+      <div class="t3">自动监控 Flap 内盘新币 · 一键狙击 · 实时持仓管理</div>
     </div>
     <div class="price">50,000 <small>猴子币 / 7天</small></div>
     <button class="pay-btn" id="payBtn"><span class="lock">🔒</span> 立即开通 · 暂时不开放</button>
+  </div>
+
+  <div class="status-bar">
+    <span class="item"><span class="dot off" id="apiDot"></span> 后端 <b id="apiState">连接中…</b></span>
+    <span class="item"><span class="dot off" id="wsDot"></span> 实时流 <b id="wsState">未连接</b></span>
+    <span class="item">模式 <b id="modeState">Dry Run</b></span>
+    <span class="item">已处理块 <b id="blockState">-</b></span>
+    <span class="item" id="emergencyItem" style="display:none"><span class="dot off"></span> <b style="color:#e5484d">紧急停止</b></span>
+    <span class="sp"></span>
+    <button class="status-btn green" id="startBtn">▶ 启动监控</button>
+    <button class="status-btn red" id="stopBtn" style="display:none">⏸ 停止</button>
+    <button class="status-btn red" id="eStopBtn">🛑 紧急停止</button>
   </div>
 
   <div class="layout">
@@ -249,20 +265,25 @@
     <div class="panel">
       <div class="panel-head">
         <h2><span class="ico">⚙️</span> 狙击配置</h2>
-        <span class="tag-lock">🔒 功能未开放</span>
+        <span class="tag-lock">🔒 交易未开放（Dry Run）</span>
       </div>
 
       <div class="group">
         <div class="g-t">运行状态</div>
         <div class="row">
-          <label>总开关</label>
+          <label>平台</label>
+          <span class="chip on"><input type="checkbox" checked> Flap</span>
+          <span class="tag-lock">仅 Flap</span>
+        </div>
+        <div class="row">
+          <label>监控开关</label>
           <div class="toggle" id="masterToggle"></div>
           <span class="t-stat" id="masterStat">未开启</span>
         </div>
         <div class="row">
-          <label>提示方式</label>
-          <span class="chip on" data-alert="page"><input type="checkbox" checked> 页面提示</span>
-          <span class="chip" data-alert="sound"><input type="checkbox"> 音效</span>
+          <label>执行模式</label>
+          <span class="chip on" data-mode="dry"><input type="checkbox" checked> Dry Run（仅模拟）</span>
+          <span class="chip" data-mode="live"><input type="checkbox"> Live</span>
         </div>
         <div class="row">
           <label>策略模板</label>
@@ -272,55 +293,45 @@
             <option>稳健长持</option>
             <option>高价速抛</option>
           </select>
-          <button class="ghost-btn" id="tplSave" style="padding:7px 12px">保存</button>
+          <button class="ghost-btn" id="saveStrategy" style="padding:7px 12px">保存策略</button>
         </div>
-        <div class="disabled-note">💡 开通会员后策略模板自动同步到账号，随时一键切换。</div>
+        <div class="disabled-note">💡 保存策略后由后端实时评估：底池 ≥ / Dev 首买 ≥ / 税率 ≤ 全部满足才触发（当前 Dry Run 只模拟不下单）。</div>
       </div>
 
       <div class="group">
-        <div class="g-t">👛 执行钱包 <span class="mini" id="walletCount">(2/10)</span></div>
-        <div id="walletList"></div>
-        <div class="wallet-import"><textarea id="walletImport" placeholder="每行一个私钥，可批量添加"></textarea><button id="importWallet">导入</button></div>
-        <button class="add-wallet" id="addWallet">＋ 添加执行钱包</button>
-        <button class="add-wallet" id="refreshBalance" style="margin-top:5px;color:#128052">↻ 刷新余额</button>
-        <div class="security-note">🔐 安全提示：执行钱包只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即停用并更换新的执行钱包/私钥；私钥不要截图、发送给他人或提交到代码仓库。</div>
+        <div class="g-t">👛 执行钱包（模式 A：MetaMask 签名）</div>
+        <div class="wallet" id="connectedWallet" style="justify-content:space-between">
+          <span class="addr" id="walletAddr">未连接钱包</span>
+          <button class="ghost-btn" id="connectWallet" style="padding:6px 12px;font-size:11px">连接钱包</button>
+        </div>
+        <div class="disabled-note">🔐 私钥只存在于你的浏览器钱包，后端不接触任何私钥。</div>
+        <div class="security-note">🔐 自动执行钱包只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即停用并更换新的执行钱包/私钥；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
 
       <div class="group">
-        <div class="g-t">🎛️ 平台过滤</div>
+        <div class="g-t">🎛️ 底池币种（仅 Flap）</div>
         <div class="row">
-          <span class="chip on" data-plat="flap"><input type="checkbox" checked> Flap</span>
-          <span class="chip on" data-plat="fm"><input type="checkbox" checked> FourMeme</span>
+          <span class="chip on" data-plat="bnb"><input type="checkbox" checked> BNB 底池</span>
+          <span class="chip" data-plat="usdt"><input type="checkbox"> USDT 底池</span>
         </div>
       </div>
 
       <div class="group">
         <div class="g-t">💰 买入参数</div>
-        <div class="row"><label>买入资产</label><select class="select" id="buyAsset"><option>Flap</option><option>BNB</option><option>FourMeme</option></select><input id="buyAssetAmt" type="number" value="1" style="max-width:100px"><span class="unit">每个币</span></div>
         <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span class="unit">BNB / 币</span></div>
-        <div class="row"><label>Gas Price</label><input id="gasPrice" type="number" value="5"><span class="unit">Gwei</span></div>
-        <div class="row"><label>Gas Limit</label><input id="gasLimit" type="number" value="800000"></div>
-      </div>
-
-      <div class="group">
-        <div class="g-t">📤 卖出参数</div>
-        <div class="row"><label>卖出 Gas</label><input id="sellGas" type="number" value="5"><span class="unit">Gwei</span></div>
-        <div class="row"><label>卖出 Limit</label><input id="sellLimit" type="number" value="500000"></div>
-        <div class="row">
-          <label>策略模式</label>
-          <span class="chip" data-mode="auto"><input type="checkbox"> 自动卖出</span>
-          <span class="chip on" data-mode="manual"><input type="checkbox" checked> 手动</span>
-        </div>
+        <div class="row"><label>最大买税</label><input id="maxBuyTax" type="number" value="10"><span class="unit">%</span></div>
+        <div class="row"><label>最大卖税</label><input id="maxSellTax" type="number" value="10"><span class="unit">%</span></div>
+        <div class="row"><label>滑点</label><input id="slippage" type="number" value="5"><span class="unit">%</span></div>
+        <div class="row"><label>Gas 手动</label><input id="gasManual" type="number" placeholder="留空=自动"><span class="unit">Gwei</span></div>
       </div>
 
       <div class="group">
         <div class="g-t">🔍 条件过滤</div>
-        <div class="condition-section"><div class="g-t">排除代币 Symbol 条件 <span class="mini">?</span></div><div class="condition-box" id="excludeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="excludeConditions" data-label="Symbol">＋ 添加 Symbol 条件 (0/10)</button></div>
-        <div class="condition-section"><div class="g-t">指定代币 Symbol 条件 <span class="mini">?</span></div><div class="condition-box" id="includeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="includeConditions" data-label="Symbol">＋ 添加 Symbol 条件 (0/10)</button></div>
-        <div class="condition-section"><div class="g-t">只买指定底池 <span class="mini">?</span></div><div class="condition-box" id="poolConditions"><div class="condition-row"><select class="select"><option>Flap</option><option>FourMeme</option></select><button class="wallet-enable">只买</button><select class="select"><option>BNB池</option><option>USDT池</option></select><button class="condition-remove">×</button></div></div><button class="condition-add" data-target="poolConditions" data-label="底池">＋ 添加只买底池 (1/30)</button></div>
-        <div class="condition-section"><div class="g-t">创建时 Dev 首买入条件 <span class="mini">?</span></div><div class="condition-box" id="devBuyConditions"><div class="condition-row"><select class="select"><option>Flap</option><option>FourMeme</option></select><select class="select"><option>BNB</option><option>USDT</option></select><select class="select"><option>不低于</option><option>不高于</option></select><button class="condition-remove">×</button></div><input class="select" type="number" value="2" style="margin-top:6px"></div><button class="condition-add" data-target="devBuyConditions" data-label="Dev 首买">＋ 添加 Dev 首买条件 (1/30)</button></div>
-        <div class="condition-section"><div class="g-t">买卖税率条件 <span class="mini">?</span></div><div class="condition-box" id="taxConditions"><div class="condition-empty">暂无条件，默认不限制买卖税率</div></div><button class="condition-add" data-target="taxConditions" data-label="买卖税率">＋ 添加买卖税率条件 (0/8)</button></div>
-        <div class="condition-section"><div class="g-t">指定 Dev/工厂/金库 <span class="mini">?</span></div><div class="condition-box" id="addressConditions"><div class="condition-empty">暂无条件，默认不限制 Dev/工厂/金库</div></div><button class="condition-add" data-target="addressConditions" data-label="指定地址">＋ 添加指定 Dev/工厂/金库 (0/2)</button></div>
+        <div class="condition-section"><div class="g-t">排除代币 Symbol 条件</div><div class="condition-box" id="excludeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="excludeConditions" data-label="Symbol" data-type="exclude_symbol">＋ 添加 Symbol 条件</button></div>
+        <div class="condition-section"><div class="g-t">指定代币 Symbol 条件</div><div class="condition-box" id="includeConditions"><div class="condition-empty">暂无条件</div></div><button class="condition-add" data-target="includeConditions" data-label="Symbol" data-type="include_symbol">＋ 添加 Symbol 条件</button></div>
+        <div class="condition-section"><div class="g-t">初始底池不低于</div><div class="row" style="margin-top:4px"><input id="poolMin" type="number" placeholder="如 5" style="flex:1"><span class="unit">BNB</span></div></div>
+        <div class="condition-section"><div class="g-t">Dev 首买不低于</div><div class="row" style="margin-top:4px"><input id="devBuyMin" type="number" placeholder="如 2" style="flex:1"><span class="unit">BNB</span></div></div>
+        <div class="condition-section"><div class="g-t">指定 Dev 地址</div><div class="condition-box" id="devConditions"><div class="condition-empty">暂无条件</div></div><button class="condition-add" data-target="devConditions" data-label="Dev 地址" data-type="dev_address">＋ 添加 Dev 地址</button></div>
       </div>
     </div>
 
@@ -328,11 +339,11 @@
     <div>
       <div class="panel" style="margin-bottom:22px">
         <div class="panel-head">
-          <h2><span class="ico">📡</span> 最近内盘代币 <span class="mini" id="listCount"></span></h2>
+          <h2><span class="ico">📡</span> 最近 Flap 内盘代币 <span class="mini" id="listCount"></span></h2>
           <div class="tabs" id="marketTabs">
-            <button class="on" data-filter="all">混合</button>
-            <button data-filter="flap">Flap</button>
-            <button data-filter="fm">FourMeme</button>
+            <button class="on" data-filter="all">全部</button>
+            <button data-filter="bnb">BNB 底池</button>
+            <button data-filter="usdt">USDT 底池</button>
           </div>
         </div>
         <div class="toolbar">
@@ -342,13 +353,21 @@
         <div class="table-wrap">
           <table class="table">
             <thead>
-              <tr><th>代币</th><th>创建信息</th><th>税率 / 分配</th><th>营销去向</th><th>操作</th></tr>
+              <tr><th>代币</th><th>底池</th><th>底池金额</th><th>税率</th><th>Dev</th><th>操作</th></tr>
             </thead>
             <tbody id="sniperRows"></tbody>
           </table>
         </div>
         <div class="m-list" id="mList"></div>
-        <div class="empty" id="marketEmpty" style="display:none"><div class="big">📭</div><div>没有符合条件的代币，换个筛选试试</div></div>
+        <div class="empty" id="marketEmpty" style="display:none"><div class="big">📭</div><div>暂无代币，等待 Flap 内盘新币创建…</div></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:22px">
+        <div class="panel-head">
+          <h2><span class="ico">📋</span> 订单 / 交易记录</h2>
+          <button class="ghost-btn" id="refreshOrders">🔄</button>
+        </div>
+        <div id="ordersWrap"></div>
       </div>
 
       <div class="panel">
@@ -360,9 +379,8 @@
           </div>
         </div>
         <div class="actions">
-          <span class="live on" id="liveStat"><span class="dot"></span> 实时监控中</span>
-          <button class="ghost-btn" id="pauseBtn">⏸ 暂停</button>
-          <button class="ghost-btn red" id="batchSellBtn">批量卖出</button>
+          <span class="live on" id="liveStat"><span class="dot"></span> 监控运行中</span>
+          <button class="ghost-btn" id="refreshPos">🔄 刷新</button>
         </div>
         <div id="posWrap"></div>
       </div>
@@ -373,281 +391,325 @@
 
 <footer>
   <div style="font-weight:800">猴子币 · MONKEY ($MKY)</div>
-  <small>内盘狙击为高级会员功能，目前暂未开放。使用前请充分了解风险，Meme 有风险，参与需谨慎。🍌</small>
+  <small>内盘狙击为高级会员功能，目前暂未开放真实交易（Dry Run）。使用前请充分了解风险，Meme 有风险，参与需谨慎。🍌</small>
 </footer>
 
 <script>
-  const $=id=>document.getElementById(id);
-  const toastWrap=$('toastWrap');
-  function toast(msg,ic='🔔'){
-    const el=document.createElement('div');
-    el.className='toast';
-    el.innerHTML=`<span class="ic">${ic}</span><span>${msg}</span>`;
+  // ═════════════ 后端对接（真实数据，非 demo） ═════════════
+  const SNIPER_API = new URLSearchParams(location.search).get("api") || "https://sniper-api.monkeycoin.top";
+  const WS_URL = SNIPER_API.replace(/^http/, "ws") + "/ws/sniper";
+
+  const $ = id => document.getElementById(id);
+  const toastWrap = $("toastWrap");
+  function toast(msg, ic = "🔔") {
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = `<span class="ic">${ic}</span><span>${msg}</span>`;
     toastWrap.appendChild(el);
-    setTimeout(()=>{el.style.transition='opacity .3s, transform .3s';el.style.opacity='0';el.style.transform='translateY(-8px)';setTimeout(()=>el.remove(),300)},2600);
+    setTimeout(() => { el.style.transition = "opacity .3s, transform .3s"; el.style.opacity = "0"; el.style.transform = "translateY(-8px)"; setTimeout(() => el.remove(), 300); }, 2600);
   }
 
-  const toggleBtn=$('navToggle'),links=$('navLinks');
-  toggleBtn.addEventListener('click',()=>links.classList.toggle('open'));
-
-  /* ── 总开关 ── */
-  const master=$('masterToggle'),masterStat=$('masterStat');
-  let masterOn=false;
-  master.addEventListener('click',()=>{
-    masterOn=!masterOn;
-    master.classList.toggle('on',masterOn);
-    masterStat.textContent=masterOn?'已开启':'未开启';
-    masterStat.style.color=masterOn?'var(--orange-deep)':'inherit';
-    toast(masterOn?'狙击已开启（演示模式 · 真实交易未开放）':'狙击已关闭',masterOn?'▶️':'⏹');
-  });
-
-  /* ── 开通（始终锁定） ── */
-  $('payBtn').addEventListener('click',()=>toast('内盘狙击会员暂未开放，敬请期待。','🔒'));
-
-  /* ── 提示方式 chips ── */
-  document.querySelectorAll('[data-alert]').forEach(c=>{
-    c.addEventListener('click',()=>{
-      c.classList.toggle('on');
-      toast(c.classList.contains('on')?`已开启${c.textContent.trim()}`:`已关闭${c.textContent.trim()}`);
+  async function api(path, opts = {}) {
+    const res = await fetch(SNIPER_API + path, {
+      headers: { "content-type": "application/json" },
+      ...opts,
     });
-  });
-
-  /* ── 策略模板 ── */
-  $('tplSave').addEventListener('click',()=>{
-    toast(`策略模板「${$('tplSelect').value}」已保存（演示）`,'💾');
-  });
-
-  /* ── 执行钱包 ── */
-  let wallets=[
-    {addr:'0x21c5AEed…t337d',bal:'0.042 BNB'},
-    {addr:'0x436fB324…D5843bb',bal:'0.018 BNB'},
-  ];
-  const walletList=$('walletList');
-  function renderWallets(){
-    walletList.innerHTML=wallets.map((w,i)=>`
-      <div class="wallet">
-        <span class="dot"></span>
-        <span class="addr">${w.addr}</span>
-        <span class="bal">${w.bal}</span>
-        <button class="wallet-enable ${w.enabled===false?'off':''}" data-enable="${i}">${w.enabled===false?'启用':'启用'}</button>
-        <button class="del" data-i="${i}">✕</button>
-      </div>`).join('');
-    $('walletCount').textContent=`(${wallets.length}/10)`;
-    walletList.querySelectorAll('.del').forEach(b=>b.addEventListener('click',()=>{
-      if(wallets.length<=1){toast('至少保留 1 个执行钱包','⚠️');return;}
-      wallets.splice(Number(b.dataset.i),1);
-      renderWallets();
-      toast('已移除执行钱包','🗑️');
-    }));
-    walletList.querySelectorAll('[data-enable]').forEach(b=>b.addEventListener('click',()=>{
-      const index=Number(b.dataset.enable); wallets[index].enabled=wallets[index].enabled===false; renderWallets(); toast(wallets[index].enabled===false?'已停用执行钱包':'已启用执行钱包',wallets[index].enabled===false?'⏸':'▶️');
-    }));
-    $('addWallet').disabled=wallets.length>=10;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
   }
-  renderWallets();
-  $('addWallet').addEventListener('click',()=>{
-    if(wallets.length>=10){toast('执行钱包已达上限 10 个','⚠️');return;}
-    const seed=Math.random().toString(16).slice(2,6);
-    wallets.push({addr:`0x${seed}…新钱包${wallets.length}`,bal:'0.000 BNB'});
-    renderWallets();
-    toast('已添加执行钱包（演示）','➕');
-  });
-  $('importWallet').addEventListener('click',()=>{
-    const raw=$('walletImport').value.trim();
-    if(!raw){toast('请先输入私钥（演示模式不会发送到网络）','⚠️');return;}
-    const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    const room=10-wallets.length;
-    lines.slice(0,room).forEach((_,i)=>wallets.push({addr:`0x导入钱包${wallets.length+1+i}…演示`,bal:'0.000 BNB',enabled:true}));
-    $('walletImport').value=''; renderWallets(); toast(`已导入 ${Math.min(lines.length,room)} 个执行钱包（演示）`,'📥');
-  });
-  $('refreshBalance').addEventListener('click',()=>{ wallets=wallets.map(w=>({...w,bal:(Math.random()*.08).toFixed(3)+' BNB'})); renderWallets(); toast('钱包余额已刷新（演示）','↻'); });
 
-  /* ── 截图式条件配置 ── */
-  document.querySelectorAll('.condition-add').forEach(button=>button.addEventListener('click',()=>{
-    const target=$(button.dataset.target); const count=target.querySelectorAll('.condition-row').length;
-    if(count>=10){toast('该条件已达到数量上限','⚠️');return;}
-    const row=document.createElement('div'); row.className='condition-row';
-    row.innerHTML=`<input class="select" type="text" placeholder="输入${button.dataset.label}"><button class="condition-remove" title="删除条件">×</button>`;
-    const empty=target.querySelector('.condition-empty'); if(empty) empty.remove(); target.appendChild(row);
-    row.querySelector('.condition-remove').addEventListener('click',()=>{row.remove(); if(!target.querySelector('.condition-row')) target.innerHTML='<div class="condition-empty">暂无条件，默认不限制</div>';});
-    toast(`已添加${button.dataset.label}条件`,'＋');
-  }));
-  document.querySelectorAll('.condition-remove').forEach(button=>button.addEventListener('click',()=>button.parentElement.remove()));
+  const toggleBtn = $("navToggle"), links = $("navLinks");
+  toggleBtn.addEventListener("click", () => links.classList.toggle("open"));
 
-  /* ── 平台过滤 ── */
-  const platState={flap:true,fm:true};
-  document.querySelectorAll('[data-plat]').forEach(c=>{
-    c.addEventListener('click',()=>{
-      c.classList.toggle('on');
-      platState[c.dataset.plat]=c.classList.contains('on');
+  // ── 系统状态 ──────────────────────────────────────────────────────────────
+  let sys = { running: false, connected: false, dryRun: true, emergencyStopped: false, lastProcessedBlock: 0, liveTradingEnabled: false };
+  async function refreshStatus() {
+    try {
+      const s = await api("/api/sniper/status");
+      Object.assign(sys, s);
+      $("apiDot").className = "dot on"; $("apiState").textContent = "在线";
+      $("modeState").textContent = sys.dryRun ? "Dry Run" : (sys.liveTradingEnabled ? "Live" : "Dry Run");
+      $("blockState").textContent = sys.lastProcessedBlock || "-";
+      $("masterToggle").classList.toggle("on", sys.running);
+      $("masterStat").textContent = sys.running ? "已开启" : "未开启";
+      $("startBtn").style.display = sys.running ? "none" : "";
+      $("stopBtn").style.display = sys.running ? "" : "none";
+      $("emergencyItem").style.display = sys.emergencyStopped ? "" : "none";
+      $("liveStat").classList.toggle("on", sys.running);
+      $("liveStat").innerHTML = `<span class="dot"></span> ${sys.running ? "监控运行中" : "监控未启动"}`;
+    } catch (e) {
+      $("apiDot").className = "dot off"; $("apiState").textContent = "离线";
+    }
+  }
+
+  $("startBtn").addEventListener("click", async () => { try { await api("/api/sniper/start", { method: "POST" }); toast("监控已启动", "▶️"); refreshStatus(); } catch (e) { toast(e.message, "⚠️"); } });
+  $("stopBtn").addEventListener("click", async () => { try { await api("/api/sniper/stop", { method: "POST" }); toast("监控已停止", "⏹"); refreshStatus(); } catch (e) { toast(e.message, "⚠️"); } });
+  $("eStopBtn").addEventListener("click", async () => { if (!confirm("确认触发紧急停止？将禁止所有买入/卖出。")) return; try { await api("/api/sniper/emergency-stop", { method: "POST" }); toast("紧急停止已触发", "🛑"); refreshStatus(); } catch (e) { toast(e.message, "⚠️"); } });
+  $("masterToggle").addEventListener("click", () => { sys.running ? $("stopBtn").click() : $("startBtn").click(); });
+
+  // ── WebSocket 实时事件 ────────────────────────────────────────────────────
+  let ws = null;
+  function connectWs() {
+    try { ws && ws.close(); } catch { /* ignore */ }
+    try {
+      ws = new WebSocket(WS_URL);
+    } catch { return; }
+    ws.onopen = () => { $("wsDot").className = "dot on"; $("wsState").textContent = "已连接"; };
+    ws.onclose = () => { $("wsDot").className = "dot off"; $("wsState").textContent = "重连中…"; setTimeout(connectWs, 4000); };
+    ws.onerror = () => { try { ws.close(); } catch { /* ignore */ } };
+    ws.onmessage = (e) => {
+      let msg; try { msg = JSON.parse(e.data); } catch { return; }
+      handleWsEvent(msg.event, msg.data);
+    };
+  }
+  function handleWsEvent(event, data) {
+    switch (event) {
+      case "flap.token.created": toast(`Flap 新币创建 ${data.symbol || ""}`, "🆕"); loadTokens(); break;
+      case "flap.dev.buy": toast(`Dev 首买 ${data.symbol || ""} ${data.quoteSpent || ""} BNB`, "🐳"); loadTokens(); break;
+      case "strategy.matched": toast(`策略命中 ${data.symbol || ""}`, "🎯"); loadOrders(); break;
+      case "strategy.rejected": loadOrders(); break;
+      case "transaction.simulated": loadOrders(); break;
+      case "transaction.pending": loadOrders(); break;
+      case "transaction.confirmed": toast(`交易已确认 ${(data.txHash || "").slice(0, 10)}…`, "✅"); loadOrders(); loadPositions(); loadTokens(); break;
+      case "transaction.failed": toast(`交易失败: ${data.reason || ""}`, "❌"); loadOrders(); break;
+      case "position.updated": loadPositions(); break;
+      case "rpc.disconnected": toast("RPC 断开，正在重连", "📡"); break;
+      case "rpc.reconnected": toast("RPC 已重连", "📡"); break;
+      case "emergency.stopped": toast("系统紧急停止！", "🛑"); refreshStatus(); break;
+      case "system.status": refreshStatus(); break;
+    }
+  }
+
+  // ── 真实代币列表 ──────────────────────────────────────────────────────────
+  let tokens = [];
+  let marketFilter = "all";
+  const sniperRows = $("sniperRows"), mList = $("mList"), marketEmpty = $("marketEmpty"), listCount = $("listCount");
+  const cardTag = () => `<span class="tag flap">Flap</span>`;
+  const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "-";
+
+  async function loadTokens() {
+    try {
+      const r = await api("/api/sniper/tokens?limit=50");
+      tokens = r.tokens || [];
       renderList();
-    });
-  });
-
-  /* ── 策略模式 ── */
-  document.querySelectorAll('[data-mode]').forEach(c=>{
-    c.addEventListener('click',()=>{
-      const on=c.classList.contains('on');
-      c.classList.toggle('on',!on);
-      toast(on?'已切换到手动模式':'已切换到自动卖出模式',on?'✋':'⚡');
-    });
-  });
-  /* ── Dev 首买 ── */
-  document.querySelectorAll('[data-dev]').forEach(c=>{
-    c.addEventListener('click',()=>{
-      c.classList.toggle('on');
-      toast(c.classList.contains('on')?'已开启 仅限 Dev 首买':'已关闭 Dev 首买限制');
-    });
-  });
-
-  /* ── 市场监控 ── */
-  const demo=[
-    {av:'🐵',nm:'Monkey King',sy:'$MK',plat:'flap',buy:'0.04 BNB',dev:'0x1F57…7777',buyTax:'5%',sellTax:'5%',lp:'5%',mk:'0x436f…bb'},
-    {av:'🦊',nm:'Fox Flip',sy:'$FLIP',plat:'fm',buy:'0.03 BNB',dev:'0x8A12…4444',buyTax:'8%',sellTax:'10%',lp:'8%',mk:'0x1A2B…cc'},
-    {av:'🐶',nm:'Shiba Next',sy:'$SHIB2',plat:'flap',buy:'0.05 BNB',dev:'0xCC09…2222',buyTax:'4%',sellTax:'4%',lp:'6%',mk:'0x9E8F…aa'},
-    {av:'🐱',nm:'Catcoin X',sy:'$CATX',plat:'fm',buy:'0.02 BNB',dev:'0x77D4…9999',buyTax:'10%',sellTax:'10%',lp:'10%',mk:'0x3C4D…bb'},
-    {av:'🦄',nm:'Uni Moon',sy:'$UNIM',plat:'flap',buy:'0.06 BNB',dev:'0x5E6F…8888',buyTax:'6%',sellTax:'8%',lp:'4%',mk:'0x0F1E…cc'},
-    {av:'🐸',nm:'Frog Pepe',sy:'$PEPEF',plat:'flap',buy:'0.03 BNB',dev:'0x2B3C…5555',buyTax:'7%',sellTax:'7%',lp:'7%',mk:'0x6A7B…aa'},
-    {av:'🐻',nm:'Bear Bull',sy:'$BRBL',plat:'fm',buy:'0.04 BNB',dev:'0x9A0B…3333',buyTax:'5%',sellTax:'9%',lp:'5%',mk:'0x4D5E…bb'},
-    {av:'🐯',nm:'Tiger Roar',sy:'$TGER',plat:'flap',buy:'0.05 BNB',dev:'0x3F4E…1111',buyTax:'9%',sellTax:'9%',lp:'9%',mk:'0x8A9B…cc'},
-    {av:'🐼',nm:'Panda Coin',sy:'$PNDA',plat:'fm',buy:'0.07 BNB',dev:'0x6C7D…6666',buyTax:'3%',sellTax:'5%',lp:'3%',mk:'0x2E3F…dd'},
-    {av:'🐷',nm:'Piggy Bank',sy:'$PIGY',plat:'flap',buy:'0.02 BNB',dev:'0x0D1E…aaaa',buyTax:'6%',sellTax:'6%',lp:'6%',mk:'0x5A6B…cc'},
-  ];
-  let marketFilter='all';
-  const sniperRows=$('sniperRows'),mList=$('mList'),marketEmpty=$('marketEmpty'),listCount=$('listCount');
-  function cardTag(t){
-    return `<span class="tag ${t.plat}">${t.plat==='flap'?'Flap':'FourMeme'}</span>`;
+    } catch (e) {
+      marketEmpty.style.display = "block";
+      marketEmpty.innerHTML = `<div class="big">📭</div><div>无法连接后端（${SNIPER_API}）</div>`;
+    }
   }
-  function renderList(){
-    const q=($('searchInput').value||'').trim().toLowerCase();
-    const list=demo.filter(t=>{
-      if(!platState[t.plat])return false;
-      if(marketFilter!=='all'&&t.plat!==marketFilter)return false;
-      if(q&&!(t.nm.toLowerCase().includes(q)||t.sy.toLowerCase().includes(q)||t.dev.toLowerCase().includes(q)))return false;
+
+  function renderList() {
+    const q = ($("searchInput").value || "").trim().toLowerCase();
+    const list = tokens.filter(t => {
+      const label = (t.quote_token_label || "").toLowerCase();
+      if (marketFilter === "bnb" && label !== "bnb") return false;
+      if (marketFilter === "usdt" && label !== "usdt") return false;
+      if (q && !((t.symbol || "").toLowerCase().includes(q) || (t.name || "").toLowerCase().includes(q) || (t.address || "").toLowerCase().includes(q))) return false;
       return true;
     });
-    sniperRows.innerHTML=list.map(t=>`
+    const fmtQuote = (v) => v ? (Number(v) / 1e18).toFixed(4) : "0";
+    const fmtBps = (b) => (b == null ? "-" : (b / 100).toFixed(1) + "%");
+    const rowsHtml = list.map(t => `
       <tr>
-        <td><div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} ${cardTag(t)}</div></div></div></td>
-        <td><span class="mini"><b>${t.buy}</b><br/>Dev ${t.dev}</span></td>
-        <td><span class="mini">买 <b>${t.buyTax}</b> · 卖 <b>${t.sellTax}</b><br/>LP <b>${t.lp}</b></span></td>
-        <td><span class="mini"><b>${t.mk}</b></span></td>
-        <td><button class="snipe-btn">🎯 狙击</button></td>
-      </tr>`).join('');
-    mList.innerHTML=list.map(t=>`
+        <td><div class="tk"><div class="av">${(t.symbol || "?").slice(0, 1)}</div><div><div class="nm">${t.name || "?"}</div><div class="sy">${t.symbol || ""} ${cardTag()}</div></div></div></td>
+        <td><span class="mini">${t.quote_token_label || "BNB"}</span></td>
+        <td><span class="mini"><b>${fmtQuote(t.reserve_quote)}</b> ${t.quote_token_label === "BNB" ? "BNB" : ""}</span></td>
+        <td><span class="mini">买 <b>${fmtBps(t.buy_tax_bps)}</b> · 卖 <b>${fmtBps(t.sell_tax_bps)}</b></span></td>
+        <td><span class="mini">${short(t.creator)}</span></td>
+        <td><button class="snipe-btn" data-token="${t.address}" data-symbol="${t.symbol || ""}">🎯 狙击</button></td>
+      </tr>`).join("");
+    sniperRows.innerHTML = rowsHtml;
+    mList.innerHTML = list.map(t => `
       <div class="m-card">
         <div class="m-top">
-          <div class="tk"><div class="av">${t.av}</div><div><div class="nm">${t.nm}</div><div class="sy">${t.sy} ${cardTag(t)}</div></div></div>
-          <button class="snipe-btn">🎯 狙击</button>
+          <div class="tk"><div class="av">${(t.symbol || "?").slice(0, 1)}</div><div><div class="nm">${t.name || "?"}</div><div class="sy">${t.symbol || ""} ${cardTag()}</div></div></div>
+          <button class="snipe-btn" data-token="${t.address}" data-symbol="${t.symbol || ""}">🎯 狙击</button>
         </div>
         <div class="m-info">
-          <span>买入 <b>${t.buy}</b></span>
-          <span>买税 <b>${t.buyTax}</b></span>
-          <span>卖税 <b>${t.sellTax}</b></span>
-          <span>LP <b>${t.lp}</b></span>
+          <span>底池 <b>${t.quote_token_label || "BNB"}</b></span>
+          <span>金额 <b>${fmtQuote(t.reserve_quote)}</b></span>
+          <span>买税 <b>${fmtBps(t.buy_tax_bps)}</b></span>
+          <span>卖税 <b>${fmtBps(t.sell_tax_bps)}</b></span>
         </div>
-        <div class="m-sub">Dev ${t.dev} · 营销 ${t.mk}</div>
-      </div>`).join('');
-    listCount.textContent=`(${list.length})`;
-    marketEmpty.style.display=list.length?'none':'block';
-    document.querySelectorAll('.snipe-btn').forEach(b=>b.addEventListener('click',()=>{
-      toast('内盘狙击交易未开放，开通会员后启用','🔒');
-    }));
+        <div class="m-sub">Dev ${short(t.creator)}</div>
+      </div>`).join("");
+    listCount.textContent = `(${list.length})`;
+    marketEmpty.style.display = list.length ? "none" : "block";
+    if (list.length) marketEmpty.innerHTML = `<div class="big">📭</div><div>暂无代币，等待 Flap 内盘新币创建…</div>`;
+    bindSnipeButtons();
   }
-  renderList();
-
-  $('marketTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
-    $('marketTabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    marketFilter=b.dataset.filter;
-    renderList();
+  function bindSnipeButtons() {
+    document.querySelectorAll(".snipe-btn[data-token]").forEach(b => b.addEventListener("click", () => snipe(b.dataset.token, b.dataset.symbol)));
+  }
+  $("marketTabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    $("marketTabs").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); marketFilter = b.dataset.filter; renderList();
   }));
+  $("searchInput").addEventListener("input", renderList);
+  $("refreshBtn").addEventListener("click", () => { loadTokens(); loadOrders(); loadPositions(); toast("已刷新", "🔄"); });
 
-  $('searchInput').addEventListener('input',renderList);
-  $('refreshBtn').addEventListener('click',()=>{
-    for(const t of demo){
-      t.buy=(Math.random()*0.06+0.02).toFixed(2)+' BNB';
-      t.buyTax=(Math.floor(Math.random()*8)+3)+'%';
-      t.sellTax=(Math.floor(Math.random()*8)+3)+'%';
+  // ── 狙击买入（模式 A：MetaMask 签名，后端只组装交易） ────────────────────
+  async function snipe(token, symbol) {
+    if (!window.ethereum) { toast("请安装 MetaMask 等钱包插件", "⚠️"); return; }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (!accounts?.length) return;
+      const wallet = accounts[0];
+      const strategyId = await ensureStrategy();
+      toast(`正在构建买入 ${symbol || ""}…`, "⏳");
+      const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value, wallet }) });
+      // 让钱包签名并广播（eth_sendTransaction 由钱包完成签名+发送，后端不接触私钥）
+      const tx = { to: r.unsignedTx.to, data: r.unsignedTx.data, value: r.unsignedTx.value, gasPrice: r.unsignedTx.gasPrice, gasLimit: r.unsignedTx.gasLimit };
+      const txHash = await window.ethereum.request({ method: "eth_sendTransaction", params: [tx] });
+      toast(`已发送买入，等待确认 ${txHash.slice(0, 10)}…`, "⛏️");
+      loadOrders();
+    } catch (e) {
+      toast("买入失败: " + String(e.message || e), "❌");
     }
-    renderList();
-    toast('市场数据已刷新（演示）','🔄');
+  }
+  $("connectWallet").addEventListener("click", async () => {
+    if (!window.ethereum) { toast("未检测到钱包插件", "⚠️"); return; }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts?.length) { $("walletAddr").textContent = accounts[0].slice(0, 6) + "…" + accounts[0].slice(-4); toast("钱包已连接", "👛"); }
+    } catch (e) { toast(String(e.message || e), "⚠️"); }
   });
 
-  /* ── 持仓 ── */
-  const positions=[
-    {av:'🐵',nm:'Monkey King',sy:'$MK',qty:'12,400,000',buy:'0.05',now:'0.068',pct:'+36%',win:true},
-    {av:'🐶',nm:'Shiba Next',sy:'$SHIB2',qty:'8,200,000',buy:'0.04',now:'0.031',pct:'-22%',win:false},
-  ];
-  const history=[
-    {av:'🦊',nm:'Fox Flip',sy:'$FLIP',qty:'5,000,000',buy:'0.03',sell:'0.047',pct:'+56%',win:true},
-    {av:'🐱',nm:'Catcoin X',sy:'$CATX',qty:'9,900,000',buy:'0.02',sell:'0.011',pct:'-45%',win:false},
-  ];
-  const posWrap=$('posWrap');
-  let posTab='open';
-  function renderPos(){
-    if(!masterOn){
-      posWrap.innerHTML=`<div class="empty"><div class="big">🐵</div><div>开启总开关并狙击后，持仓将显示在这里</div></div>`;
-      return;
-    }
-    const list=posTab==='open'?positions:history;
-    if(!list.length){
-      posWrap.innerHTML=`<div class="empty"><div class="big">📭</div><div>暂无${posTab==='open'?'持仓':'历史'}记录</div></div>`;
-      return;
-    }
-    posWrap.innerHTML=`
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>代币</th><th>数量</th><th>${posTab==='open'?'买入价':'买入'}</th><th>${posTab==='open'?'现价':'卖出'}</th><th>盈亏</th><th>操作</th></tr></thead>
-          <tbody>${list.map(p=>`
-            <tr>
-              <td><div class="tk"><div class="av">${p.av}</div><div><div class="nm">${p.nm}</div><div class="sy">${p.sy}</div></div></div></td>
-              <td><span class="mini">${p.qty}</span></td>
-              <td><span class="mini">${p.buy}</span></td>
-              <td><span class="mini">${p.now?p.now:p.sell}</span></td>
-              <td><span class="mini" style="color:${p.win?'#2ecc71':'#e5484d'};font-weight:800">${p.pct}</span></td>
-              <td>${posTab==='open'?`<button class="snipe-btn sell-btn" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)">卖出</button>`:'<span class="mini">已结算</span>'}</td>
-            </tr>`).join('')}</tbody>
-        </table>
-      </div>
-      <div class="m-list">${list.map(p=>`
-        <div class="m-card">
-          <div class="m-top">
-            <div class="tk"><div class="av">${p.av}</div><div><div class="nm">${p.nm}</div><div class="sy">${p.sy}</div></div></div>
-            <span class="pct" style="color:${p.win?'#2ecc71':'#e5484d'}">${p.pct}</span>
-          </div>
-          <div class="m-info">
-            <span>数量 <b>${p.qty}</b></span>
-            <span>买 <b>${p.buy}</b></span>
-            <span>${posTab==='open'?'现':'卖'} <b>${p.now?p.now:p.sell}</b></span>
-          </div>
-          ${posTab==='open'?`<button class="snipe-btn sell-btn sell-wide" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)">卖出</button>`:''}
-        </div>`).join('')}</div>`;
-    posWrap.querySelectorAll('.sell-btn').forEach(b=>b.addEventListener('click',()=>toast('卖出功能暂未开放（演示）','🔒')));
+  // ── 策略保存（把当前 UI 配置提交到后端） ──────────────────────────────────
+  async function ensureStrategy() {
+    const s = await api("/api/sniper/strategies");
+    if (s.strategies?.length) return s.strategies[0].id;
+    const id = await api("/api/sniper/strategies", { method: "POST", body: JSON.stringify(buildStrategy()) });
+    return id.id;
   }
-  renderPos();
-  $('posTabs').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
-    $('posTabs').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    posTab=b.dataset.pos;
-    renderPos();
-  }));
-
-  /* ── 实时 / 暂停 ── */
-  let running=true;
-  const liveStat=$('liveStat'),pauseBtn=$('pauseBtn');
-  function setRunning(v){
-    running=v;
-    liveStat.classList.toggle('on',v);
-    liveStat.innerHTML=v?'<span class="dot"></span> 实时监控中':'<span class="dot"></span> 已暂停';
-    pauseBtn.textContent=v?'⏸ 暂停':'▶ 继续';
+  function collectConditions() {
+    const conds = [];
+    document.querySelectorAll(".condition-row").forEach(row => {
+      const box = row.closest(".condition-box");
+      const btn = box && document.querySelector(`[data-target="${box.id}"]`);
+      if (!btn) return;
+      const type = btn.dataset.type;
+      const input = row.querySelector("input");
+      if (input && input.value.trim()) conds.push({ type, operator: "contains", value: input.value.trim() });
+    });
+    return conds;
   }
-  pauseBtn.addEventListener('click',()=>{
-    setRunning(!running);
-    toast(running?'已恢复实时监控':'已暂停监控','⏯️');
+  function buildStrategy() {
+    return {
+      name: $("tplSelect").value,
+      enabled: true,
+      mode: document.querySelector('[data-mode="live"]')?.classList.contains("on") ? "live" : "dry_run",
+      quoteTokens: ["BNB"], // 仅 Flap + BNB 底池（USDT 底池暂留开关位）
+      poolMinQuote: $("poolMin").value || null,
+      devBuyMin: $("devBuyMin").value || null,
+      maxBuyTaxBps: Math.round(Number($("maxBuyTax").value || 10) * 100),
+      maxSellTaxBps: Math.round(Number($("maxSellTax").value || 10) * 100),
+      buyAmountQuote: $("buyAmt").value || "0.05",
+      slippageBps: Math.round(Number($("slippage").value || 5) * 100),
+      gasPriceManualGwei: $("gasManual").value ? Number($("gasManual").value) : null,
+      conditions: collectConditions(),
+    };
+  }
+  $("saveStrategy").addEventListener("click", async () => {
+    try {
+      const list = await api("/api/sniper/strategies");
+      const body = JSON.stringify(buildStrategy());
+      if (list.strategies?.length) await api("/api/sniper/strategies/" + list.strategies[0].id, { method: "PUT", body });
+      else await api("/api/sniper/strategies", { method: "POST", body });
+      toast("策略已保存到后端", "💾");
+    } catch (e) { toast(e.message, "⚠️"); }
   });
 
-  $('batchSellBtn').addEventListener('click',()=>toast('批量卖出暂未开放（演示）','🔒'));
+  // ── 订单 / 持仓 ───────────────────────────────────────────────────────────
+  async function loadOrders() {
+    try {
+      const r = await api("/api/sniper/orders?limit=50");
+      const orders = r.orders || [];
+      const stateColor = { READY: "#128052", MATCHING: "#B8860B", SIGNING: "#B8860B", PENDING: "#B8860B", BROADCASTING: "#FF7A00", CONFIRMED: "#2ecc71", FAILED: "#e5484d", SKIPPED: "#a99b85" };
+      $("ordersWrap").innerHTML = orders.length ? `
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>代币</th><th>方向</th><th>状态</th><th>金额</th><th>Gas</th><th>时间</th></tr></thead>
+            <tbody>${orders.map(o => `
+              <tr>
+                <td><span class="mini"><b>${short(o.token)}</b></span></td>
+                <td><span class="mini">${o.side === "buy" ? "买入" : "卖出"}</span></td>
+                <td><span class="mini" style="color:${stateColor[o.state] || "#333"};font-weight:800">${o.state}</span></td>
+                <td><span class="mini">${o.amount_in ? (Number(o.amount_in) / 1e18).toFixed(4) : "-"}</span></td>
+                <td><span class="mini">${o.gas_price_gwei ? o.gas_price_gwei + " Gwei" : "-"}</span></td>
+                <td><span class="mini">${(o.created_at || "").slice(11, 19)}</span></td>
+              </tr>`).join("")}</tbody>
+          </table>
+        </div>` : `<div class="empty"><div class="big">📋</div><div>暂无订单记录</div></div>`;
+    } catch (e) {
+      $("ordersWrap").innerHTML = `<div class="empty">无法加载订单</div>`;
+    }
+  }
+  async function loadPositions() {
+    try {
+      const r = await api("/api/sniper/positions?limit=50");
+      const pos = r.positions || [];
+      const open = pos.filter(p => p.state === "open");
+      const closed = pos.filter(p => p.state === "closed");
+      const list = $("posTabs").querySelector(".on")?.dataset.pos === "history" ? closed : open;
+      $("posWrap").innerHTML = list.length ? `
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>代币</th><th>钱包</th><th>数量</th><th>买入价</th><th>状态</th></tr></thead>
+            <tbody>${list.map(p => `
+              <tr>
+                <td><span class="mini"><b>${short(p.token)}</b></span></td>
+                <td><span class="mini">${p.wallet ? short(p.wallet) : "-"}</span></td>
+                <td><span class="mini">${p.amount_tokens ? (Number(p.amount_tokens) / 1e18).toFixed(2) : "-"}</span></td>
+                <td><span class="mini">${p.entry_quote ? (Number(p.entry_quote) / 1e18).toFixed(4) : "-"}</span></td>
+                <td><span class="mini" style="color:${p.state === "open" ? "#128052" : "#a99b85"};font-weight:800">${p.state === "open" ? "持仓中" : "已平仓"}</span></td>
+              </tr>`).join("")}</tbody>
+          </table>
+        </div>` : `<div class="empty"><div class="big">🐵</div><div>暂无${list === open ? "持仓" : "历史"}记录</div></div>`;
+    } catch (e) {
+      $("posWrap").innerHTML = `<div class="empty">无法加载持仓</div>`;
+    }
+  }
+  $("posTabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    $("posTabs").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); loadPositions();
+  }));
+  $("refreshOrders").addEventListener("click", () => { loadOrders(); loadPositions(); });
+  $("refreshPos").addEventListener("click", () => { loadPositions(); });
+
+  // ── 条件动态添加 ──────────────────────────────────────────────────────────
+  document.querySelectorAll(".condition-add").forEach(btn => btn.addEventListener("click", () => {
+    const target = $(btn.dataset.target);
+    const row = document.createElement("div");
+    row.className = "condition-row";
+    row.innerHTML = `<input class="select" type="text" placeholder="输入${btn.dataset.label}"><button class="condition-remove">×</button>`;
+    const empty = target.querySelector(".condition-empty"); if (empty) empty.remove();
+    target.appendChild(row);
+    row.querySelector(".condition-remove").addEventListener("click", () => {
+      row.remove();
+      if (!target.querySelector(".condition-row")) target.innerHTML = '<div class="condition-empty">暂无条件</div>';
+    });
+  }));
+
+  // ── 模式切换（Dry Run / Live 指示） ───────────────────────────────────────
+  document.querySelectorAll("[data-mode]").forEach(c => c.addEventListener("click", () => {
+    const on = c.classList.contains("on");
+    document.querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("on", false));
+    c.classList.toggle("on", !on);
+    toast(!on ? "已切换 Live（需后端 ENABLE_LIVE_TRADING=true 才生效）" : "已切换 Dry Run（仅模拟）", !on ? "⚡" : "🧪");
+  }));
+
+  // ── 开通（锁定） ───────────────────────────────────────────────────────────
+  $("payBtn").addEventListener("click", () => toast("内盘狙击会员暂未开放，敬请期待。", "🔒"));
+
+  // ── 初始化 ────────────────────────────────────────────────────────────────
+  refreshStatus();
+  loadTokens();
+  loadOrders();
+  loadPositions();
+  setInterval(refreshStatus, 8000);
+  connectWs();
 </script>
 </body>
 </html>
