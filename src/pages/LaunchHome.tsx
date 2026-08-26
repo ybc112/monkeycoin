@@ -98,7 +98,7 @@ function useCopy() {
 
 function Card({ children, className, title, icon: Icon, number }: any) {
   return (
-    <div className={cn("rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)] p-6 shadow-sm", className)}>
+    <div className={cn("rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)] p-4 shadow-sm sm:p-6", className)}>
       {title && (
         <div className="mb-5 flex items-center gap-2 text-lg font-semibold text-[var(--sb-text)]">
           {Icon && <Icon className="h-5 w-5 text-[var(--sb-gold)]" />}
@@ -180,7 +180,7 @@ function TaxRing({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative h-32 w-32">
+      <div className="relative h-28 w-28 sm:h-32 sm:w-32">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
           {loading || segments.length === 0 ? (
             <circle cx="50" cy="50" r="42" fill="none" stroke="var(--sb-border)" strokeWidth="16" />
@@ -641,8 +641,8 @@ export default function LaunchHome() {
 
       {/* Hero / status strip */}
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-8">
-        <div className="sb-brand-hero flex flex-col gap-5 p-6 lg:flex-row lg:items-center">
-          <div className="flex items-start gap-4 lg:flex-1">
+        <div className="sb-brand-hero flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
+          <div className="flex items-start gap-3 sm:flex-1 sm:gap-4">
             <div
               className={cn(
                 "mt-1.5 h-3 w-3 shrink-0 rounded-full border-2 border-[var(--sb-card)] shadow-[0_0_8px_currentColor]",
@@ -672,7 +672,7 @@ export default function LaunchHome() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:w-[460px]">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:w-[420px] lg:w-[460px]">
             {[
               {
                 label: "创建费",
@@ -701,7 +701,7 @@ export default function LaunchHome() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="sb-hero-stat rounded-xl border p-3 text-center transition-colors hover:border-amber-400/40"
+                className="sb-hero-stat rounded-xl border p-2 text-center transition-colors hover:border-amber-400/40 sm:p-3"
               >
                 <div className="sb-hero-stat-label text-xs">{item.label}</div>
                 <div className="sb-hero-stat-value mt-1 text-sm font-bold">{item.value}</div>
@@ -725,7 +725,7 @@ export default function LaunchHome() {
               key={mode.key}
               onClick={() => setDeployMode(mode.key)}
               className={cn(
-                "rounded-2xl border p-6 text-left transition",
+                "rounded-2xl border p-4 text-left transition sm:p-6",
                 deployMode === mode.key
                   ? "border-[var(--sb-gold)] bg-[var(--sb-gold-light)]"
                   : "border-[var(--sb-border)] bg-[var(--sb-card)] hover:border-[var(--sb-gold)]/50"
@@ -751,10 +751,10 @@ export default function LaunchHome() {
       </section>
 
       {/* Main form */}
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 md:grid-cols-[1fr_360px]">
+      <main className="mx-auto grid max-w-6xl gap-4 px-4 sm:gap-6 md:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <Card title="基础信息" icon={Rocket} number="01">
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <InputGroup
                 label="代币名称"
                 value={params.name}
@@ -793,7 +793,7 @@ export default function LaunchHome() {
 
           {deployMode === "launch" && (
             <Card title="一键加池设置" icon={Droplets} number="02">
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
                 <InputGroup
                   label="加池 BNB"
                   value={liquidityBnb}
@@ -860,7 +860,7 @@ export default function LaunchHome() {
                 </button>
               </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <SliderGroup
                 label="买入税率"
                 value={params.totalBuyTax}
@@ -925,7 +925,7 @@ export default function LaunchHome() {
           </Card>
 
           <Card title="单边燃烧与风控" icon={FireExtinguisher} number="04">
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <InputGroup
                 label="燃烧间隔"
                 value={params.lpBurnFrequency}
@@ -975,7 +975,7 @@ export default function LaunchHome() {
           </Card>
 
           <Card title="高级选项" icon={ShieldCheck} number="05">
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <InputGroup
                 label="转账手续费"
                 value={params.transferFee}
@@ -1020,9 +1020,9 @@ export default function LaunchHome() {
         </div>
 
         {/* Sidebar preview */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Card title="费用预览" icon={Sparkles}>
-            <div className="mb-5 grid grid-cols-2 gap-3">
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-5">
               <TaxRing fee={fees?.buy ?? null} label="买入税" totalTaxBps={params.totalBuyTax} loading={feesLoading} />
               <TaxRing fee={fees?.sell ?? null} label="卖出税" totalTaxBps={params.totalSellTax} loading={feesLoading} />
             </div>

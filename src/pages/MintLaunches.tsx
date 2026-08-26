@@ -93,15 +93,15 @@ export default function MintLaunches() {
   }, [wallet.account, refreshKey]);
 
   return (
-    <div className="page-fade-in mx-auto max-w-7xl px-4 py-6 lg:py-8">
-      <section className="rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-5 lg:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="page-fade-in mx-auto max-w-7xl px-3 py-4 lg:py-6 sm:px-4">
+      <section className="rounded-2xl border border-[var(--sb-border)] bg-[var(--sb-card)]/80 p-4 lg:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Rocket className="h-5 w-5 text-[#B8860B]" />
-              <h1 className="text-2xl font-black tracking-tight text-[#0F172A]">猴子币 Mint 已发射</h1>
+              <Rocket className="h-5 w-5 text-[#D4A843]" />
+              <h1 className="text-2xl font-black tracking-tight text-[var(--sb-text)]">猴子币 Mint 已发射</h1>
             </div>
-            <p className="mt-1 text-sm text-[#64748B]">
+            <p className="mt-1 text-sm text-[var(--sb-muted)]">
               展示通过 猴子币 Mint 发射台部署到 BNB Smart Chain 的代币与金库。
             </p>
           </div>
@@ -122,9 +122,9 @@ export default function MintLaunches() {
         </div>
       </section>
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-4 flex items-center gap-3 sm:mt-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sb-muted)]" />
           <input
             className="world-input pl-9"
             placeholder="搜索代币名称、符号或合约地址"
@@ -136,8 +136,8 @@ export default function MintLaunches() {
 
       {status === "loading" && (
         <div className="world-empty">
-          <Loader2 className="h-8 w-8 animate-spin text-[#B8860B]" />
-          <p className="text-sm text-[#64748B]">正在加载链上发射列表…</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#D4A843]" />
+          <p className="text-sm text-[var(--sb-muted)]">正在加载链上发射列表…</p>
         </div>
       )}
 
@@ -152,17 +152,17 @@ export default function MintLaunches() {
           <div className="world-empty-icon">
             <Rocket className="h-7 w-7" />
           </div>
-          <p className="text-base font-medium text-[#0F172A]">
+          <p className="text-base font-medium text-[var(--sb-text)]">
             {query ? "没有匹配的发射项目" : "暂无发射项目"}
           </p>
-          <p className="text-sm text-[#64748B]">
+          <p className="text-sm text-[var(--sb-muted)]">
             {query ? "尝试更换搜索关键词" : "去发射台创建第一个 猴子币 Mint 项目吧"}
           </p>
         </div>
       )}
 
       {status === "ready" && filtered.length > 0 && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-3 pt-2 sm:mt-6 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((project) => (
             <div
               key={project.token}
