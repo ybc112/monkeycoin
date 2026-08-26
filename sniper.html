@@ -546,7 +546,7 @@
       handleWsEvent(msg.event, msg.data);
     };
   }
-  function handleWsEvent(event, data) {
+  async function handleWsEvent(event, data) {
     switch (event) {
       case "flap.token.created": toast(`Flap 新币创建 ${data.symbol || ""}`, "🆕"); loadTokens(); break;
       case "flap.dev.buy": toast(`Dev 首买 ${data.symbol || ""} ${data.quoteSpent || ""} BNB`, "🐳"); loadTokens(); break;
