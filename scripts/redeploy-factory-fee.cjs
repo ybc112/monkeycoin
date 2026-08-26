@@ -66,9 +66,9 @@ async function main() {
 
   const balance = await provider.getBalance(signer.address);
   console.log("Deployer:", signer.address, "| Balance:", ethers.formatEther(balance), "BNB");
-  console.log("Estimated gas: ~10.5M @1gwei =", ethers.formatEther(10_500_000n * ethers.parseUnits("1", "gwei")));
-  if (balance < ethers.parseEther("0.011")) {
-    throw new Error("余额不足：重部署至少需要约 0.011 BNB，请先充值");
+  console.log("Estimated gas: ~10.5M @", ethers.formatUnits(GAS_PRICE, "gwei"), "gwei =", ethers.formatEther(10_500_000n * GAS_PRICE));
+  if (balance < ethers.parseEther("0.003")) {
+    throw new Error("余额不足：至少需要约 0.003 BNB 才能部署");
   }
 
   console.log("\n1/3 Deploying BananaTokenDeployer...");
