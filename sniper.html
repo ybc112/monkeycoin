@@ -126,7 +126,7 @@
   .tag.fm{background:rgba(255,122,0,.14);color:var(--orange-deep)}
   .mini{font-size:11.5px;color:var(--brown-soft);font-weight:600}
   .mini b{color:var(--brown);font-weight:800}
-  .snipe-btn{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.2s}
+  .snipe-btn{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border:none;border-radius:10px;padding:8px 13px;min-width:76px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.2s}
   .snipe-btn:hover{transform:translateY(-1px);box-shadow:0 8px 16px -8px var(--orange)}
   .snipe-btn:disabled{cursor:not-allowed;opacity:.45;transform:none;box-shadow:none}
   .empty{text-align:center;padding:44px 16px;color:var(--muted)}
@@ -152,10 +152,11 @@
   .m-card .tk{min-width:0}
   .m-card .tk .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  .toast-wrap{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
-  .toast{background:#3B2F2F;color:#fff;font-size:13px;font-weight:700;padding:11px 20px;border-radius:999px;box-shadow:0 16px 34px -14px rgba(0,0,0,.4);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;max-width:88vw}
+  .toast-wrap{position:fixed;top:82px;right:24px;z-index:90;width:min(360px,calc(100vw - 32px));pointer-events:none}
+  .toast{background:rgba(59,47,47,.96);color:#fff;font-size:13px;font-weight:700;padding:12px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.1);box-shadow:0 14px 32px -16px rgba(59,47,47,.7);animation:toastIn .22s ease;display:flex;align-items:flex-start;gap:9px;width:100%;line-height:1.45;word-break:break-word}
+  .toast .msg{min-width:0;flex:1}
   .toast .ic{color:var(--gold)}
-  @keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.95)}to{opacity:1;transform:none}}
+  @keyframes toastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 
   footer{border-top:1.5px solid var(--line);padding:30px 0 26px;margin-top:40px;text-align:center;color:var(--brown-soft)}
   footer small{display:block;margin-top:12px;font-size:12px;opacity:.75}
@@ -526,14 +527,43 @@
   }
 
   const toastWrap = $("toastWrap");
+  let activeToast = null;
+  let toastTimer = null;
   // toast(msg, 图标, 声音类别)；声音类别 ∈ newToken|buy|sell|error
   function toast(msg, ic = "🔔", sound = null) {
-    const el = document.createElement("div");
-    el.className = "toast";
-    el.innerHTML = `<span class="ic">${ic}</span><span>${msg}</span>`;
-    toastWrap.appendChild(el);
-    setTimeout(() => { el.style.transition = "opacity .3s, transform .3s"; el.style.opacity = "0"; el.style.transform = "translateY(-8px)"; setTimeout(() => el.remove(), 300); }, 3200);
+    if (!activeToast) {
+      activeToast = document.createElement("div");
+      activeToast.className = "toast";
+      activeToast.innerHTML = '<span class="ic"></span><span class="msg"></span>';
+      toastWrap.replaceChildren(activeToast);
+    }
+    activeToast.querySelector(".ic").textContent = ic;
+    activeToast.querySelector(".msg").textContent = msg;
+    activeToast.style.opacity = "1";
+    activeToast.style.transform = "none";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      if (!activeToast) return;
+      activeToast.style.transition = "opacity .22s, transform .22s";
+      activeToast.style.opacity = "0";
+      activeToast.style.transform = "translateX(12px)";
+      setTimeout(() => { activeToast?.remove(); activeToast = null; }, 220);
+    }, 2800);
     if (sound && SOUND[sound]) SOUND[sound]();
+  }
+
+  const liveEventBatch = { created: 0, devBuy: 0, latest: "", timer: null };
+  function queueLiveEvent(kind, text) {
+    liveEventBatch[kind] += 1;
+    liveEventBatch.latest = text;
+    if (liveEventBatch.timer) return;
+    liveEventBatch.timer = setTimeout(() => {
+      const parts = [];
+      if (liveEventBatch.created) parts.push(`新币 ${liveEventBatch.created} 个`);
+      if (liveEventBatch.devBuy) parts.push(`Dev 首买 ${liveEventBatch.devBuy} 笔`);
+      toast(`实时动态：${parts.join(" · ")} · ${liveEventBatch.latest}`, "📡", "newToken");
+      liveEventBatch.created = 0; liveEventBatch.devBuy = 0; liveEventBatch.latest = ""; liveEventBatch.timer = null;
+    }, 900);
   }
 
   // ── 声音提示（Web Audio 合成，无需音频文件；新币/买入/卖出/失败 独立开关） ──
@@ -664,11 +694,11 @@
   async function handleWsEvent(event, data) {
     switch (event) {
       case "flap.token.created":
-        toast(`Flap 新币创建 ${data.symbol || ""}`, "🆕", "newToken");
+        queueLiveEvent("created", `最新 ${data.symbol || data.name || "未知代币"}`);
         showNotif("Flap 新币创建", `${data.name || data.symbol || ""} · ${data.token || ""}`);
         loadTokens(); break;
       case "flap.dev.buy":
-        toast(`Dev 首买 ${data.symbol || ""} ${data.quoteSpent || ""} BNB`, "🐳", "newToken");
+        queueLiveEvent("devBuy", `最新 ${data.symbol || "未知代币"} ${data.quoteSpent || ""} BNB`);
         showNotif("Dev 首买", `${data.symbol || ""} ${data.quoteSpent || ""} BNB`);
         loadTokens(); break;
       case "strategy.matched":
@@ -821,6 +851,9 @@
 
   // ── 狙击买入（两笔：先手续费转账 → 确认后买入；均本机签名） ──────────────
   async function snipe(token, symbol) {
+    const relatedButtons = [...document.querySelectorAll(".snipe-btn[data-token]")].filter(b => b.dataset.token === token);
+    if (relatedButtons.some(b => b.disabled)) return;
+    relatedButtons.forEach(b => { b.disabled = true; b.textContent = "处理中…"; });
     try {
       const strategyId = await ensureStrategy();
       toast(`正在构建买入 ${symbol || ""}…`, "⏳");
@@ -837,6 +870,8 @@
       toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…，等待确认后自动买入`, "💸");
     } catch (e) {
       toast("买入失败: " + String(e.message || e), "❌");
+    } finally {
+      relatedButtons.forEach(b => { b.disabled = false; b.textContent = "🎯 狙击"; });
     }
   }
 
