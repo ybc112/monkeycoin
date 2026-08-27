@@ -349,7 +349,6 @@
         <div class="g-t">👛 我的执行钱包（私钥仅本次会话内存，页面关闭即清除）</div>
         <div class="wallet" id="connectedWallet" style="justify-content:space-between">
           <span class="addr" id="walletAddr">未设置钱包</span>
-          <button class="ghost-btn" id="connectWallet" style="padding:6px 12px;font-size:11px">连接 MetaMask</button>
         </div>
         <div class="row" style="margin-top:8px">
           <label>私钥</label>
@@ -495,14 +494,6 @@
     } catch (e) { toast("私钥无效", "❌"); }
   });
 
-  $("connectWallet").addEventListener("click", async () => {
-    if (!window.ethereum) { toast("未检测到 MetaMask", "⚠️"); return; }
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts?.length) { applyWallet(accounts[0]); toast("已连接 MetaMask", "👛"); }
-    } catch (e) { toast(String(e.message || e), "⚠️"); }
-  });
-
   // 用执行钱包签名 unsignedTx 并广播（服务器只收到已签名交易，接触不到私钥）
   async function signAndBroadcast({ orderId, unsignedTx, extra }) {
     let signedRaw;
@@ -515,12 +506,8 @@
         gasPrice: unsignedTx.gasPrice, gasLimit: unsignedTx.gasLimit,
         chainId: 56, nonce, type: 0,
       });
-    } else if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (!accounts?.length) throw new Error("未授权钱包");
-      signedRaw = await window.ethereum.request({ method: "eth_signTransaction", params: [{ ...unsignedTx, from: accounts[0] }] });
     } else {
-      throw new Error("未设置执行钱包：请粘贴私钥或连接 MetaMask");
+      throw new Error("未设置执行钱包：请先粘贴私钥");
     }
     const r = await api("/api/sniper/broadcast", { method: "POST", body: JSON.stringify({ orderId, signedRaw, ...extra }) });
     return r;
@@ -724,7 +711,6 @@
           toast("需要授权（approve）后才能卖出，正在用本机钱包签名…", "✍️", "sell");
           try {
             let walletAddr = localWallet ? localWallet.address : "";
-            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
             const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction } });
             toast(`授权已广播 ${(out.txHash || "").slice(0, 10)}…，确认后自动卖出`, "⛏️", "sell");
           } catch (e) {
@@ -737,7 +723,6 @@
           toast(`收到待签名${isSell ? "卖出" : "买入"}，正在用本机钱包签名…`, "✍️", isSell ? "sell" : "buy");
           try {
             let walletAddr = localWallet ? localWallet.address : "";
-            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
             const extra = isSell
               ? { side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
               : { side: "buy", token: data.token, wallet: walletAddr, amountTokens: data.amountTokens, entryPrice: data.entryPrice, entryQuote: data.entryQuote };
@@ -763,7 +748,6 @@
           toast(`待签平台手续费 ${(Number(data.amount || 0) / 1e18).toFixed(6)} BNB`, "💸", data.side === "sell" ? "sell" : "buy");
           try {
             let walletAddr = localWallet ? localWallet.address : "";
-            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
             const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra: { isFee: true, side: data.side, wallet: walletAddr } });
             toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…`, "⛏️", data.side === "sell" ? "sell" : "buy");
           } catch (e) {
@@ -1046,7 +1030,7 @@
   // ── 手动/比例卖出（用户本机签名；卖后自动扣 0.5% 平台手续费） ────────────
   async function sellFraction(token, positionId, amountTokens, entryQuote, fraction) {
     if (!token || !positionId) return;
-    if (!localWallet && !window.ethereum) { toast("请先设置执行钱包（粘贴私钥或连接 MetaMask）", "⚠️"); return; }
+    if (!localWallet) { toast("请先粘贴执行钱包私钥", "⚠️"); return; }
     const sellAmt = (Number(amountTokens || 0) / 1e18) * fraction;
     const label = fraction >= 1 ? "全部卖出" : (fraction * 100) + "% 卖出";
     try {
@@ -1056,7 +1040,6 @@
       const f = r.fee || {};
       toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸", "sell");
       let walletAddr = localWallet ? localWallet.address : "";
-      if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
       // approve 需要先授权
       if (r.needApprove && r.approveTx) {
         const out = await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction } });
