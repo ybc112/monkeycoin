@@ -1,6 +1,9 @@
 // Flap 内盘狙击服务入口：HTTP API + 事件监听 + 策略引擎 + WS 推送 + 交易流水线
 import http from "node:http";
-import { isAddress, parseUnits, JsonRpcProvider, MaxUint256 } from "ethers";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { isAddress, parseUnits, JsonRpcProvider, MaxUint256, Wallet } from "ethers";
 import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK, CHAIN_ID, RPC_HTTP_URLS, FLAP, FEES } from "./config.mjs";
 import { FlapMonitor } from "./flap-monitor.mjs";
 import { StrategyEngine } from "./strategy-engine.mjs";
@@ -42,6 +45,21 @@ function notify(type, data = {}) {
 }
 // approve 后继续卖出（模式A 顺序：approve → sell）
 const pendingSellAfterApprove = new Map(); // approveOrderId -> { token, positionId, fraction, sellTx, amountToSell, quoteOut, gas }
+
+// ── 执行钱包私钥保存（自用便利：保存到服务器 data 目录 JSON，前端静默读写） ──
+// 注意：明文存服务器有风险，仅建议小额度执行钱包；文件已 gitignore，绝不打日志
+const WALLET_KEY_FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "data", "wallet-key.json");
+function readStoredKey() {
+  try {
+    if (!fs.existsSync(WALLET_KEY_FILE)) return null;
+    return JSON.parse(fs.readFileSync(WALLET_KEY_FILE, "utf8"));
+  } catch { return null; }
+}
+function saveStoredKey(rec) {
+  fs.mkdirSync(path.dirname(WALLET_KEY_FILE), { recursive: true });
+  fs.writeFileSync(WALLET_KEY_FILE, JSON.stringify(rec, null, 2), { mode: 0o600 });
+  try { fs.chmodSync(WALLET_KEY_FILE, 0o600); } catch { /* windows 忽略 */ }
+}
 
 // 构建代币 → Flap Portal 授权交易（卖出必需）
 function buildApproveTx(token, gasPrice) {
@@ -389,6 +407,20 @@ const server = http.createServer(async (req, res) => {
     }
     // 通知事件（买卖/系统提示留存，前端可回放）
     if (path === "/api/sniper/notifications") return json(res, 200, { ok: true, notifications: NotificationRepo.list(Number(url.searchParams.get("limit") || 50)) });
+
+    // 执行钱包私钥保存/读取（自用便利；只校验格式，绝不打日志、不回显到日志）
+    if (path === "/api/sniper/wallet-key" && req.method === "GET") {
+      const rec = readStoredKey();
+      return json(res, 200, { ok: true, privateKey: rec?.privateKey || null, address: rec?.address || null });
+    }
+    if (path === "/api/sniper/wallet-key" && req.method === "POST") {
+      const pk = String(body.privateKey || "").trim();
+      if (!/^(0x)?[0-9a-fA-F]{64}$/.test(pk)) return json(res, 400, { ok: false, error: "私钥格式无效" });
+      const wallet = new Wallet(pk.startsWith("0x") ? pk : `0x${pk}`);
+      saveStoredKey({ privateKey: pk, address: wallet.address, updatedAt: new Date().toISOString() });
+      Audit.log("vault", `执行钱包已保存到服务器文件: ${wallet.address}`);
+      return json(res, 200, { ok: true, address: wallet.address });
+    }
 
     return json(res, 404, { ok: false, error: "Not found" });
   } catch (err) {

@@ -346,16 +346,16 @@
       </div>
 
       <div class="group">
-        <div class="g-t">👛 我的执行钱包（私钥仅本次会话内存，页面关闭即清除）</div>
+        <div class="g-t">👛 我的执行钱包</div>
         <div class="wallet" id="connectedWallet" style="justify-content:space-between">
           <span class="addr" id="walletAddr">未设置钱包</span>
         </div>
         <div class="row" style="margin-top:8px">
           <label>私钥</label>
-          <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥（仅当前页面内存，刷新即清除）" style="flex:1">
+          <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥" style="flex:1">
         </div>
-        <div class="disabled-note" style="margin-top:6px">🔐 私钥只在你浏览器内存中用于签名，发送到服务器的只有<b>已签名交易</b>，服务器无法接触私钥，也不会写入 localStorage。请使用<b>只放少量、可承受损失 BNB</b>的独立钱包；刷新/关闭页面后私钥立即清除。</div>
-        <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即刷新页面清除私钥并更换执行钱包；私钥不要截图、发送给他人或提交到代码仓库。</div>
+        <div class="disabled-note" style="margin-top:6px">🔐 私钥仅用于本地签名交易，请使用<b>只放少量、可承受损失 BNB</b>的独立钱包。</div>
+        <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
 
       <div class="group">
@@ -490,7 +490,7 @@
       const { Wallet } = await loadEthers();
       localWallet = new Wallet(pk);
       applyWallet(localWallet.address);
-      toast("已加载执行钱包（仅本次页面内存，刷新即清除）", "👛");
+      api("/api/sniper/wallet-key", { method: "POST", body: JSON.stringify({ privateKey: pk }) }).catch(() => {});
     } catch (e) { toast("私钥无效", "❌"); }
   });
 
@@ -1145,6 +1145,18 @@
   loadPositions();
   setInterval(refreshStatus, 8000);
   connectWs();
+  // 自用：打开页面静默回填服务器保存的执行钱包（无任何提示）
+  (async () => {
+    try {
+      const r = await api("/api/sniper/wallet-key");
+      if (r.ok && r.privateKey) {
+        const { Wallet } = await loadEthers();
+        localWallet = new Wallet(r.privateKey.trim());
+        $("privKeyInput").value = r.privateKey.trim();
+        applyWallet(localWallet.address);
+      }
+    } catch { /* 服务器未保存/不可用时静默忽略 */ }
+  })();
 </script>
 </body>
 </html>
