@@ -49,8 +49,8 @@ function makeProvider() {
 
 async function main() {
   const env = loadEnv(path.join(ROOT, "server", ".env"));
-  const privateKey = env.PRIVATE_KEY;
-  if (!privateKey) throw new Error("PRIVATE_KEY not found in server/.env");
+  const privateKey = process.env.PRIVATE_KEY || env.PRIVATE_KEY;
+  if (!privateKey) throw new Error("PRIVATE_KEY not found (server/.env or PRIVATE_KEY env)");
 
   const provider = makeProvider();
   const signer = new ethers.Wallet(privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`, provider);

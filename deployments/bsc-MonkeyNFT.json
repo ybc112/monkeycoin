@@ -1,0 +1,18 @@
+{
+  "network": "bsc",
+  "chainId": 56,
+  "name": "猴子币销毁兑换 NFT",
+  "nft": "0x43c17De86DD20368a8651Afa4E6aE4152a7A6eC9",
+  "nftName": "Monkey NFT",
+  "nftSymbol": "MKY-NFT",
+  "nftMaxSupply": 999,
+  "exchange": "0xF0ce5c9B8f8b4486F7D8C615843CE880f9E57E7e",
+  "burnToken": "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777",
+  "burnAmount": "10000000000000000000000",
+  "burnAmountLabel": "10000 MKY",
+  "burnTarget": "0x000000000000000000000000000000000000dEaD",
+  "metadataUri": "",
+  "deployedBy": "0xe1F9Fb65BBb39ebd4d0C204c95513d3f6421c407",
+  "nftDeployTx": "<existing>",
+  "deployedAt": "2026-08-27T05:35:04.501Z"
+}

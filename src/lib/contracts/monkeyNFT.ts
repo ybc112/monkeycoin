@@ -8,10 +8,10 @@ export const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 
 // 部署后回填（从 deployments/bsc-MonkeyNFT.json）
 export const MONKEY_NFT_ADDRESS = String(
-  (import.meta.env.VITE_MONKEY_NFT_ADDRESS ?? "") || ""
+  (import.meta.env.VITE_MONKEY_NFT_ADDRESS ?? "") || "0x43c17De86DD20368a8651Afa4E6aE4152a7A6eC9"
 ).trim();
 export const BURN_TO_MINT_ADDRESS = String(
-  (import.meta.env.VITE_BURN_TO_MINT_ADDRESS ?? "") || ""
+  (import.meta.env.VITE_BURN_TO_MINT_ADDRESS ?? "") || "0xF0ce5c9B8f8b4486F7D8C615843CE880f9E57E7e"
 ).trim();
 
 export const isNftConfigured = isAddress(MONKEY_NFT_ADDRESS) && isAddress(BURN_TO_MINT_ADDRESS);
