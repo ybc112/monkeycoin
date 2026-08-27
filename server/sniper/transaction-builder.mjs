@@ -1,7 +1,38 @@
-// 交易构建：Gas 计算、滑点、买入/卖出 calldata（内盘 bonding curve + DEX 迁移两种）
+// 交易构建：Gas 计算、滑点、手续费、买入/卖出 calldata（内盘 bonding curve + DEX 迁移两种）
 import { ZeroAddress, parseUnits } from "ethers";
-import { GAS, FLAP } from "./config.mjs";
+import { GAS, FLAP, FEES } from "./config.mjs";
 import { getPortal, getRouter, getProvider } from "./flap-contracts.mjs";
+
+// ── 平台手续费（BigInt，禁止 Number 计算链上金额） ─────────────────────────
+// fee = amountWei × BPS / 10000；trade = amountWei − fee
+export function calcFee(amountWei, bps = FEES.BPS) {
+  const amt = BigInt(amountWei);
+  const fee = (amt * BigInt(bps)) / 10000n;
+  return { fee, trade: amt - fee };
+}
+
+// 构建手续费转账交易：BNB → 固定手续费地址（方式 B 卖后转账 / 方式 A 买前转账）
+export function buildFeeTransferTx({ feeWei, gasPrice, gasLimit = 21000 }) {
+  return { to: FEES.RECIPIENT, data: "0x", value: feeWei, gasPrice, gasLimit };
+}
+
+// 手续费零散信息（给前端展示用；地址/比例只来自后端权威常量）
+export function feeBreakdown(amountWei, bps = FEES.BPS) {
+  const amt = BigInt(amountWei);
+  const { fee, trade } = calcFee(amt, bps);
+  return {
+    bps: bps,
+    percent: (bps / 100).toFixed(1) + "%",
+    feeWei: fee.toString(),
+    feeBnb: (Number(fee) / 1e18).toFixed(6),
+    grossWei: amt.toString(),
+    grossBnb: (Number(amt) / 1e18).toFixed(6),
+    netWei: trade.toString(),
+    netBnb: (Number(trade) / 1e18).toFixed(6),
+    recipient: FEES.RECIPIENT,
+    asset: FEES.ASSET,
+  };
+}
 
 // ── Gas：recommended = 网络当前 gas × multiplier；final = min(recommended, MAX) ──
 export async function computeGasPrice({ manualGwei, provider } = {}) {

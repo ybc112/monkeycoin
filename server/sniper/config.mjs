@@ -95,6 +95,20 @@ export const RISK = {
   PRICE_POLL_MS: Number(env.PRICE_POLL_MS || 10000), // 持仓价格轮询
 };
 
+// ── 平台手续费（后端唯一权威，前端不可覆盖；启动即校验地址/比例） ──────────
+const FEE_RECIPIENT = env.SNIPER_FEE_RECIPIENT || "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
+const FEE_BPS = Number(env.SNIPER_FEE_BPS ?? 50);
+if (!/^0x[a-fA-F0-9]{40}$/.test(FEE_RECIPIENT)) throw new Error(`[config] SNIPER_FEE_RECIPIENT 地址格式无效: ${FEE_RECIPIENT}`);
+if (!Number.isInteger(FEE_BPS) || FEE_BPS < 0 || FEE_BPS > 10000) throw new Error(`[config] SNIPER_FEE_BPS 无效: ${FEE_BPS}`);
+export const FEES = {
+  BPS: FEE_BPS, // 0.5%
+  RECIPIENT: FEE_RECIPIENT,
+  ASSET: "BNB",
+  MIN_FEE_WEI: 0n, // 最小手续费（BNB，可调大防粉尘）
+  // 手续费状态机（杜绝重复扣费）
+  STATE: { NONE: "NONE", PENDING: "PENDING", SENT: "SENT", CONFIRMED: "CONFIRMED", FAILED: "FAILED", RETRYING: "RETRYING" },
+};
+
 // ── 监听参数 ────────────────────────────────────────────────────────────────
 export const MONITOR = {
   BLOCK_CONFIRMATIONS: Number(env.BLOCK_CONFIRMATIONS || 3), // 确认数后再入库

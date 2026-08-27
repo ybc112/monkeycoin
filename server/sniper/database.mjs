@@ -111,6 +111,15 @@ if (db) {
       mode TEXT,                          -- dry_run|live
       is_simulated INTEGER DEFAULT 0,
       sim_result TEXT,
+      fee_bps INTEGER DEFAULT 0,          -- 平台手续费 bps（0=未启用/不适用）
+      fee_asset TEXT DEFAULT 'BNB',
+      fee_amount TEXT,                    -- 手续费金额 wei
+      fee_recipient TEXT,                 -- 手续费接收地址（后端权威，前端不可改）
+      gross_amount TEXT,                  -- 交易总额 wei
+      net_amount TEXT,                    -- 扣除手续费后的实际成交金额 wei
+      fee_tx_hash TEXT,                   -- 手续费转账交易哈希
+      fee_state TEXT DEFAULT 'NONE',      -- NONE|PENDING|SENT|CONFIRMED|FAILED|RETRYING
+      fee_error TEXT,
       created_at TEXT,
       updated_at TEXT
     );
@@ -191,6 +200,15 @@ if (db) {
     ["positions", "stop_loss_bps", "INTEGER"],
     ["positions", "batch_total", "INTEGER DEFAULT 1"],
     ["positions", "batch_sold", "INTEGER DEFAULT 0"],
+    ["orders", "fee_bps", "INTEGER DEFAULT 0"],
+    ["orders", "fee_asset", "TEXT DEFAULT 'BNB'"],
+    ["orders", "fee_amount", "TEXT"],
+    ["orders", "fee_recipient", "TEXT"],
+    ["orders", "gross_amount", "TEXT"],
+    ["orders", "net_amount", "TEXT"],
+    ["orders", "fee_tx_hash", "TEXT"],
+    ["orders", "fee_state", "TEXT DEFAULT 'NONE'"],
+    ["orders", "fee_error", "TEXT"],
   ].forEach(([t, c, d]) => ensureColumn(t, c, d));
 }
 
@@ -335,11 +353,15 @@ export const EventRepo = {
 export const OrderRepo = {
   create(o) {
     const r = run(`INSERT INTO orders (token,strategy_id,side,state,matched_reason,amount_in,amount_out,min_out,
-      gas_price_gwei,gas_limit,tx_hash,wallet,mode,is_simulated,sim_result,created_at,updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      gas_price_gwei,gas_limit,tx_hash,wallet,mode,is_simulated,sim_result,
+      fee_bps,fee_asset,fee_amount,fee_recipient,gross_amount,net_amount,fee_tx_hash,fee_state,fee_error,created_at,updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [o.token, o.strategyId ?? null, o.side, o.state, o.matchedReason ?? "", o.amountIn ?? null, o.amountOut ?? null,
         o.minOut ?? null, o.gasPriceGwei ?? null, o.gasLimit ?? null, o.txHash ?? null, o.wallet ?? null,
-        o.mode || "dry_run", o.isSimulated ? 1 : 0, o.simResult ? JSON.stringify(o.simResult) : null, now(), now()]);
+        o.mode || "dry_run", o.isSimulated ? 1 : 0, o.simResult ? JSON.stringify(o.simResult) : null,
+        o.feeBps ?? 0, o.feeAsset || "BNB", o.feeAmount ?? null, o.feeRecipient ?? null,
+        o.grossAmount ?? null, o.netAmount ?? null, o.feeTxHash ?? null, o.feeState || "NONE", o.feeError ?? null,
+        now(), now()]);
     return db ? Number(r.lastInsertRowid) : 0;
   },
   updateState(id, state, extra = {}) {
@@ -349,10 +371,34 @@ export const OrderRepo = {
     if (extra.amountOut) { sets.push("amount_out=?"); vals.push(extra.amountOut); }
     if (extra.gasPriceGwei) { sets.push("gas_price_gwei=?"); vals.push(extra.gasPriceGwei); }
     if (extra.gasLimit) { sets.push("gas_limit=?"); vals.push(extra.gasLimit); }
+    if (extra.matchedReason !== undefined) { sets.push("matched_reason=?"); vals.push(extra.matchedReason); }
+    if (extra.amountIn) { sets.push("amount_in=?"); vals.push(extra.amountIn); }
+    if (extra.minOut) { sets.push("min_out=?"); vals.push(extra.minOut); }
+    if (extra.wallet) { sets.push("wallet=?"); vals.push(extra.wallet); }
+    if (extra.feeAmount) { sets.push("fee_amount=?"); vals.push(extra.feeAmount); }
+    if (extra.netAmount) { sets.push("net_amount=?"); vals.push(extra.netAmount); }
+    if (extra.grossAmount) { sets.push("gross_amount=?"); vals.push(extra.grossAmount); }
+    if (extra.feeError !== undefined) { sets.push("fee_error=?"); vals.push(extra.feeError); }
     vals.push(id);
     run(`UPDATE orders SET ${sets.join(",")} WHERE id=?`, vals);
   },
+  // 记录手续费转账交易哈希（幂等：已 CONFIRMED 则拒绝覆盖，杜绝重复扣费）
+  setFeeTxHash(id, txHash) {
+    const row = get(`SELECT fee_state FROM orders WHERE id=?`, [id]);
+    if (row && ["CONFIRMED"].includes(row.fee_state)) return false;
+    run(`UPDATE orders SET fee_tx_hash=?, fee_state='SENT', updated_at=? WHERE id=?`, [txHash, now(), id]);
+    return true;
+  },
+  setFeeState(id, state, error = "") {
+    run(`UPDATE orders SET fee_state=?, fee_error=?, updated_at=? WHERE id=?`, [state, error, now(), id]);
+  },
+  get(id) { return get(`SELECT * FROM orders WHERE id=?`, [id]); },
   list(limit = 100) { return all(`SELECT * FROM orders ORDER BY id DESC LIMIT ?`, [limit]); },
+  // 待补手续费（失败/重试中，未确认扣费）——幂等重试队列
+  listPendingFee(limit = 20) {
+    return all(`SELECT * FROM orders WHERE fee_state IN ('PENDING','FAILED','RETRYING') AND fee_amount IS NOT NULL
+      AND (fee_tx_hash IS NULL OR fee_state != 'CONFIRMED') ORDER BY id ASC LIMIT ?`, [limit]);
+  },
 };
 
 export const TransactionRepo = {

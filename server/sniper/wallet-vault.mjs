@@ -6,6 +6,7 @@ import path from "node:path";
 import { Wallet, getAddress } from "ethers";
 import { WALLET_VAULT } from "./config.mjs";
 import { WalletRepo, Audit } from "./database.mjs";
+import { getProvider } from "./flap-contracts.mjs";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const VAULT_FILE = path.resolve(__dirname, "..", "..", "server/sniper/data/encrypted-wallets.json");
@@ -78,7 +79,10 @@ export class WalletVault {
   getWallet(address) {
     const rec = this._load().find(x => x.address.toLowerCase() === address.toLowerCase());
     if (!rec || !rec.enabled) return null;
-    try { return new Wallet(this._decrypt(rec)); } catch { return null; }
+    try {
+      // 必须连接 Provider，否则 signer.sendTransaction 无法广播
+      return new Wallet(this._decrypt(rec), getProvider());
+    } catch { return null; }
   }
   setEnabled(address, enabled) {
     const list = this._load();

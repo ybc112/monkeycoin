@@ -96,6 +96,8 @@
   .add-wallet:disabled{cursor:not-allowed;opacity:.5}
   .tag-lock{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);background:#F1EAD9;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-weight:700}
   .disabled-note{font-size:12px;color:var(--muted);background:#F6F0E3;border:1px dashed var(--line);border-radius:12px;padding:9px 12px;line-height:1.5;margin-top:6px}
+  .fee-note{font-size:11.5px;color:#b07d1c;background:#FDF6E3;border:1px solid rgba(212,168,67,.3);border-radius:10px;padding:7px 10px;line-height:1.5;margin:6px 0 8px}
+  .fee-recipient{font-size:11.5px;color:var(--muted);padding:2px 0 0;word-break:break-all}
   .security-note{margin-top:7px;border:1px solid rgba(229,72,77,.22);border-radius:10px;background:#fff8f6;color:#a0443f;padding:9px 10px;font-size:11px;line-height:1.55}
   .condition-box{border:1.5px solid var(--line);border-radius:12px;background:rgba(255,255,255,.58);padding:8px;margin-top:6px}
   .condition-empty{font-size:12px;color:var(--muted);padding:7px 4px}
@@ -252,6 +254,7 @@
     <span class="item"><span class="dot off" id="wsDot"></span> 实时流 <b id="wsState">未连接</b></span>
     <span class="item">模式 <b id="modeState">Dry Run</b></span>
     <span class="item">已处理块 <b id="blockState">-</b></span>
+    <span class="item">手续费 <b id="feeState" style="color:#D4A843">0.5%</b></span>
     <span class="item" id="emergencyItem" style="display:none"><span class="dot off"></span> <b style="color:#e5484d">紧急停止</b></span>
     <span class="sp"></span>
     <button class="status-btn green" id="startBtn">▶ 启动监控</button>
@@ -326,11 +329,13 @@
 
       <div class="group">
         <div class="g-t">💰 买入参数</div>
-        <div class="row"><label>买入金额</label><input id="buyAmt" type="number" value="0.05"><span class="unit">BNB / 币</span></div>
+        <div class="row"><label>买入总额</label><input id="buyAmt" type="number" value="0.05"><span class="unit">BNB / 币</span></div>
+        <div class="fee-note" id="buyFeeNote">平台手续费 0.5%（0.000250 BNB），实际买入 0.049750 BNB</div>
         <div class="row"><label>最大买税</label><input id="maxBuyTax" type="number" value="10"><span class="unit">%</span></div>
         <div class="row"><label>最大卖税</label><input id="maxSellTax" type="number" value="10"><span class="unit">%</span></div>
         <div class="row"><label>滑点</label><input id="slippage" type="number" value="5"><span class="unit">%</span></div>
         <div class="row"><label>Gas 手动</label><input id="gasManual" type="number" placeholder="留空=自动"><span class="unit">Gwei</span></div>
+        <div class="fee-recipient" id="feeRecipientRow">手续费接收地址：<span id="feeRecipient">0x436f…843bb</span></div>
       </div>
 
       <div class="group">
@@ -506,7 +511,14 @@
   toggleBtn.addEventListener("click", () => links.classList.toggle("open"));
 
   // ── 系统状态 ──────────────────────────────────────────────────────────────
-  let sys = { running: false, connected: false, dryRun: true, emergencyStopped: false, lastProcessedBlock: 0, liveTradingEnabled: false };
+  let sys = { running: false, connected: false, dryRun: true, emergencyStopped: false, lastProcessedBlock: 0, liveTradingEnabled: false, fee: { bps: 50, recipient: "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb" } };
+  function updateBuyFeeNote() {
+    const amt = Number($("buyAmt").value || 0);
+    const bps = sys.fee?.bps ?? 50;
+    const fee = amt * bps / 10000;
+    const trade = amt - fee;
+    $("buyFeeNote").textContent = `平台手续费 ${(bps / 100).toFixed(1)}%（${fee.toFixed(6)} BNB），实际买入 ${trade.toFixed(6)} BNB`;
+  }
   async function refreshStatus() {
     try {
       const s = await api("/api/sniper/status");
@@ -514,6 +526,13 @@
       $("apiDot").className = "dot on"; $("apiState").textContent = "在线";
       $("modeState").textContent = sys.dryRun ? "Dry Run" : (sys.liveTradingEnabled ? "Live" : "Dry Run");
       $("blockState").textContent = sys.lastProcessedBlock || "-";
+      // 手续费（只来自后端权威）
+      if (sys.fee) {
+        $("feeState").textContent = (sys.fee.bps / 100).toFixed(1) + "%";
+        $("feeRecipient").textContent = sys.fee.recipient.slice(0, 6) + "…" + sys.fee.recipient.slice(-4);
+        $("feeRecipient").title = sys.fee.recipient;
+        updateBuyFeeNote();
+      }
       $("masterToggle").classList.toggle("on", sys.running);
       $("masterStat").textContent = sys.running ? "已开启" : "未开启";
       $("startBtn").style.display = sys.running ? "none" : "";
@@ -525,6 +544,7 @@
       $("apiDot").className = "dot off"; $("apiState").textContent = "离线";
     }
   }
+  $("buyAmt").addEventListener("input", updateBuyFeeNote);
 
   $("startBtn").addEventListener("click", async () => { try { await api("/api/sniper/start", { method: "POST" }); toast("监控已启动", "▶️"); refreshStatus(); } catch (e) { toast(e.message, "⚠️"); } });
   $("stopBtn").addEventListener("click", async () => { try { await api("/api/sniper/stop", { method: "POST" }); toast("监控已停止", "⏹"); refreshStatus(); } catch (e) { toast(e.message, "⚠️"); } });
@@ -557,9 +577,11 @@
         if (data.requiresSignature && data.unsignedTx) {
           toast(`收到待签名${data.side === "sell" ? "卖出" : "买入"}，正在用本机钱包签名…`, "✍️");
           try {
+            let walletAddr = localWallet ? localWallet.address : "";
+            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
             const extra = data.side === "sell"
-              ? { side: "sell", positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
-              : {};
+              ? { side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
+              : { side: "buy", token: data.token, wallet: walletAddr, amountTokens: data.amountTokens, entryPrice: data.entryPrice, entryQuote: data.entryQuote };
             const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra });
             toast(`已广播${data.side === "sell" ? "卖出" : "买入"} ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
           } catch (e) {
@@ -571,6 +593,23 @@
       case "transaction.confirmed": toast(`交易已确认 ${(data.txHash || "").slice(0, 10)}…`, "✅"); loadOrders(); loadPositions(); loadTokens(); break;
       case "transaction.failed": toast(`交易失败: ${data.reason || ""}`, "❌"); loadOrders(); break;
       case "position.updated": loadPositions(); break;
+      // ── 平台手续费（买前扣费 / 卖后扣费；0.5%，地址后端权威） ──
+      case "fee.transfer.pending":
+        if (data.requiresSignature && data.unsignedTx) {
+          toast(`待签平台手续费 ${(Number(data.amount || 0) / 1e18).toFixed(6)} BNB`, "💸");
+          try {
+            let walletAddr = localWallet ? localWallet.address : "";
+            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
+            const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra: { isFee: true, side: data.side, wallet: walletAddr } });
+            toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+          } catch (e) {
+            toast(`手续费签名失败: ${String(e.message || e)}`, "⚠️");
+          }
+        }
+        loadOrders();
+        break;
+      case "fee.transfer.confirmed": toast("平台手续费已确认到账", "💸"); loadOrders(); break;
+      case "fee.transfer.failed": toast("手续费转账失败，将自动重试（不会重复扣费）", "⚠️"); loadOrders(); break;
       case "rpc.disconnected": toast("RPC 断开，正在重连", "📡"); break;
       case "rpc.reconnected": toast("RPC 已重连", "📡"); break;
       case "emergency.stopped": toast("系统紧急停止！", "🛑"); refreshStatus(); break;
@@ -646,25 +685,22 @@
   $("searchInput").addEventListener("input", renderList);
   $("refreshBtn").addEventListener("click", () => { loadTokens(); loadOrders(); loadPositions(); toast("已刷新", "🔄"); });
 
-  // ── 狙击买入（模式 A：MetaMask 签名，后端只组装交易） ────────────────────
+  // ── 狙击买入（两笔：先手续费转账 → 确认后买入；均本机签名） ──────────────
   async function snipe(token, symbol) {
     try {
       const strategyId = await ensureStrategy();
       toast(`正在构建买入 ${symbol || ""}…`, "⏳");
       const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value }) });
       if (!r.ok) { toast("买入被拒: " + (r.error || ""), "⚠️"); return; }
-      // 预计获得 token 数作为开仓依据（确认后以链上为准）
-      const amountTokens = r.quote;
-      const value = BigInt(r.unsignedTx.value || "0");
-      const entryPrice = Number(value) / 1e18 / (Number(amountTokens) / 1e18 || 1);
-      let walletAddr = localWallet ? localWallet.address : "";
-      if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
+      // 展示手续费明细（金额/实际交易金额/地址，全部来自后端）
+      const f = r.fee || {};
+      toast(`平台手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际买入 ${f.netBnb || "0"} BNB`, "💸");
+      // 第 1 笔：手续费转账（isFee）→ 后端确认后会自动推送买入待签
       const out = await signAndBroadcast({
-        orderId: r.orderId, unsignedTx: r.unsignedTx,
-        extra: { side: "buy", token, wallet: walletAddr, amountTokens, entryPrice: String(entryPrice), entryQuote: r.unsignedTx.value },
+        orderId: r.orderId, unsignedTx: r.feeTx,
+        extra: { isFee: true, side: "buy" },
       });
-      toast(`已广播买入 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
-      loadOrders();
+      toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…，等待确认后自动买入`, "💸");
     } catch (e) {
       toast("买入失败: " + String(e.message || e), "❌");
     }
@@ -716,6 +752,7 @@
   });
 
   // ── 订单 / 持仓 ───────────────────────────────────────────────────────────
+  const FEE_STATE_LABEL = { NONE: "-", PENDING: "待扣", SENT: "已发送", CONFIRMED: "已到账", FAILED: "失败", RETRYING: "重试中" };
   async function loadOrders() {
     try {
       const r = await api("/api/sniper/orders?limit=50");
@@ -724,13 +761,14 @@
       $("ordersWrap").innerHTML = orders.length ? `
         <div class="table-wrap">
           <table class="table">
-            <thead><tr><th>代币</th><th>方向</th><th>状态</th><th>金额</th><th>Gas</th><th>时间</th></tr></thead>
+            <thead><tr><th>代币</th><th>方向</th><th>状态</th><th>金额(BNB)</th><th>手续费</th><th>Gas</th><th>时间</th></tr></thead>
             <tbody>${orders.map(o => `
               <tr>
                 <td><span class="mini"><b>${short(o.token)}</b></span></td>
                 <td><span class="mini">${o.side === "buy" ? "买入" : "卖出"}</span></td>
                 <td><span class="mini" style="color:${stateColor[o.state] || "#333"};font-weight:800">${o.state}</span></td>
-                <td><span class="mini">${o.amount_in ? (Number(o.amount_in) / 1e18).toFixed(4) : "-"}</span></td>
+                <td><span class="mini">${o.net_amount ? (Number(o.net_amount) / 1e18).toFixed(4) : (o.amount_in ? (Number(o.amount_in) / 1e18).toFixed(4) : "-")}</span></td>
+                <td><span class="mini" style="color:${o.fee_state === "CONFIRMED" ? "#128052" : "#D4A843"}">${FEE_STATE_LABEL[o.fee_state] || "-"}${o.fee_amount ? " " + (Number(o.fee_amount) / 1e18).toFixed(4) : ""}</span></td>
                 <td><span class="mini">${o.gas_price_gwei ? o.gas_price_gwei + " Gwei" : "-"}</span></td>
                 <td><span class="mini">${(o.created_at || "").slice(11, 19)}</span></td>
               </tr>`).join("")}</tbody>
@@ -768,7 +806,7 @@
     }
   }
 
-  // ── 手动卖出（用户本机签名） ─────────────────────────────────────────────
+  // ── 手动卖出（用户本机签名；卖后自动扣 0.5% 平台手续费） ─────────────────
   async function sellPosition(token, positionId, amountTokens, entryQuote) {
     if (!token || !positionId) return;
     if (!localWallet && !window.ethereum) { toast("请先设置执行钱包（粘贴私钥或连接 MetaMask）", "⚠️"); return; }
@@ -776,11 +814,15 @@
       toast("构建卖出…", "⏳");
       const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: (Number(amountTokens) / 1e18).toFixed(6) }) });
       if (!r.ok) { toast("卖出被拒: " + (r.error || ""), "⚠️"); return; }
+      const f = r.fee || {};
+      toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸");
+      let walletAddr = localWallet ? localWallet.address : "";
+      if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
       const out = await signAndBroadcast({
         orderId: r.orderId, unsignedTx: r.unsignedTx,
-        extra: { side: "sell", positionId: Number(positionId), fraction: 1, quoteOut: r.quote, entryQuote },
+        extra: { side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction: 1, quoteOut: r.quote, entryQuote },
       });
-      toast(`已广播卖出 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+      toast(`已广播卖出 ${(out.txHash || "").slice(0, 10)}…（卖出确认后自动扣手续费）`, "⛏️");
       loadOrders(); loadPositions();
     } catch (e) {
       toast("卖出失败: " + String(e.message || e), "❌");
