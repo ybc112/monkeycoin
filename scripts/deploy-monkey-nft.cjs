@@ -1,5 +1,5 @@
 // 部署 猴子币销毁兑换 NFT（BSC）
-// 顺序：部署 MonkeyNFT(999) → 部署 BurnToMint(MKY, nft, 30000e18) → NFT.setMintAuthority(兑换合约) → 写部署记录
+// 顺序：部署 MonkeyNFT(999) → 部署 BurnToMint(MKY, nft, 10000e18) → NFT.setMintAuthority(兑换合约) → 写部署记录
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
@@ -15,7 +15,7 @@ const BSC_RPCS = [
 
 const MONKEY_TOKEN = process.env.MONKEY_TOKEN_ADDRESS || "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
 const MAX_SUPPLY = Number(process.env.NFT_MAX_SUPPLY || 999);
-const COST_MKY = BigInt(process.env.NFT_COST_MKY || 30000) * 10n ** 18n;
+const COST_MKY = BigInt(process.env.NFT_COST_MKY || 10000) * 10n ** 18n;
 const GAS_PRICE = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "1", "gwei");
 const GAS_LIMIT_NFT = 3_000_000;
 const GAS_LIMIT_BURN = 3_000_000;
