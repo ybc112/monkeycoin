@@ -72,7 +72,7 @@ export class StrategyEngine {
       quoteTokenAddress: info.quoteTokenAddress, quoteTokenLabel: label, reserveQuote: info.reserve.toString(),
       circulatingSupply: info.circulatingSupply.toString(), price: info.price.toString(), status: info.status,
       statusName: label, buyTaxBps: info.buyTaxBps, sellTaxBps: info.sellTaxBps, pool: info.pool,
-      progress: info.progress.toString(), createdBlock: ev.blockNumber });
+      progress: info.progress.toString(), devBuyQuote: 0, createdBlock: ev.blockNumber });
     return rec;
   }
 
@@ -88,7 +88,8 @@ export class StrategyEngine {
         rec.state = info;
         rec.initialReserveQuote = fromQuote(info.reserve);
         TokenRepo.upsert({ address: ev.token, reserveQuote: info.reserve.toString(), price: info.price.toString(),
-          buyTaxBps: info.buyTaxBps, sellTaxBps: info.sellTaxBps, progress: info.progress.toString() });
+          buyTaxBps: info.buyTaxBps, sellTaxBps: info.sellTaxBps, progress: info.progress.toString(),
+          devBuyQuote: rec.devBuyQuote });
       }
     }
     await this.evaluate(rec);

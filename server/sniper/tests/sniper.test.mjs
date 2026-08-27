@@ -236,3 +236,102 @@ test("手续费重复扣除保护：已 CONFIRMED 后拒绝覆盖 fee_tx_hash", 
 test("Dry Run：默认开启且不广播真实交易", () => {
   assert.equal(DRY_RUN, true);
 });
+
+// ── 补充：approve / 广播校验 / 通知 / 手续费台账 / 持仓盈亏 / 状态机 ──────────
+test("approve：Portal 授权 calldata 正确（ERC-20 approve 签名）", async () => {
+  const { MaxUint256 } = await import("ethers");
+  const { getTokenContract } = await load("flap-contracts.mjs");
+  const { FLAP } = cfg;
+  const token = "0x" + "AB".repeat(20);
+  const tc = getTokenContract(token);
+  const data = tc.interface.encodeFunctionData("approve", [FLAP.PORTAL, MaxUint256]);
+  // approve 函数选择器 0x095ea7b3，参数为 (spender, amount)
+  assert.ok(data.startsWith("0x095ea7b3"), data);
+  const decoded = tc.interface.decodeFunctionData("approve", data);
+  assert.equal(decoded[0].toLowerCase(), FLAP.PORTAL.toLowerCase());
+  assert.equal(decoded[1], MaxUint256);
+});
+
+test("广播校验：Dry Run / 未开启 Live / 订单状态 / 方向 / 代币全部拦截", async () => {
+  const { validateBroadcast } = await load("risk-checker.mjs");
+  const order = { id: 1, side: "buy", token: "0x" + "AB".repeat(20), state: "SIGNING" };
+  const signedRaw = "0x" + "f0".repeat(150);
+  // Dry Run 无条件禁止
+  assert.equal(validateBroadcast({ DRY_RUN: true, ENABLE_LIVE_TRADING: true, signedRaw, order, body: {} }).ok, false);
+  // 未开启 Live 禁止
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: false, signedRaw, order, body: {} }).ok, false);
+  // 正常放行
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw, order, body: {} }).ok, true);
+  // 订单不存在
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw, order: null, body: {} }).ok, false);
+  // 已确认订单不可再广播
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw, order: { ...order, state: "CONFIRMED" }, body: {} }).ok, false);
+  // 方向不匹配
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw, order, body: { side: "sell" } }).ok, false);
+  // 代币不匹配（大小写无关，但不同地址拒绝）
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw, order, body: { token: "0x" + "CD".repeat(20) } }).ok, false);
+  // signedRaw 格式无效
+  assert.equal(validateBroadcast({ DRY_RUN: false, ENABLE_LIVE_TRADING: true, signedRaw: "bad", order, body: {} }).ok, false);
+});
+
+test("通知事件：入库并可查询", async () => {
+  const { NotificationRepo } = await load("database.mjs");
+  NotificationRepo.insert({ type: "buy.confirmed", title: "买入已确认", message: "测试", data: { token: "0x" + "AB".repeat(20) } });
+  const list = NotificationRepo.list(10);
+  assert.ok(list.some(n => n.type === "buy.confirmed" && n.title === "买入已确认"));
+});
+
+test("手续费台账：fee_records 从 PENDING → SENT → CONFIRMED 幂等", async () => {
+  const { FeeRecordRepo, OrderRepo } = await load("database.mjs");
+  const id = OrderRepo.create({
+    token: "0x" + "EF".repeat(20), side: "buy", state: "SIGNING",
+    feeBps: 50, feeAmount: "250000000000000", feeRecipient: FIXED_FEE_RECIPIENT, feeState: "PENDING",
+  });
+  FeeRecordRepo.insert({ orderId: id, token: "0x" + "EF".repeat(20), side: "buy", bps: 50, amount: "250000000000000", recipient: FIXED_FEE_RECIPIENT });
+  FeeRecordRepo.updateState(id, "SENT", "0x" + "F1".repeat(32));
+  FeeRecordRepo.confirmByOrder(id, "0x" + "F2".repeat(32));
+  const rec = FeeRecordRepo.list(50).find(r => r.order_id === id);
+  assert.equal(rec.state, "CONFIRMED");
+  assert.equal(rec.tx_hash, "0x" + "F2".repeat(32));
+  assert.ok(rec.confirmed_at);
+});
+
+test("持仓统计：卖出次数/毛收入/手续费/净盈亏累计 + 平仓时间", async () => {
+  const { PositionRepo } = await load("database.mjs");
+  const id = PositionRepo.open({
+    token: "0x" + "11".repeat(20), wallet: "0xA1", orderId: 99,
+    amountTokens: "1000000000000000000", entryPrice: "1", entryQuote: "50000000000000000", // 0.05 BNB
+  });
+  assert.ok(id > 0, "open 应返回持仓 id");
+  // 第一次卖出 0.03 BNB 毛收入，手续费 0.5% = 0.00015 BNB，净 0.02985 BNB
+  PositionRepo.recordSell(id, 0.02985, 0.03, 0.00015);
+  PositionRepo.recordSell(id, 0.04975, 0.05, 0.00025);
+  const pos = PositionRepo.all(100).find(p => p.id === id);
+  assert.equal(Number(pos.sell_count), 2);
+  assert.ok(Math.abs(Number(pos.gross_sold) - 0.08) < 1e-9);
+  assert.ok(Math.abs(Number(pos.fee_total) - 0.0004) < 1e-9);
+  // 平仓：记录 realized_pnl + closed_at
+  PositionRepo.close(id, "0.01985", "0.01985");
+  const closed = PositionRepo.all(100).find(p => p.id === id);
+  assert.equal(closed.state, "closed");
+  assert.ok(closed.closed_at);
+  assert.ok(closed.closed_at >= closed.opened_at);
+});
+
+test("买入/卖出订单状态机：状态可逐步更新并持久化", async () => {
+  const { OrderRepo } = await load("database.mjs");
+  const id = OrderRepo.create({ token: "0x" + "22".repeat(20), side: "buy", state: "DISCOVERED", feeBps: 50, feeRecipient: FIXED_FEE_RECIPIENT });
+  OrderRepo.updateState(id, "MATCHING");
+  OrderRepo.updateState(id, "CHECKING");
+  OrderRepo.updateState(id, "SIMULATING");
+  OrderRepo.updateState(id, "READY", { amountOut: "1000", minOut: "950", gasPriceGwei: "3.0", gasLimit: 1200000 });
+  OrderRepo.updateState(id, "SIGNING");
+  OrderRepo.updateState(id, "BROADCASTING", { txHash: "0x" + "33".repeat(32) });
+  OrderRepo.updateState(id, "CONFIRMED", { txHash: "0x" + "33".repeat(32) });
+  const o = OrderRepo.get(id);
+  assert.equal(o.state, "CONFIRMED");
+  assert.equal(o.tx_hash, "0x" + "33".repeat(32));
+  assert.equal(o.amount_out, "1000");
+  assert.equal(o.min_out, "950");
+  assert.equal(o.gas_price_gwei, "3.0");
+});

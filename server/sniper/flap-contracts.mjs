@@ -34,6 +34,7 @@ export const TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
   "function allowance(address,address) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
 ];
 
 // ── RPC 轮换 provider ───────────────────────────────────────────────────────

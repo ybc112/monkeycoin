@@ -10,6 +10,23 @@ export function isEmergencyStopped() {
 }
 export function setEmergencyStop(v) { StateRepo.set(EMERGENCY_KEY, v ? "true" : "false"); }
 
+// 广播安全校验（纯逻辑，供服务与测试复用）：
+// Dry Run / 未开启 Live / 紧急停止 / signedRaw 格式 / 订单存在与状态 / 方向与代币一致性
+export function validateBroadcast({ DRY_RUN, ENABLE_LIVE_TRADING, signedRaw, order, body = {} }) {
+  if (DRY_RUN) return { ok: false, error: "Dry Run 模式禁止广播真实交易" };
+  if (!ENABLE_LIVE_TRADING) return { ok: false, error: "ENABLE_LIVE_TRADING=false，禁止广播" };
+  if (isEmergencyStopped()) return { ok: false, error: "系统紧急停止，禁止广播" };
+  if (typeof signedRaw !== "string" || !/^0x[0-9a-fA-F]{100,}$/.test(signedRaw))
+    return { ok: false, error: "signedRaw 格式无效" };
+  if (!order) return { ok: false, error: "订单不存在" };
+  const broadcastable = new Set(["SIGNING", "BROADCASTING", "PENDING"]);
+  if (!broadcastable.has(order.state)) return { ok: false, error: `订单状态 ${order.state} 不可广播` };
+  if (body.side && order.side && body.side !== order.side) return { ok: false, error: "订单方向不匹配" };
+  if (body.token && order.token && String(body.token).toLowerCase() !== String(order.token).toLowerCase())
+    return { ok: false, error: "订单代币不匹配" };
+  return { ok: true };
+}
+
 // 探测并检查代币的 maxTx / maxWallet 限制（尽力而为，接口不存在则跳过）
 async function checkTransferLimits(token, buyAmountWei, strategy, results, pass) {
   if (strategy.maxTxBps == null && strategy.maxWalletBps == null) return true;

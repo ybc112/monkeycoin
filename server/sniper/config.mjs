@@ -111,7 +111,9 @@ export const FEES = {
 
 // ── 监听参数 ────────────────────────────────────────────────────────────────
 export const MONITOR = {
-  BLOCK_CONFIRMATIONS: Number(env.BLOCK_CONFIRMATIONS || 3), // 确认数后再入库
+  // 快速狙击模式：FAST_SNIPER=true 时不等待区块确认（BLOCK_CONFIRMATIONS=0），命中即触发策略
+  FAST_SNIPER: env.FAST_SNIPER === "true",
+  BLOCK_CONFIRMATIONS: env.FAST_SNIPER === "true" ? 0 : Number(env.BLOCK_CONFIRMATIONS || 3), // 确认数后再入库
   POLL_INTERVAL_MS: Number(env.POLL_INTERVAL_MS || 4000), // HTTP 轮询兜底
   WS_HEARTBEAT_MS: Number(env.WS_HEARTBEAT_MS || 15_000),
   RECONNECT_DELAY_MS: Number(env.RECONNECT_DELAY_MS || 3000),

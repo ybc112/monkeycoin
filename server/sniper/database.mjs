@@ -175,6 +175,29 @@ if (db) {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+    CREATE TABLE IF NOT EXISTS fee_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER,
+      token TEXT,
+      side TEXT,
+      bps INTEGER DEFAULT 0,
+      amount TEXT,
+      recipient TEXT,
+      tx_hash TEXT,
+      state TEXT DEFAULT 'PENDING',   -- PENDING|SENT|CONFIRMED|FAILED|RETRYING
+      error TEXT,
+      created_at TEXT,
+      confirmed_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS notification_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts TEXT NOT NULL,
+      type TEXT NOT NULL,
+      title TEXT,
+      message TEXT,
+      data TEXT,
+      read INTEGER DEFAULT 0
+    );
     CREATE TABLE IF NOT EXISTS audit_logs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       ts TEXT NOT NULL,
@@ -209,6 +232,12 @@ if (db) {
     ["orders", "fee_tx_hash", "TEXT"],
     ["orders", "fee_state", "TEXT DEFAULT 'NONE'"],
     ["orders", "fee_error", "TEXT"],
+    ["positions", "buy_count", "INTEGER DEFAULT 1"],
+    ["positions", "sell_count", "INTEGER DEFAULT 0"],
+    ["positions", "gross_sold", "TEXT DEFAULT '0'"],
+    ["positions", "fee_total", "TEXT DEFAULT '0'"],
+    ["positions", "auto_sell", "INTEGER DEFAULT 1"],
+    ["flap_tokens", "dev_buy_quote", "TEXT"],
   ].forEach(([t, c, d]) => ensureColumn(t, c, d));
 }
 
@@ -321,17 +350,17 @@ export const TokenRepo = {
     if (r) run(
       `UPDATE flap_tokens SET name=?,symbol=?,meta=?,creator=?,quote_token_address=?,quote_token_label=?,
         reserve_quote=?,circulating_supply=?,price=?,status=?,status_name=?,buy_tax_bps=?,sell_tax_bps=?,
-        pool=?,progress=?,created_block=? WHERE address=?`,
+        pool=?,progress=?,dev_buy_quote=?,created_block=? WHERE address=?`,
       [t.name, t.symbol, t.meta ?? "", t.creator, t.quoteTokenAddress, t.quoteTokenLabel || "BNB",
         t.reserveQuote, t.circulatingSupply, t.price, t.status, t.statusName, t.buyTaxBps, t.sellTaxBps,
-        t.pool ?? "", t.progress, t.createdBlock, t.address]);
+        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.createdBlock, t.address]);
     else run(
       `INSERT INTO flap_tokens (address,name,symbol,meta,creator,quote_token_address,quote_token_label,
         reserve_quote,circulating_supply,price,status,status_name,buy_tax_bps,sell_tax_bps,pool,progress,
-        created_block,created_at,first_seen_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        dev_buy_quote,created_block,created_at,first_seen_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [t.address, t.name, t.symbol, t.meta ?? "", t.creator, t.quoteTokenAddress, t.quoteTokenLabel || "BNB",
         t.reserveQuote, t.circulatingSupply, t.price, t.status, t.statusName, t.buyTaxBps, t.sellTaxBps,
-        t.pool ?? "", t.progress, t.createdBlock, now(), now()]);
+        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.createdBlock, now(), now()]);
   },
   list(limit = 50) { return all(`SELECT * FROM flap_tokens ORDER BY created_block DESC LIMIT ?`, [limit]); },
   get(address) { return get(`SELECT * FROM flap_tokens WHERE lower(address)=lower(?)`, [address]); },
@@ -414,13 +443,41 @@ export const TransactionRepo = {
   },
 };
 
+// ── 手续费记录（fee_records）：独立台账，供对账/统计 ────────────────────────
+export const FeeRecordRepo = {
+  insert({ orderId, token, side, bps, amount, recipient }) {
+    run(`INSERT INTO fee_records (order_id,token,side,bps,amount,recipient,state,created_at)
+      VALUES (?,?,?,?,?,?,'PENDING',?)`,
+      [orderId ?? null, token ?? null, side ?? null, bps ?? 0, amount ?? null, recipient ?? null, now()]);
+  },
+  updateState(orderId, state, txHash = null, error = "") {
+    run(`UPDATE fee_records SET state=?, ${txHash ? "tx_hash=?, " : ""}${state === "CONFIRMED" ? "confirmed_at=?, " : ""}error=? WHERE order_id=?`,
+      [...(txHash ? [txHash] : []), ...(state === "CONFIRMED" ? [now()] : []), error, orderId]);
+  },
+  confirmByOrder(orderId, txHash) {
+    run(`UPDATE fee_records SET state='CONFIRMED', tx_hash=?, confirmed_at=?, error='' WHERE order_id=? AND state IN ('PENDING','SENT')`, [txHash, now(), orderId]);
+  },
+  list(limit = 100) { return all(`SELECT * FROM fee_records ORDER BY id DESC LIMIT ?`, [limit]); },
+};
+
+// ── 通知事件（notification_events）：买卖/系统提示留存 ──────────────────────
+export const NotificationRepo = {
+  insert({ type, title, message, data }) {
+    run(`INSERT INTO notification_events (ts,type,title,message,data,read) VALUES (?,?,?,?,?,0)`,
+      [now(), type, title ?? "", message ?? "", data ? JSON.stringify(data) : null]);
+  },
+  list(limit = 100) { return all(`SELECT * FROM notification_events ORDER BY id DESC LIMIT ?`, [limit]); },
+};
+
 export const PositionRepo = {
   open(p) {
-    run(`INSERT INTO positions (token,wallet,order_id,state,amount_tokens,entry_price,entry_quote,
-      take_profit_bps,stop_loss_bps,batch_total,batch_sold,opened_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    const r = run(`INSERT INTO positions (token,wallet,order_id,state,amount_tokens,entry_price,entry_quote,
+      take_profit_bps,stop_loss_bps,batch_total,batch_sold,buy_count,sell_count,gross_sold,fee_total,opened_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [p.token, p.wallet ?? null, p.orderId ?? null, "open", p.amountTokens, p.entryPrice, p.entryQuote,
-        p.takeProfitBps ?? null, p.stopLossBps ?? null, p.batchTotal ?? 1, p.batchSold ?? 0, now()]);
+        p.takeProfitBps ?? null, p.stopLossBps ?? null, p.batchTotal ?? 1, p.batchSold ?? 0,
+        p.buyCount ?? 1, 0, "0", "0", now()]);
+    return db ? Number(r.lastInsertRowid) : 0;
   },
   close(id, realizedPnl, realizedPnlQuote) {
     run(`UPDATE positions SET state='closed', realized_pnl=?, realized_pnl_quote=?, closed_at=? WHERE id=?`,
@@ -431,6 +488,20 @@ export const PositionRepo = {
   markBatchSold(id, sold, realizedPnlQuote) {
     run(`UPDATE positions SET batch_sold=batch_sold+?, realized_pnl_quote=COALESCE(realized_pnl_quote,0)+? WHERE id=?`,
       [sold, realizedPnlQuote ?? 0, id]);
+  },
+  // 卖出统计：次数 + 累计毛收入 + 累计手续费
+  recordSell(id, netQuote, grossQuote, feeQuote) {
+    run(`UPDATE positions SET sell_count=sell_count+1,
+      gross_sold=COALESCE(CAST(gross_sold AS REAL),0)+?,
+      fee_total=COALESCE(CAST(fee_total AS REAL),0)+?,
+      realized_pnl_quote=COALESCE(CAST(realized_pnl_quote AS REAL),0)+? WHERE id=?`,
+      [grossQuote ?? 0, feeQuote ?? 0, netQuote ?? 0, id]);
+  },
+  setTakeProfitStopLoss(id, tpBps, slBps) {
+    run(`UPDATE positions SET take_profit_bps=?, stop_loss_bps=? WHERE id=?`, [tpBps, slBps, id]);
+  },
+  setAutoSell(id, on) {
+    run(`UPDATE positions SET auto_sell=? WHERE id=?`, [on ? 1 : 0, id]);
   },
   openList() { return all(`SELECT * FROM positions WHERE state='open'`); },
   all(limit = 100) { return all(`SELECT * FROM positions ORDER BY id DESC LIMIT ?`, [limit]); },

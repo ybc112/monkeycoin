@@ -10,18 +10,45 @@ import { WalletVault } from "./wallet-vault.mjs";
 import { NonceManager } from "./nonce-manager.mjs";
 import { computeGasPrice, applySlippage, buildBuyTx, buildSellTx, buildFeeTransferTx, calcFee, feeBreakdown } from "./transaction-builder.mjs";
 import { simulateBuy, simulateSell, getTokenBalance } from "./transaction-simulator.mjs";
-import { runPreTradeChecks, isEmergencyStopped, setEmergencyStop } from "./risk-checker.mjs";
+import { runPreTradeChecks, isEmergencyStopped, setEmergencyStop, validateBroadcast } from "./risk-checker.mjs";
 import { pickBuyWallet } from "./strategy-engine.mjs";
 import { getProvider, getTokenContract, quoteBuy, quoteTokenLabel } from "./flap-contracts.mjs";
 import { fetchOptionsFor } from "./config.mjs";
 import {
   StrategyRepo, TokenRepo, EventRepo, OrderRepo, TransactionRepo,
-  PositionRepo, StateRepo, Audit, closeDb,
+  PositionRepo, StateRepo, Audit, closeDb, FeeRecordRepo, NotificationRepo,
 } from "./database.mjs";
 
 const ws = new SniperWsServer();
 const nonces = new NonceManager();
 const vault = new WalletVault();
+
+// ── 通知：入库 + WS 推送（前端据此 Toast/声音/浏览器通知） ──────────────────
+function notify(type, data = {}) {
+  const titles = {
+    "token.created": "Flap 新币创建", "dev.buy": "Dev 首买", "strategy.matched": "策略命中",
+    "strategy.rejected": "策略不匹配", "buy.pending": "买入待签名", "buy.broadcast": "买入已广播",
+    "buy.confirmed": "买入已确认", "buy.failed": "买入失败",
+    "sell.pending": "卖出待签名", "sell.broadcast": "卖出已广播", "sell.confirmed": "卖出已确认",
+    "sell.failed": "卖出失败", "approve.pending": "授权待签名", "approve.confirmed": "授权已确认",
+    "fee.pending": "手续费待支付", "fee.confirmed": "手续费已确认", "fee.failed": "手续费失败",
+    "wallet.low_balance": "钱包余额不足", "gas.capped": "Gas 超上限", "emergency.stopped": "紧急停止",
+    "rpc.disconnected": "RPC 断开", "rpc.reconnected": "RPC 重连", "take_profit": "止盈触发", "stop_loss": "止损触发",
+  };
+  const title = titles[type] || type;
+  const message = typeof data.message === "string" ? data.message : "";
+  try { NotificationRepo.insert({ type, title, message, data: { ...data, message: undefined } }); } catch { /* ignore */ }
+  ws.emit(`notification.${type}`, { ...data, title, ts: Date.now() });
+}
+// approve 后继续卖出（模式A 顺序：approve → sell）
+const pendingSellAfterApprove = new Map(); // approveOrderId -> { token, positionId, fraction, sellTx, amountToSell, quoteOut, gas }
+
+// 构建代币 → Flap Portal 授权交易（卖出必需）
+function buildApproveTx(token, gasPrice) {
+  const tc = getTokenContract(token);
+  const data = tc.interface.encodeFunctionData("approve", [FLAP.PORTAL, MaxUint256]);
+  return { to: token, data, value: "0", gasPrice, gasLimit: 60000 };
+}
 
 // 止盈/止损/分批卖出：由持仓监控触发
 const positions = new PositionManager({
@@ -101,6 +128,9 @@ async function sendFeeTransfer({ orderId, feeWei, fromWallet, side = "" }) {
   try {
     const gas = await computeGasPrice({});
     const tx = buildFeeTransferTx({ feeWei, gasPrice: gas.raw, gasLimit: 21000 });
+    // 首次扣费时建立台账
+    const isFirst = order.fee_state === "PENDING" || order.fee_state === "NONE";
+    if (isFirst) FeeRecordRepo.insert({ orderId, token: order.token, side: side || order.side, bps: order.fee_bps || FEES.BPS, amount: feeWei.toString(), recipient: FEES.RECIPIENT });
     if (vault.isEnabled() && fromWallet) {
       const signer = vault.getWallet(fromWallet);
       if (!signer) throw new Error("自动钱包不可用或已停用");
@@ -108,15 +138,21 @@ async function sendFeeTransfer({ orderId, feeWei, fromWallet, side = "" }) {
       const signed = await signer.sendTransaction({ to: tx.to, value: tx.value, gasPrice: gas.raw, gasLimit: 21000n, nonce });
       nonces.reserve(fromWallet);
       if (!OrderRepo.setFeeTxHash(orderId, signed.hash)) return;
+      FeeRecordRepo.updateState(orderId, "SENT", signed.hash);
       Audit.log("fee", `手续费转账已广播 order=${orderId} hash=${signed.hash.slice(0, 10)}… amount=${feeWei.toString()}`);
       ws.emit("fee.transfer.pending", { orderId, txHash: signed.hash, amount: feeWei.toString(), recipient: FEES.RECIPIENT, side: side || order.side });
+      notify("fee.pending", { orderId, amount: feeWei.toString(), message: `手续费转账已广播 ${feeWei.toString()} wei` });
       signed.wait().then(() => {
         OrderRepo.setFeeState(orderId, "CONFIRMED");
         TransactionRepo.updateStatus(signed.hash, "confirmed");
+        FeeRecordRepo.confirmByOrder(orderId, signed.hash);
         ws.emit("fee.transfer.confirmed", { orderId, txHash: signed.hash });
+        notify("fee.confirmed", { orderId, txHash: signed.hash, amount: feeWei.toString() });
       }).catch((e) => {
         OrderRepo.setFeeState(orderId, "RETRYING", String(e?.message || e));
+        FeeRecordRepo.updateState(orderId, "FAILED", null, String(e?.message || e));
         ws.emit("fee.transfer.failed", { orderId, txHash: signed.hash, reason: String(e?.message || e) });
+        notify("fee.failed", { orderId, reason: String(e?.message || e) });
       });
     } else {
       // 模式A：推送手续费转账待用户签名（不发真实交易）
@@ -126,17 +162,33 @@ async function sendFeeTransfer({ orderId, feeWei, fromWallet, side = "" }) {
         recipient: FEES.RECIPIENT, bps: FEES.BPS,
         unsignedTx: { to: tx.to, data: tx.data, value: tx.value.toString(), gasPrice: gas.raw.toString(), gasLimit: 21000, isFee: true },
       });
+      notify("fee.pending", { orderId, amount: feeWei.toString(), message: `平台手续费待签名 ${feeWei.toString()} wei` });
     }
   } catch (err) {
     OrderRepo.setFeeState(orderId, "RETRYING", String(err?.message || err));
+    FeeRecordRepo.updateState(orderId, "FAILED", null, String(err?.message || err));
     ws.emit("fee.transfer.failed", { orderId, reason: String(err?.message || err) });
     Audit.log("fee", `手续费转账失败 order=${orderId}: ${String(err?.message || err)}`, "warn");
   }
 }
 
 // ── 交易流水线（dry_run 只模拟；live 且 ENABLE_LIVE_TRADING 才广播） ─────────
+// 重复买入检查：同代币已有进行中/已确认的买入订单则拒绝（大小写统一）
+function hasActiveBuyOrder(tokenAddress) {
+  const t = (tokenAddress || "").toLowerCase();
+  const active = new Set(["MATCHING", "CHECKING", "SIMULATING", "READY", "SIGNING", "BROADCASTING", "PENDING"]);
+  return OrderRepo.list(300).some(o =>
+    o.side === "buy" && (o.token || "").toLowerCase() === t && active.has(o.state));
+}
+
 async function executeBuyPipeline({ strategy, token }) {
   if (!strategy || !token) return;
+  const tokenLower = (token.token || "").toLowerCase();
+  // 同一代币禁止重复下单
+  if (hasActiveBuyOrder(tokenLower)) {
+    Audit.log("order", `跳过买入 ${token.token}: 已有进行中的买入订单（防重复）`, "warn");
+    return;
+  }
   const orderId = OrderRepo.create({
     token: token.token, strategyId: strategy.id, side: "buy", state: "MATCHING",
     mode: strategy.mode || "dry_run", matchedReason: "策略全部条件命中",
@@ -183,7 +235,8 @@ async function executeBuyPipeline({ strategy, token }) {
   });
   ws.emit("transaction.simulated", { orderId, token: token.token, outputAmount: sim.outputAmount.toString(), minOut: minOut.toString(), gasPrice: gas.gwei, feeWei: feeWei.toString(), grossWei: check.buyWei.toString(), netWei: tradeWei.toString() });
 
-  if (DRY_RUN && strategy.mode !== "live") return; // Dry Run 停在模拟结果
+  // Dry Run 无条件禁止广播（不能被策略 live 模式绕过）
+  if (DRY_RUN) return;
   if (!ENABLE_LIVE_TRADING) {
     OrderRepo.updateState(orderId, "SKIPPED", { matchedReason: "ENABLE_LIVE_TRADING=false，未广播" });
     return;
@@ -297,7 +350,45 @@ const server = http.createServer(async (req, res) => {
     if (path === "/api/sniper/broadcast" && req.method === "POST") return handleBroadcast(res, body);
 
     if (path === "/api/sniper/orders") return json(res, 200, { ok: true, orders: OrderRepo.list(Number(url.searchParams.get("limit") || 100)) });
-    if (path === "/api/sniper/positions") return json(res, 200, { ok: true, positions: PositionRepo.all(Number(url.searchParams.get("limit") || 100)) });
+    if (path === "/api/sniper/positions") {
+      const positions = PositionRepo.all(Number(url.searchParams.get("limit") || 100));
+      // 富化持仓卡片所需代币/订单信息（名称/税率/底池/Dev/手续费/交易哈希等）
+      const enriched = positions.map(p => {
+        const t = TokenRepo.get(p.token) || {};
+        const order = p.order_id ? OrderRepo.get(p.order_id) : null;
+        return {
+          ...p,
+          tokenName: t.name || "", tokenSymbol: t.symbol || "",
+          quoteTokenLabel: t.quote_token_label || "", reserveQuote: t.reserve_quote || "",
+          buyTaxBps: t.buy_tax_bps ?? null, sellTaxBps: t.sell_tax_bps ?? null,
+          creator: t.creator || "", statusName: t.status_name || "",
+          devBuyQuote: t.dev_buy_quote ?? null,
+          orderTxHash: order?.tx_hash || "", orderFeeState: order?.fee_state || "NONE",
+          orderFeeAmount: order?.fee_amount || "",
+        };
+      });
+      return json(res, 200, { ok: true, positions: enriched });
+    }
+    // 修改止盈止损 / 自动卖出开关（持仓卡片按钮）
+    if (path.startsWith("/api/sniper/positions/") && req.method === "PUT") {
+      const id = Number(path.split("/").filter(Boolean).pop());
+      const pos = PositionRepo.all(1000).find(p => p.id === id);
+      if (!pos) return json(res, 404, { ok: false, error: "持仓不存在" });
+      if (body.takeProfitBps !== undefined || body.stopLossBps !== undefined) {
+        const tp = body.takeProfitBps != null ? Number(body.takeProfitBps) : pos.take_profit_bps;
+        const sl = body.stopLossBps != null ? Number(body.stopLossBps) : pos.stop_loss_bps;
+        PositionRepo.setTakeProfitStopLoss(id, tp, sl);
+        Audit.log("position", `修改 #${id} 止盈/止损 → TP=${tp}bp SL=${sl}bp`);
+      }
+      if (body.autoSell !== undefined) {
+        PositionRepo.setAutoSell(id, Boolean(body.autoSell));
+        Audit.log("position", `修改 #${id} 自动卖出 → ${body.autoSell ? "开" : "关"}`);
+      }
+      ws.emit("position.updated", { positionId: id, state: pos.state });
+      return json(res, 200, { ok: true });
+    }
+    // 通知事件（买卖/系统提示留存，前端可回放）
+    if (path === "/api/sniper/notifications") return json(res, 200, { ok: true, notifications: NotificationRepo.list(Number(url.searchParams.get("limit") || 50)) });
 
     return json(res, 404, { ok: false, error: "Not found" });
   } catch (err) {
@@ -374,8 +465,22 @@ async function handleSell(res, body) {
     grossAmount: grossWei.toString(), netAmount: (grossWei - feeWei).toString(), feeState: "PENDING",
   });
   const fee = feeBreakdown(grossWei);
+  // 完整 approve：allowance 不足时先返回 approve 交易，确认后再卖出
+  const walletAddr = wallet || "0x0000000000000000000000000000000000000001";
+  const tc = getTokenContract(token);
+  const allowance = await tc.allowance(walletAddr, FLAP.PORTAL).catch(() => 0n);
+  if (allowance < tokenAmount) {
+    const approveTx = buildApproveTx(token, gas.raw);
+    pendingSellAfterApprove.set(orderId, { token, positionId: positionId ?? null, fraction: fraction ?? 1, sellTx: tx, amountToSell: tokenAmount, quoteOut: grossWei, gas });
+    return json(res, 200, {
+      ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee,
+      needApprove: true,
+      approveTx: { to: approveTx.to, data: approveTx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: 60000, isApprove: true },
+      gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(),
+    });
+  }
   return json(res, 200, {
-    ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee,
+    ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee, needApprove: false,
     unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
     gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(),
     quote: grossWei.toString(), minOut: minOut.toString(),
@@ -434,16 +539,31 @@ async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
     return;
   }
   try {
-    // 用户自管钱包模式：构建卖出交易 → WS 推送，等用户在浏览器签名后回传广播
+    // 用户自管钱包模式：构建卖出交易；allowance 不足时先走完整 approve 流程
     const tx = await buildSellTx({ token, tokenAmount: amountToSell, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
-    OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "等待用户钱包签名卖出" });
-    ws.emit("transaction.pending", {
-      orderId, token, side: "sell", requiresSignature: true,
-      positionId: position.id, fraction,
-      unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
-      amountTokens: amountToSell.toString(), quoteOut: sim.outputAmount.toString(),
-      fee: { bps: FEES.BPS, percent: (FEES.BPS / 100).toFixed(1) + "%", feeWei: feeWei.toString(), feeBnb: (Number(feeWei) / 1e18).toFixed(6), grossWei: sim.outputAmount.toString(), grossBnb: (Number(sim.outputAmount) / 1e18).toFixed(6), netWei: (sim.outputAmount - feeWei).toString(), netBnb: (Number(sim.outputAmount - feeWei) / 1e18).toFixed(6), recipient: FEES.RECIPIENT },
-    });
+    const tc = getTokenContract(token);
+    const allowance = await tc.allowance(wallet, FLAP.PORTAL).catch(() => 0n);
+    if (allowance < amountToSell) {
+      const approveTx = buildApproveTx(token, gas.raw);
+      OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "需先授权（approve Portal）" });
+      pendingSellAfterApprove.set(orderId, { token, positionId: position.id, fraction, sellTx: tx, amountToSell, quoteOut: sim.outputAmount, gas });
+      ws.emit("transaction.pending", {
+        orderId, token, side: "sell", requiresSignature: true, isApprove: true,
+        positionId: position.id, fraction,
+        unsignedTx: { to: approveTx.to, data: approveTx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: 60000, isApprove: true },
+      });
+      notify("approve.pending", { orderId, token, message: `需授权 Portal 后才能卖出 ${token.slice(0, 8)}` });
+    } else {
+      OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "等待用户钱包签名卖出" });
+      ws.emit("transaction.pending", {
+        orderId, token, side: "sell", requiresSignature: true,
+        positionId: position.id, fraction,
+        unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
+        amountTokens: amountToSell.toString(), quoteOut: sim.outputAmount.toString(),
+        fee: { bps: FEES.BPS, percent: (FEES.BPS / 100).toFixed(1) + "%", feeWei: feeWei.toString(), feeBnb: (Number(feeWei) / 1e18).toFixed(6), grossWei: sim.outputAmount.toString(), grossBnb: (Number(sim.outputAmount) / 1e18).toFixed(6), netWei: (sim.outputAmount - feeWei).toString(), netBnb: (Number(sim.outputAmount - feeWei) / 1e18).toFixed(6), recipient: FEES.RECIPIENT },
+      });
+      notify("sell.pending", { orderId, token, amount: sim.outputAmount.toString(), feeWei: feeWei.toString(), message: `卖出待签名 ${token.slice(0, 8)}` });
+    }
   } catch (err) {
     OrderRepo.updateState(orderId, "FAILED", { matchedReason: `构建卖出失败: ${String(err?.message || err)}` });
     ws.emit("transaction.failed", { orderId, token, reason: String(err?.message || err) });
@@ -453,6 +573,10 @@ async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
 async function handleBroadcast(res, body) {
   const { orderId, signedRaw } = body;
   if (!orderId || !signedRaw) return json(res, 400, { ok: false, error: "orderId 与 signedRaw 必填" });
+  // 安全校验：Dry Run / 未开启 Live / 紧急停止 / 格式 / 订单状态 / 方向 / 代币（纯逻辑复用）
+  const order = OrderRepo.get(Number(orderId));
+  const v = validateBroadcast({ DRY_RUN, ENABLE_LIVE_TRADING, signedRaw, order, body });
+  if (!v.ok) return json(res, 400, { ok: false, error: v.error });
   try {
     const resp = await broadcastRawToMultiple(signedRaw);
     OrderRepo.updateState(orderId, "BROADCASTING", { txHash: resp.hash });
@@ -461,12 +585,15 @@ async function handleBroadcast(res, body) {
       OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
       TransactionRepo.updateStatus(receipt.hash, "confirmed");
       ws.emit("transaction.confirmed", { orderId, txHash: receipt.hash, block: receipt.blockNumber, side: body.side });
+      notify("transaction.confirmed", { orderId, side: body.side, txHash: receipt.hash, token: body.token || order.token });
 
       // 手续费转账确认：标记已扣费 + 继续买入流程（模式A 顺序：fee → buy）
       if (body.isFee) {
         OrderRepo.setFeeTxHash(orderId, receipt.hash);
         OrderRepo.setFeeState(orderId, "CONFIRMED");
+        FeeRecordRepo.confirmByOrder(orderId, receipt.hash);
         ws.emit("fee.transfer.confirmed", { orderId, txHash: receipt.hash });
+        notify("fee.confirmed", { orderId, txHash: receipt.hash, amount: order.fee_amount });
         const ctx = pendingBuyAfterFee.get(orderId);
         if (ctx) {
           pendingBuyAfterFee.delete(orderId);
@@ -474,6 +601,19 @@ async function handleBroadcast(res, body) {
             orderId, token: ctx.token, side: "buy", requiresSignature: true,
             unsignedTx: { to: ctx.buyTx.to, data: ctx.buyTx.data, value: ctx.tradeWei.toString(), gasPrice: ctx.gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT },
             amountTokens: ctx.sim.outputAmount.toString(), entryQuote: ctx.tradeWei.toString(),
+          });
+        }
+      } else if (body.isApprove) {
+        // approve 确认后：继续卖出（需要授权 → 卖出）
+        OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "授权成功，等待卖出签名" });
+        const ctx = pendingSellAfterApprove.get(orderId);
+        if (ctx) {
+          pendingSellAfterApprove.delete(orderId);
+          ws.emit("transaction.pending", {
+            orderId, token: ctx.token, side: "sell", requiresSignature: true,
+            positionId: ctx.positionId, fraction: ctx.fraction,
+            unsignedTx: { to: ctx.sellTx.to, data: ctx.sellTx.data, value: "0", gasPrice: ctx.gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
+            amountTokens: ctx.amountToSell.toString(), quoteOut: ctx.quoteOut.toString(),
           });
         }
       } else if (body.side === "sell" && body.positionId) {
@@ -489,7 +629,9 @@ async function handleBroadcast(res, body) {
         const total = Number(pos?.batch_total || 1);
         if (sold + 1 >= total) positions.close({ positionId: body.positionId, realizedPnl: String(netQuote), realizedPnlQuote: String(pnl) });
         else positions.markBatchSold(body.positionId, pnl);
+        positions.recordSell(body.positionId, netQuote, grossQuote, feeQuote);
         ws.emit("position.updated", { positionId: body.positionId, state: sold + 1 >= total ? "closed" : "partial", gross: grossQuote, fee: feeQuote, net: netQuote });
+        notify("sell.confirmed", { orderId, positionId: body.positionId, symbol: (pos?.token || "").slice(0, 8), gross: grossQuote, fee: feeQuote, net: netQuote, txHash: receipt.hash });
         // 卖出手续费（幂等；模式B 直接转账 / 模式A 推送待签）
         if (feeWei > 0n && body.wallet) sendFeeTransfer({ orderId, feeWei, fromWallet: body.wallet, side: "sell" });
         if (positions.checkDailyLossLimit()) {
@@ -500,10 +642,12 @@ async function handleBroadcast(res, body) {
       } else if (body.token && body.amountTokens) {
         positions.open({ token: body.token, wallet: body.wallet, orderId, amountTokens: body.amountTokens, entryPrice: body.entryPrice, entryQuote: body.entryQuote, takeProfitBps: body.takeProfitBps, stopLossBps: body.stopLossBps, batchTotal: body.sellBatches || 1 });
         ws.emit("position.updated", { orderId, token: body.token, state: "open" });
+        notify("buy.confirmed", { orderId, token: body.token, symbol: (body.token || "").slice(0, 8), amount: body.amountTokens, txHash: receipt.hash });
       }
     }).catch((err) => {
-      OrderRepo.updateState(orderId, "FAILED", {});
+      OrderRepo.updateState(orderId, "FAILED", { matchedReason: String(err?.message || err) });
       ws.emit("transaction.failed", { orderId, reason: String(err?.message || err) });
+      notify("transaction.failed", { orderId, reason: String(err?.message || err) });
     });
     return json(res, 200, { ok: true, txHash: resp.hash });
   } catch (err) {

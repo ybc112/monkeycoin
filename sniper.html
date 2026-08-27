@@ -201,20 +201,63 @@
     .m-card .m-info span b{color:var(--brown)}
     .m-card .m-sub{font-size:11px;color:var(--muted);margin-top:9px;font-weight:600}
     .m-card .pct{font-weight:900;font-size:16px}
-    .m-card .snipe-btn{padding:8px 16px}
-    .sell-wide{width:100%;margin-top:10px;padding:10px}
-    .empty{padding:34px 16px}
-    .actions{gap:8px}
-    .live{font-size:12px}
-    .ghost-btn{padding:7px 14px;font-size:12px}
-    .toast-wrap{top:62px}
-    .toast{font-size:12px;padding:10px 16px}
+  .m-card .snipe-btn{padding:8px 16px}
+  .sell-wide{width:100%;margin-top:10px;padding:10px}
+  .empty{padding:34px 16px}
+  .actions{gap:8px}
+  .live{font-size:12px}
+  .ghost-btn{padding:7px 14px;font-size:12px}
+  .toast-wrap{top:62px}
+  .toast{font-size:12px;padding:10px 16px}
   }
+
+  /* ── 声音开关 / 持仓卡片 / 弹窗 ── */
+  .sound-switches{display:flex;gap:12px;flex-wrap:wrap}
+  .sound-switches label{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--brown-soft);font-weight:700;cursor:pointer;min-width:0}
+  .sound-switches input{accent-color:var(--orange);width:15px;height:15px}
+  .pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:16px}
+  .pos-card{background:linear-gradient(180deg,#fff,#FFF9EE);border:1.5px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);min-width:0}
+  .pos-card .pc-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-width:0}
+  .pos-card .pc-title{font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .pos-card .pc-sym{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+  .pos-card .pc-state{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .pos-card .pc-state.open{background:rgba(46,204,113,.14);color:#128052}
+  .pos-card .pc-state.closed{background:#F1EAD9;color:var(--muted)}
+  .pos-card .pc-tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap}
+  .pos-card .pc-tag.flap{background:rgba(212,168,67,.16);color:var(--gold-deep)}
+  .pos-card .pc-tag.dex{background:rgba(46,204,113,.14);color:#128052}
+  .pos-card .pc-tag.inner{background:rgba(255,122,0,.12);color:var(--orange-deep)}
+  .pos-card .pc-kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12px;margin-bottom:10px;min-width:0}
+  .pos-card .pc-kv .kv{min-width:0;display:flex;gap:6px;align-items:baseline}
+  .pos-card .pc-kv .k{color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0}
+  .pos-card .pc-kv .v{color:var(--brown);font-weight:800;word-break:break-all;min-width:0}
+  .pos-card .pc-kv .v.good{color:#128052}
+  .pos-card .pc-kv .v.bad{color:#e5484d}
+  .pos-card .pc-kv .v.fee{color:#b07d1c}
+  .pos-card .pc-kv .v.flat{color:var(--muted)}
+  .pos-card .pc-ops{display:flex;gap:6px;flex-wrap:wrap}
+  .pos-card .pc-ops button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:.2s;color:var(--brown-soft);white-space:nowrap}
+  .pos-card .pc-ops button:hover{border-color:var(--orange);color:var(--orange-deep)}
+  .pos-card .pc-ops button.sell{color:#fff;background:linear-gradient(90deg,#e5484d,#ff7a5c);border:none}
+  .pos-card .pc-ops button.sell:hover{box-shadow:0 8px 16px -8px #e5484d;transform:translateY(-1px)}
+  .pos-card .pc-ops button.gold{color:#fff;background:linear-gradient(90deg,var(--orange),var(--gold-deep));border:none}
+  .pos-card .pc-ops button.on{background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border-color:transparent}
+  .modal{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;background:rgba(45,36,22,.45);backdrop-filter:blur(3px);padding:16px}
+  .modal.open{display:flex}
+  .modal-box{background:#fff;border-radius:18px;padding:20px;max-width:640px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 30px 70px -30px rgba(0,0,0,.5)}
+  .modal-box h3{font-size:16px;font-weight:900;margin-bottom:12px}
+  .modal-box .close{float:right;border:0;background:#F1EAD9;border-radius:8px;width:28px;height:28px;cursor:pointer;font-weight:800;color:var(--brown-soft)}
+  .modal-box .row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .modal-box .row label{min-width:64px;font-size:13px;color:var(--brown-soft);font-weight:700}
+  .modal-box .row input{flex:1;max-width:none}
+  .modal-box .mini-row{font-size:11.5px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--line)}
+  @media(max-width:640px){.pos-card .pc-kv{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="blobs" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="toast-wrap" id="toastWrap"></div>
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
 
 <nav>
   <a class="brand" href="/">
@@ -302,21 +345,35 @@
       </div>
 
       <div class="group">
-        <div class="g-t">👛 我的执行钱包（私钥仅存本机，绝不上传服务器）</div>
+        <div class="g-t">👛 我的执行钱包（私钥仅本次会话内存，页面关闭即清除）</div>
         <div class="wallet" id="connectedWallet" style="justify-content:space-between">
           <span class="addr" id="walletAddr">未设置钱包</span>
           <button class="ghost-btn" id="connectWallet" style="padding:6px 12px;font-size:11px">连接 MetaMask</button>
         </div>
         <div class="row" style="margin-top:8px">
           <label>私钥</label>
-          <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥（仅浏览器本地）" style="flex:1">
+          <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥（仅当前页面内存，刷新即清除）" style="flex:1">
         </div>
-        <div class="row" style="justify-content:space-between">
-          <label style="width:auto">记住到本机</label>
-          <span class="chip" id="rememberKey" style="margin-left:auto"><input type="checkbox"> localStorage 保存（不勾=仅本次会话）</span>
+        <div class="disabled-note" style="margin-top:6px">🔐 私钥只在你浏览器内存中用于签名，发送到服务器的只有<b>已签名交易</b>，服务器无法接触私钥，也不会写入 localStorage。请使用<b>只放少量、可承受损失 BNB</b>的独立钱包；刷新/关闭页面后私钥立即清除。</div>
+        <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即刷新页面清除私钥并更换执行钱包；私钥不要截图、发送给他人或提交到代码仓库。</div>
+      </div>
+
+      <div class="group">
+        <div class="g-t">🔔 买卖提示（声音 + 浏览器通知）</div>
+        <div class="row"><label>声音提示</label>
+          <div class="sound-switches">
+            <label><input type="checkbox" id="soundNewToken" checked> 新币</label>
+            <label><input type="checkbox" id="soundBuy" checked> 买入</label>
+            <label><input type="checkbox" id="soundSell" checked> 卖出</label>
+            <label><input type="checkbox" id="soundError" checked> 失败</label>
+          </div>
         </div>
-        <div class="disabled-note" style="margin-top:6px">🔐 私钥只在你浏览器本地用于签名，发送到服务器的只有<b>已签名交易</b>，服务器无法接触私钥。请使用<b>只放少量、可承受损失 BNB</b>的独立钱包；用完可删除本机私钥。</div>
-        <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产。使用完毕后请立即删除本机私钥并更换执行钱包；私钥不要截图、发送给他人或提交到代码仓库。</div>
+        <div class="row">
+          <label>浏览器通知</label>
+          <button class="ghost-btn" id="notifBtn" style="padding:7px 14px">🔔 开启通知</button>
+          <span class="t-stat" id="notifState">未授权</span>
+        </div>
+        <div class="disabled-note">⚠️ 浏览器通知必须由你主动点击授权，不会自动申请。提示覆盖：新币创建、Dev 首买、策略命中/不匹配、买入/卖出/授权(approve)的 待签名/已广播/已确认/失败、止盈/止损、余额不足、Gas 超限、紧急停止、RPC 断开/重连。</div>
       </div>
 
       <div class="group">
@@ -412,33 +469,20 @@
   const SNIPER_API = new URLSearchParams(location.search).get("api") || "https://sniper-api.monkeycoin.top";
   const WS_URL = SNIPER_API.replace(/^http/, "ws") + "/ws/sniper";
   const BSC_RPC = "https://bsc-rpc.publicnode.com";
-  const KEY_STORE = "monkey_sniper_privkey";
+  const FLAP_PORTAL = "0xe2cE6ab80874Fa9Fa2aAE65D277Dd6B8e65C9De0";
   const $ = id => document.getElementById(id);
 
-  // ── 执行钱包（用户自管：私钥仅浏览器本地签名，绝不上传服务器） ──────────
+  // ── 执行钱包（用户自管：私钥仅浏览器内存签名，绝不上传服务器、不写 localStorage） ──
   let ethersMod = null;
   async function loadEthers() {
     if (!ethersMod) ethersMod = await import("https://esm.sh/ethers@6.13.5");
     return ethersMod;
   }
-  let localWallet = null; // ethers Wallet（内存；仅用户勾选“记住”才写 localStorage）
+  let localWallet = null; // ethers Wallet（仅内存；页面关闭即清除，绝不持久化）
   function applyWallet(addr) {
     $("walletAddr").textContent = addr ? addr.slice(0, 6) + "…" + addr.slice(-4) : "未设置钱包";
     if (!addr) $("privKeyInput").value = "";
   }
-  // 启动时若本机保存过私钥，自动加载
-  (async () => {
-    try {
-      const saved = localStorage.getItem(KEY_STORE);
-      if (saved) {
-        const { Wallet } = await loadEthers();
-        localWallet = new Wallet(saved.trim());
-        applyWallet(localWallet.address);
-        toast("已从本机加载执行钱包", "👛");
-      }
-    } catch { /* 私钥失效则忽略 */ }
-  })();
-
   $("privKeyInput").addEventListener("change", async () => {
     const pk = $("privKeyInput").value.trim();
     if (!pk) { return; }
@@ -446,15 +490,8 @@
       const { Wallet } = await loadEthers();
       localWallet = new Wallet(pk);
       applyWallet(localWallet.address);
-      if ($("rememberKey").classList.contains("on")) localStorage.setItem(KEY_STORE, pk);
-      else localStorage.removeItem(KEY_STORE);
-      toast("已加载执行钱包（私钥仅本机）", "👛");
+      toast("已加载执行钱包（仅本次页面内存，刷新即清除）", "👛");
     } catch (e) { toast("私钥无效", "❌"); }
-  });
-  $("rememberKey").addEventListener("click", () => {
-    $("rememberKey").classList.toggle("on");
-    const on = $("rememberKey").classList.contains("on");
-    if (!on) localStorage.removeItem(KEY_STORE);
   });
 
   $("connectWallet").addEventListener("click", async () => {
@@ -489,13 +526,71 @@
   }
 
   const toastWrap = $("toastWrap");
-  function toast(msg, ic = "🔔") {
+  // toast(msg, 图标, 声音类别)；声音类别 ∈ newToken|buy|sell|error
+  function toast(msg, ic = "🔔", sound = null) {
     const el = document.createElement("div");
     el.className = "toast";
     el.innerHTML = `<span class="ic">${ic}</span><span>${msg}</span>`;
     toastWrap.appendChild(el);
-    setTimeout(() => { el.style.transition = "opacity .3s, transform .3s"; el.style.opacity = "0"; el.style.transform = "translateY(-8px)"; setTimeout(() => el.remove(), 300); }, 2600);
+    setTimeout(() => { el.style.transition = "opacity .3s, transform .3s"; el.style.opacity = "0"; el.style.transform = "translateY(-8px)"; setTimeout(() => el.remove(), 300); }, 3200);
+    if (sound && SOUND[sound]) SOUND[sound]();
   }
+
+  // ── 声音提示（Web Audio 合成，无需音频文件；新币/买入/卖出/失败 独立开关） ──
+  const soundPrefs = { newToken: true, buy: true, sell: true, error: true };
+  try {
+    const saved = JSON.parse(localStorage.getItem("monkey_sniper_sound") || "null");
+    if (saved) Object.assign(soundPrefs, saved);
+  } catch { /* ignore */ }
+  let audioCtx = null;
+  function beep(freq = 880, dur = 0.14, type = "sine", gain = 0.05, delay = 0) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.02);
+    } catch { /* 音频不可用则静默 */ }
+  }
+  const SOUND = {
+    newToken: () => { if (soundPrefs.newToken) { beep(660, .1, "sine"); beep(880, .12, "sine", .05, .12); } },
+    buy: () => { if (soundPrefs.buy) { beep(520, .1, "sine"); beep(660, .1, "sine", .05, .1); beep(880, .14, "sine", .06, .2); } },
+    sell: () => { if (soundPrefs.sell) { beep(880, .1, "sine"); beep(660, .1, "sine", .05, .1); beep(520, .14, "sine", .05, .2); } },
+    error: () => { if (soundPrefs.error) { beep(220, .18, "square", .045); beep(180, .22, "square", .045, .2); } },
+  };
+  ["soundNewToken", "soundBuy", "soundSell", "soundError"].forEach((id, i) => {
+    $(id).addEventListener("change", (e) => {
+      const key = ["newToken", "buy", "sell", "error"][i];
+      soundPrefs[key] = e.target.checked;
+      try { localStorage.setItem("monkey_sniper_sound", JSON.stringify(soundPrefs)); } catch { /* ignore */ }
+    });
+  });
+
+  // ── 浏览器通知（必须用户主动点击授权，绝不自动申请） ──
+  let notifOk = false;
+  function refreshNotifState() {
+    if (!("Notification" in window)) { $("notifState").textContent = "不支持"; return; }
+    const p = Notification.permission;
+    notifOk = p === "granted";
+    $("notifState").textContent = p === "granted" ? "已开启" : (p === "denied" ? "已拒绝" : "未授权");
+  }
+  function showNotif(title, body) {
+    if (!notifOk) return;
+    try { new Notification(title, { body: body || "", icon: "/0ee769b5412dfd0f4d0a14349ca7307e.jpg" }); } catch { /* ignore */ }
+  }
+  $("notifBtn").addEventListener("click", async () => {
+    if (!("Notification" in window)) { toast("当前浏览器不支持通知", "⚠️"); return; }
+    try {
+      const p = await Notification.requestPermission();
+      refreshNotifState();
+      toast(notifOk ? "浏览器通知已开启" : "通知未授权，浏览器会拦截", notifOk ? "🔔" : "⚠️");
+    } catch (e) { toast(String(e.message || e), "⚠️"); }
+  });
 
   async function api(path, opts = {}) {
     const res = await fetch(SNIPER_API + path, {
@@ -568,51 +663,90 @@
   }
   async function handleWsEvent(event, data) {
     switch (event) {
-      case "flap.token.created": toast(`Flap 新币创建 ${data.symbol || ""}`, "🆕"); loadTokens(); break;
-      case "flap.dev.buy": toast(`Dev 首买 ${data.symbol || ""} ${data.quoteSpent || ""} BNB`, "🐳"); loadTokens(); break;
-      case "strategy.matched": toast(`策略命中 ${data.symbol || ""}`, "🎯"); loadOrders(); break;
-      case "strategy.rejected": loadOrders(); break;
-      case "transaction.simulated": loadOrders(); break;
+      case "flap.token.created":
+        toast(`Flap 新币创建 ${data.symbol || ""}`, "🆕", "newToken");
+        showNotif("Flap 新币创建", `${data.name || data.symbol || ""} · ${data.token || ""}`);
+        loadTokens(); break;
+      case "flap.dev.buy":
+        toast(`Dev 首买 ${data.symbol || ""} ${data.quoteSpent || ""} BNB`, "🐳", "newToken");
+        showNotif("Dev 首买", `${data.symbol || ""} ${data.quoteSpent || ""} BNB`);
+        loadTokens(); break;
+      case "strategy.matched":
+        toast(`策略命中 ${data.symbol || ""}，正在构建买入`, "🎯", "buy");
+        showNotif("策略命中", `${data.symbol || ""}，正在构建买入`);
+        loadOrders(); break;
+      case "strategy.rejected":
+        showNotif("策略不匹配", `${data.symbol || ""}：${data.reason || ""}`);
+        loadOrders(); break;
+      case "transaction.simulated":
+        if (data.side === "sell") {
+          const g = Number(data.grossWei || 0) / 1e18, f = Number(data.feeWei || 0) / 1e18, n = Number(data.netWei || 0) / 1e18;
+          toast(`卖出模拟成功 预计到账 ${g.toFixed(4)} BNB，手续费 ${f.toFixed(6)} BNB，净 ${n.toFixed(4)} BNB`, "🧪", "sell");
+          showNotif("卖出模拟成功", `预计到账 ${g.toFixed(4)} BNB`);
+        } else {
+          const f = Number(data.feeWei || 0) / 1e18, n = Number(data.netWei || 0) / 1e18;
+          toast(`买入模拟成功 实际买入 ${n.toFixed(4)} BNB（手续费 ${f.toFixed(6)} BNB）`, "🧪", "buy");
+        }
+        loadOrders(); break;
       case "transaction.pending":
-        if (data.requiresSignature && data.unsignedTx) {
-          toast(`收到待签名${data.side === "sell" ? "卖出" : "买入"}，正在用本机钱包签名…`, "✍️");
+        // approve（授权）待签名：确认后后端自动继续卖出
+        if (data.isApprove) {
+          toast("需要授权（approve）后才能卖出，正在用本机钱包签名…", "✍️", "sell");
           try {
             let walletAddr = localWallet ? localWallet.address : "";
             if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
-            const extra = data.side === "sell"
+            const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction } });
+            toast(`授权已广播 ${(out.txHash || "").slice(0, 10)}…，确认后自动卖出`, "⛏️", "sell");
+          } catch (e) {
+            toast(`授权签名失败: ${String(e.message || e)}`, "⚠️", "error");
+          }
+          loadOrders(); break;
+        }
+        if (data.requiresSignature && data.unsignedTx) {
+          const isSell = data.side === "sell";
+          toast(`收到待签名${isSell ? "卖出" : "买入"}，正在用本机钱包签名…`, "✍️", isSell ? "sell" : "buy");
+          try {
+            let walletAddr = localWallet ? localWallet.address : "";
+            if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
+            const extra = isSell
               ? { side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
               : { side: "buy", token: data.token, wallet: walletAddr, amountTokens: data.amountTokens, entryPrice: data.entryPrice, entryQuote: data.entryQuote };
             const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra });
-            toast(`已广播${data.side === "sell" ? "卖出" : "买入"} ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+            toast(`已广播${isSell ? "卖出" : "买入"} ${(out.txHash || "").slice(0, 10)}…`, "⛏️", isSell ? "sell" : "buy");
           } catch (e) {
-            toast(`自动签名失败: ${String(e.message || e)}（请确认已设置执行钱包）`, "⚠️");
+            toast(`自动签名失败: ${String(e.message || e)}（请确认已设置执行钱包）`, "⚠️", "error");
           }
         }
         loadOrders();
         break;
-      case "transaction.confirmed": toast(`交易已确认 ${(data.txHash || "").slice(0, 10)}…`, "✅"); loadOrders(); loadPositions(); loadTokens(); break;
-      case "transaction.failed": toast(`交易失败: ${data.reason || ""}`, "❌"); loadOrders(); break;
+      case "transaction.confirmed":
+        toast(`交易已确认 ${(data.txHash || "").slice(0, 10)}…`, "✅", data.side === "sell" ? "sell" : "buy");
+        loadOrders(); loadPositions(); loadTokens(); break;
+      case "transaction.failed":
+        toast(`交易失败: ${data.reason || ""}`, "❌", "error");
+        showNotif("交易失败", String(data.reason || ""));
+        loadOrders(); break;
       case "position.updated": loadPositions(); break;
       // ── 平台手续费（买前扣费 / 卖后扣费；0.5%，地址后端权威） ──
       case "fee.transfer.pending":
         if (data.requiresSignature && data.unsignedTx) {
-          toast(`待签平台手续费 ${(Number(data.amount || 0) / 1e18).toFixed(6)} BNB`, "💸");
+          toast(`待签平台手续费 ${(Number(data.amount || 0) / 1e18).toFixed(6)} BNB`, "💸", data.side === "sell" ? "sell" : "buy");
           try {
             let walletAddr = localWallet ? localWallet.address : "";
             if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
             const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra: { isFee: true, side: data.side, wallet: walletAddr } });
-            toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…`, "⛏️");
+            toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…`, "⛏️", data.side === "sell" ? "sell" : "buy");
           } catch (e) {
-            toast(`手续费签名失败: ${String(e.message || e)}`, "⚠️");
+            toast(`手续费签名失败: ${String(e.message || e)}`, "⚠️", "error");
           }
         }
         loadOrders();
         break;
-      case "fee.transfer.confirmed": toast("平台手续费已确认到账", "💸"); loadOrders(); break;
-      case "fee.transfer.failed": toast("手续费转账失败，将自动重试（不会重复扣费）", "⚠️"); loadOrders(); break;
-      case "rpc.disconnected": toast("RPC 断开，正在重连", "📡"); break;
-      case "rpc.reconnected": toast("RPC 已重连", "📡"); break;
-      case "emergency.stopped": toast("系统紧急停止！", "🛑"); refreshStatus(); break;
+      case "fee.transfer.confirmed": toast("平台手续费已确认到账", "💸", "buy"); loadOrders(); break;
+      case "fee.transfer.failed": toast("手续费转账失败，将自动重试（不会重复扣费）", "⚠️", "error"); loadOrders(); break;
+      case "rpc.disconnected": toast("RPC 断开，正在重连", "📡", "error"); break;
+      case "rpc.reconnected": toast("RPC 已重连", "📡", "newToken"); break;
+      case "emergency.stopped": toast("系统紧急停止！", "🛑", "error"); refreshStatus(); break;
       case "system.status": refreshStatus(); break;
     }
   }
@@ -778,6 +912,11 @@
       $("ordersWrap").innerHTML = `<div class="empty">无法加载订单</div>`;
     }
   }
+  // ── 持仓卡片（含 25/50/75/100% 卖出、自动卖出、止盈止损、记录、复制、BscScan） ──
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmtBnb = (w, d = 4) => (w == null || w === "" ? "0" : (Number(w) / 1e18).toFixed(d));
+  const fmtPct = (bp) => (bp == null ? "-" : (bp / 100).toFixed(1) + "%");
+  const fmtTs = (s) => (s || "").replace("T", " ").slice(0, 16) || "-";
   async function loadPositions() {
     try {
       const r = await api("/api/sniper/positions?limit=50");
@@ -785,48 +924,168 @@
       const open = pos.filter(p => p.state === "open");
       const closed = pos.filter(p => p.state === "closed");
       const list = $("posTabs").querySelector(".on")?.dataset.pos === "history" ? closed : open;
-      $("posWrap").innerHTML = list.length ? `
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>代币</th><th>钱包</th><th>数量</th><th>买入价</th><th>状态</th><th>操作</th></tr></thead>
-            <tbody>${list.map(p => `
-              <tr>
-                <td><span class="mini"><b>${short(p.token)}</b></span></td>
-                <td><span class="mini">${p.wallet ? short(p.wallet) : "-"}</span></td>
-                <td><span class="mini">${p.amount_tokens ? (Number(p.amount_tokens) / 1e18).toFixed(2) : "-"}</span></td>
-                <td><span class="mini">${p.entry_quote ? (Number(p.entry_quote) / 1e18).toFixed(4) : "-"}</span></td>
-                <td><span class="mini" style="color:${p.state === "open" ? "#128052" : "#a99b85"};font-weight:800">${p.state === "open" ? "持仓中" : "已平仓"}</span></td>
-                <td>${p.state === "open" ? `<button class="snipe-btn sell-now" style="background:linear-gradient(90deg,#e5484d,#ff7a5c)" data-token="${p.token}" data-pos="${p.id}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}">卖出</button>` : '<span class="mini">已结算</span>'}</td>
-              </tr>`).join("")}</tbody>
-          </table>
-        </div>` : `<div class="empty"><div class="big">🐵</div><div>暂无${list === open ? "持仓" : "历史"}记录</div></div>`;
-      document.querySelectorAll(".sell-now").forEach(b => b.addEventListener("click", () => sellPosition(b.dataset.token, b.dataset.pos, b.dataset.amt, b.dataset.entry)));
+      $("posWrap").innerHTML = list.length
+        ? `<div class="pos-grid">${list.map(p => positionCard(p)).join("")}</div>`
+        : `<div class="empty"><div class="big">🐵</div><div>暂无${list === open ? "持仓" : "历史"}记录</div></div>`;
     } catch (e) {
       $("posWrap").innerHTML = `<div class="empty">无法加载持仓</div>`;
     }
   }
+  function positionCard(p) {
+    const cost = Number(p.entry_quote || 0) / 1e18;          // 实际成本（BNB）
+    const realized = Number(p.realized_pnl_quote || 0);      // 已实现净盈亏（已含手续费）
+    const grossSold = Number(p.gross_sold || 0);
+    const feeTotal = Number(p.fee_total || 0);
+    const retPct = cost > 0 ? (realized / cost * 100) : 0;
+    const pnlColor = realized > 0 ? "good" : (realized < 0 ? "bad" : "flat");
+    const isDex = (p.statusName || "") === "DEX" || (p.status_name || "") === "DEX";
+    const showOps = p.state === "open";
+    const tp = p.take_profit_bps != null ? (p.take_profit_bps / 100).toFixed(1) + "%" : "-";
+    const sl = p.stop_loss_bps != null ? (p.stop_loss_bps / 100).toFixed(1) + "%" : "-";
+    const autoOn = Number(p.auto_sell ?? 1) === 1;
+    return `
+    <div class="pos-card">
+      <div class="pc-head">
+        <div class="pc-title">${esc(p.tokenName || short(p.token))}</div>
+        <span class="pc-sym">${esc(p.tokenSymbol || "")}</span>
+        <span class="pc-tag flap">Flap</span>
+        <span class="pc-tag ${isDex ? "dex" : "inner"}">${isDex ? "DEX" : "内盘"}</span>
+        <span class="pc-state ${p.state}">${p.state === "open" ? "持仓中" : "已平仓"}</span>
+      </div>
+      <div class="pc-kv">
+        <div class="kv"><span class="k">钱包</span><span class="v">${short(p.wallet)}</span></div>
+        <div class="kv"><span class="k">代币</span><span class="v">${short(p.token)}</span></div>
+        <div class="kv"><span class="k">开仓</span><span class="v">${fmtTs(p.opened_at)}</span></div>
+        <div class="kv"><span class="k">关仓</span><span class="v">${p.closed_at ? fmtTs(p.closed_at) : "-"}</span></div>
+        <div class="kv"><span class="k">底池</span><span class="v">${esc(p.quoteTokenLabel || "BNB")}</span></div>
+        <div class="kv"><span class="k">初始底池</span><span class="v">${fmtBnb(p.reserveQuote)} BNB</span></div>
+        <div class="kv"><span class="k">Dev 首买</span><span class="v">${p.devBuyQuote != null ? Number(p.devBuyQuote).toFixed(2) + " BNB" : "-"}</span></div>
+        <div class="kv"><span class="k">Dev</span><span class="v">${short(p.creator)}</span></div>
+        <div class="kv"><span class="k">买税</span><span class="v">${fmtPct(p.buyTaxBps)}</span></div>
+        <div class="kv"><span class="k">卖税</span><span class="v">${fmtPct(p.sellTaxBps)}</span></div>
+        <div class="kv"><span class="k">工厂</span><span class="v">${short(FLAP_PORTAL)}</span></div>
+        <div class="kv"><span class="k">金库</span><span class="v">-</span></div>
+        <div class="kv"><span class="k">实际成本</span><span class="v">${cost.toFixed(4)} BNB</span></div>
+        <div class="kv"><span class="k">卖出收入</span><span class="v">${grossSold.toFixed(4)} BNB</span></div>
+        <div class="kv"><span class="k">持仓数量</span><span class="v">${fmtBnb(p.amount_tokens, 2)}</span></div>
+        <div class="kv"><span class="k">可卖数量</span><span class="v">${fmtBnb(p.amount_tokens, 2)}</span></div>
+        <div class="kv"><span class="k">买入/卖出</span><span class="v">${p.buy_count || 1} / ${p.sell_count || 0} 次</span></div>
+        <div class="kv"><span class="k">平台手续费</span><span class="v fee">${feeTotal.toFixed(4)} BNB</span></div>
+        <div class="kv"><span class="k">总盈亏</span><span class="v ${pnlColor}">${realized >= 0 ? "+" : ""}${realized.toFixed(4)} BNB</span></div>
+        <div class="kv"><span class="k">总收益率</span><span class="v ${pnlColor}">${retPct >= 0 ? "+" : ""}${retPct.toFixed(1)}%</span></div>
+        ${p.orderTxHash ? `<div class="kv"><span class="k">交易哈希</span><span class="v">${short(p.orderTxHash)}</span></div>` : ""}
+      </div>
+      <div class="pc-ops">
+        ${showOps ? `
+          <button class="sell" data-act="sell" data-pos="${p.id}" data-token="${p.token}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}" data-frac="0.25">25%</button>
+          <button class="sell" data-act="sell" data-pos="${p.id}" data-token="${p.token}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}" data-frac="0.5">50%</button>
+          <button class="sell" data-act="sell" data-pos="${p.id}" data-token="${p.token}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}" data-frac="0.75">75%</button>
+          <button class="sell" data-act="sell" data-pos="${p.id}" data-token="${p.token}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}" data-frac="1">100%</button>
+          <button class="sell gold" data-act="sellall" data-pos="${p.id}" data-token="${p.token}" data-amt="${p.amount_tokens || ""}" data-entry="${p.entry_quote || "0"}" data-frac="1">全部卖出</button>
+          <button class="${autoOn ? "on" : ""}" data-act="auto" data-pos="${p.id}">自动卖出 ${autoOn ? "开" : "关"}</button>
+          <button data-act="tpsl" data-pos="${p.id}">止盈 ${tp} · 止损 ${sl}</button>
+          <button data-act="orders" data-token="${p.token}">交易记录</button>
+          <button data-act="copy" data-token="${p.token}">复制地址</button>
+          <button data-act="scan" data-token="${p.token}">BscScan</button>
+        ` : '<span class="mini">已结算</span>'}
+      </div>
+    </div>`;
+  }
+  // 持仓卡片按钮（事件委托）
+  $("posWrap").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const pos = btn.dataset.pos, token = btn.dataset.token, amt = btn.dataset.amt, entry = btn.dataset.entry;
+    const frac = Number(btn.dataset.frac || 1);
+    try {
+      if (act === "sell" || act === "sellall") await sellFraction(token, pos, amt, entry, frac);
+      else if (act === "auto") await toggleAutoSell(pos, btn);
+      else if (act === "tpsl") editTpSl(pos);
+      else if (act === "orders") showTokenOrders(token);
+      else if (act === "copy") copyToken(token);
+      else if (act === "scan") window.open("https://bscscan.com/token/" + token, "_blank");
+    } catch (err) { toast(String(err.message || err), "⚠️", "error"); }
+  });
 
-  // ── 手动卖出（用户本机签名；卖后自动扣 0.5% 平台手续费） ─────────────────
-  async function sellPosition(token, positionId, amountTokens, entryQuote) {
+  // ── 手动/比例卖出（用户本机签名；卖后自动扣 0.5% 平台手续费） ────────────
+  async function sellFraction(token, positionId, amountTokens, entryQuote, fraction) {
     if (!token || !positionId) return;
     if (!localWallet && !window.ethereum) { toast("请先设置执行钱包（粘贴私钥或连接 MetaMask）", "⚠️"); return; }
+    const sellAmt = (Number(amountTokens || 0) / 1e18) * fraction;
+    const label = fraction >= 1 ? "全部卖出" : (fraction * 100) + "% 卖出";
     try {
-      toast("构建卖出…", "⏳");
-      const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: (Number(amountTokens) / 1e18).toFixed(6) }) });
+      toast(`构建${label}…`, "⏳");
+      const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: sellAmt.toFixed(6), fraction }) });
       if (!r.ok) { toast("卖出被拒: " + (r.error || ""), "⚠️"); return; }
       const f = r.fee || {};
-      toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸");
+      toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸", "sell");
       let walletAddr = localWallet ? localWallet.address : "";
       if (!walletAddr && window.ethereum) { try { const acc = await window.ethereum.request({ method: "eth_requestAccounts" }); walletAddr = acc?.[0] || ""; } catch { /* ignore */ } }
+      // approve 需要先授权
+      if (r.needApprove && r.approveTx) {
+        const out = await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction } });
+        toast(`授权已广播 ${(out.txHash || "").slice(0, 10)}…，确认后自动卖出`, "⛏️", "sell");
+        return;
+      }
       const out = await signAndBroadcast({
         orderId: r.orderId, unsignedTx: r.unsignedTx,
-        extra: { side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction: 1, quoteOut: r.quote, entryQuote },
+        extra: { side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction, quoteOut: r.quote, entryQuote },
       });
-      toast(`已广播卖出 ${(out.txHash || "").slice(0, 10)}…（卖出确认后自动扣手续费）`, "⛏️");
+      toast(`已广播${label} ${(out.txHash || "").slice(0, 10)}…（卖出确认后自动扣手续费）`, "⛏️", "sell");
       loadOrders(); loadPositions();
     } catch (e) {
-      toast("卖出失败: " + String(e.message || e), "❌");
+      toast(`${label}失败: ${String(e.message || e)}`, "❌", "error");
     }
+  }
+  async function toggleAutoSell(posId, btn) {
+    const next = !btn.classList.contains("on");
+    await api(`/api/sniper/positions/${posId}`, { method: "PUT", body: JSON.stringify({ autoSell: next }) });
+    toast(`自动卖出已${next ? "开启" : "关闭"}`, next ? "✅" : "⏸", "sell");
+    loadPositions();
+  }
+  function editTpSl(posId) {
+    $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) $("modal").classList.remove("open"); });
+    $("modalBox").innerHTML = `
+      <button class="close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+      <h3>修改止盈 / 止损（自动卖出）</h3>
+      <div class="row"><label>止盈 %</label><input id="tpInput" type="number" step="0.5" value="20" placeholder="如 20"></div>
+      <div class="row"><label>止损 %</label><input id="slInput" type="number" step="0.5" value="15" placeholder="如 15"></div>
+      <div class="row" style="justify-content:flex-end">
+        <button class="ghost-btn" id="tpSlSave" style="background:linear-gradient(90deg,var(--orange),var(--gold-deep));color:#fff;border:none">保存</button>
+      </div>`;
+    open();
+    $("tpSlSave").addEventListener("click", async () => {
+      const tp = Number($("tpInput").value || 0) * 100;
+      const sl = Number($("slInput").value || 0) * 100;
+      if (!tp && !sl) { toast("请输入止盈或止损", "⚠️"); return; }
+      await api(`/api/sniper/positions/${posId}`, { method: "PUT", body: JSON.stringify({ takeProfitBps: tp, stopLossBps: sl }) });
+      toast(`止盈 ${tp / 100}% / 止损 ${sl / 100}% 已保存`, "✅", "sell");
+      $("modal").classList.remove("open");
+      loadPositions();
+    });
+  }
+  async function showTokenOrders(token) {
+    const r = await api("/api/sniper/orders?limit=200");
+    const rows = (r.orders || []).filter(o => (o.token || "").toLowerCase() === String(token).toLowerCase());
+    const stateColor = { READY: "#128052", MATCHING: "#B8860B", SIGNING: "#B8860B", PENDING: "#B8860B", BROADCASTING: "#FF7A00", CONFIRMED: "#2ecc71", FAILED: "#e5484d", SKIPPED: "#a99b85" };
+    $("modalBox").innerHTML = `
+      <button class="close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+      <h3>交易记录 · ${short(token)}</h3>
+      ${rows.length ? rows.map(o => `
+        <div class="mini-row">
+          <b>${o.side === "buy" ? "买入" : "卖出"}</b> ·
+          <span style="color:${stateColor[o.state] || "#333"};font-weight:800">${o.state}</span> ·
+          金额 ${o.net_amount ? (Number(o.net_amount) / 1e18).toFixed(4) : "-"} BNB ·
+          手续费 ${o.fee_state === "CONFIRMED" ? (Number(o.fee_amount || 0) / 1e18).toFixed(6) : "-"} BNB ·
+          Gas ${o.gas_price_gwei || "-"} Gwei ·
+          ${o.tx_hash ? `<a href="https://bscscan.com/tx/${o.tx_hash}" target="_blank" style="color:var(--orange-deep)">${short(o.tx_hash)}</a>` : "-"} ·
+          ${(o.created_at || "").slice(0, 16).replace("T", " ")}
+        </div>`).join("") : `<div class="empty"><div class="big">📋</div><div>该代币暂无订单</div></div>`}`;
+    $("modal").classList.add("open");
+  }
+  function copyToken(token) {
+    try { navigator.clipboard.writeText(token); toast("代币地址已复制", "📋"); } catch { toast("复制失败，请手动复制", "⚠️"); }
   }
   $("posTabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     $("posTabs").querySelectorAll("button").forEach(x => x.classList.remove("on"));
@@ -861,6 +1120,7 @@
   $("payBtn").addEventListener("click", () => toast("内盘狙击会员暂未开放，敬请期待。", "🔒"));
 
   // ── 初始化 ────────────────────────────────────────────────────────────────
+  refreshNotifState();
   refreshStatus();
   loadTokens();
   loadOrders();

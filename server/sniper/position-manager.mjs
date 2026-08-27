@@ -38,6 +38,8 @@ export class PositionManager {
     const open = PositionRepo.openList();
     if (!open.length) return;
     for (const p of open) {
+      // 自动卖出开关关闭的持仓不参与止盈/止损监控
+      if (Number(p.auto_sell ?? 1) === 0) continue;
       const price = this.getPrice ? await this.getPrice(p.token) : null;
       if (price == null || Number(price) <= 0) continue;
       await this.checkTriggerForPosition(p, price);
