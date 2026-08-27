@@ -66,7 +66,8 @@ export class FlapMonitor {
         provider.websocket?.on("close", () => { if (this.running) this._scheduleWsReconnect(); });
       } catch { /* 部分环境无 websocket 属性 */ }
       provider.on("block", (n) => this._onNewHead(n));
-      await provider._getConnection().networkPromise;
+      // 等待连接就绪：ethers ≥6.13 已移除内部 _getConnection().networkPromise，改用公开 getNetwork()
+      await provider.getNetwork();
       this.connected = true;
       this.onSystem?.({ type: "rpc.reconnected", data: { ws: url } });
       Audit.log("monitor", `WS 已连接: ${url}`);
