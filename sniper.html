@@ -618,14 +618,29 @@
     } catch (e) { toast(String(e.message || e), "⚠️"); }
   });
 
+  // 单飞合并：同一数据源的在途请求复用同一个 Promise，防止事件风暴/轮询并发把浏览器连接打满（ERR_INSUFFICIENT_RESOURCES）
+  const inflight = new Map();
+  function once(key, fn) {
+    if (!inflight.has(key)) {
+      const p = fn();
+      inflight.set(key, p);
+      const cleanup = () => inflight.delete(key);
+      p.then(cleanup, cleanup);
+    }
+    return inflight.get(key);
+  }
+
   async function api(path, opts = {}) {
-    const res = await fetch(SNIPER_API + path, {
-      headers: { "content-type": "application/json" },
-      ...opts,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    return data;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(SNIPER_API + path, { headers: { "content-type": "application/json" }, signal: ctrl.signal, ...opts });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { error: "后端返回非 JSON（网络/网关异常），请稍后再试" }; }
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    } finally { clearTimeout(to); }
   }
 
   const toggleBtn = $("navToggle"), links = $("navLinks");
@@ -641,6 +656,7 @@
     $("buyFeeNote").textContent = `平台手续费 ${(bps / 100).toFixed(1)}%（${fee.toFixed(6)} BNB），实际买入 ${trade.toFixed(6)} BNB`;
   }
   async function refreshStatus() {
+    return once("status", async () => {
     try {
       const s = await api("/api/sniper/status");
       Object.assign(sys, s);
@@ -664,6 +680,7 @@
     } catch (e) {
       $("apiDot").className = "dot off"; $("apiState").textContent = "离线";
     }
+    });
   }
   $("buyAmt").addEventListener("input", updateBuyFeeNote);
 
@@ -782,14 +799,16 @@
   const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "-";
 
   async function loadTokens() {
+    return once("tokens", async () => {
     try {
       const r = await api("/api/sniper/tokens?limit=50");
       tokens = r.tokens || [];
       renderList();
     } catch (e) {
       marketEmpty.style.display = "block";
-      marketEmpty.innerHTML = `<div class="big">📭</div><div>无法连接后端（${SNIPER_API}）</div>`;
+      marketEmpty.innerHTML = `<div class="big">📭</div><div>无法连接后端（${SNIPER_API}），点击"🔄 刷新"重试</div>`;
     }
+    });
   }
 
   function renderList() {
@@ -844,6 +863,11 @@
 
   // ── 狙击买入（两笔：先手续费转账 → 确认后买入；均本机签名） ──────────────
   async function snipe(token, symbol) {
+    // 无执行钱包时直接给出明确引导（买入/手续费都需要私钥在本机签名）
+    if (!localWallet) {
+      toast("未设置执行钱包：请先在右上角「执行钱包」粘贴私钥，再点击狙击", "🔑", "error");
+      return;
+    }
     const relatedButtons = [...document.querySelectorAll(".snipe-btn[data-token]")].filter(b => b.dataset.token === token);
     if (relatedButtons.some(b => b.disabled)) return;
     relatedButtons.forEach(b => { b.disabled = true; b.textContent = "处理中…"; });
@@ -921,6 +945,7 @@
   // ── 订单 / 持仓 ───────────────────────────────────────────────────────────
   const FEE_STATE_LABEL = { NONE: "-", PENDING: "待扣", SENT: "已发送", CONFIRMED: "已到账", FAILED: "失败", RETRYING: "重试中" };
   async function loadOrders() {
+    return once("orders", async () => {
     try {
       const r = await api("/api/sniper/orders?limit=50");
       const orders = r.orders || [];
@@ -944,6 +969,7 @@
     } catch (e) {
       $("ordersWrap").innerHTML = `<div class="empty">无法加载订单</div>`;
     }
+    });
   }
   // ── 持仓卡片（含 25/50/75/100% 卖出、自动卖出、止盈止损、记录、复制、BscScan） ──
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -951,6 +977,7 @@
   const fmtPct = (bp) => (bp == null ? "-" : (bp / 100).toFixed(1) + "%");
   const fmtTs = (s) => (s || "").replace("T", " ").slice(0, 16) || "-";
   async function loadPositions() {
+    return once("positions", async () => {
     try {
       const r = await api("/api/sniper/positions?limit=50");
       const pos = r.positions || [];
@@ -963,6 +990,7 @@
     } catch (e) {
       $("posWrap").innerHTML = `<div class="empty">无法加载持仓</div>`;
     }
+    });
   }
   function positionCard(p) {
     const cost = Number(p.entry_quote || 0) / 1e18;          // 实际成本（BNB）
