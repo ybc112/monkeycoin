@@ -1,6 +1,6 @@
-// 策略匹配引擎：所有启用的条件全部满足才触发买入
+﻿// 策略匹配引擎：所有启用的条件全部满足才触发买入
 import { StrategyRepo, TokenRepo, PositionRepo } from "./database.mjs";
-import { getTokenInfo, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
+import { getTokenInfo, decodeLaunchBill, quoteTokenLabel, fromQuote, toQuote } from "./flap-contracts.mjs";
 
 // 多钱包下单分配：优先选择持仓数量最少的启用钱包（负载均衡）
 export function pickBuyWallet({ strategy, enabledWallets = [] }) {
@@ -58,6 +58,8 @@ export class StrategyEngine {
       return null;
     }
     const label = quoteTokenLabel(info.quoteTokenAddress);
+    // 从创建交易 calldata 解码营销/分红/销毁/LP 占比（链上权威；失败不阻断买入）
+    const bill = await decodeLaunchBill(ev.txHash).catch(() => null);
     const rec = {
       token: ev.token,
       name: ev.name, symbol: ev.symbol, meta: ev.meta, creator: ev.creator,
@@ -66,13 +68,18 @@ export class StrategyEngine {
       quoteLabel: label,
       initialReserveQuote: fromQuote(info.reserve),
       devBuyQuote: 0,
+      mktBps: bill?.mktBps ?? null, // 营销占比（基点，100=1%）
+      dividendBps: bill?.dividendBps ?? null,
+      deflationBps: bill?.deflationBps ?? null,
+      lpBps: bill?.lpBps ?? null,
     };
     this.pending.set(ev.token.toLowerCase(), rec);
     TokenRepo.upsert({ address: ev.token, name: ev.name, symbol: ev.symbol, meta: ev.meta, creator: ev.creator,
       quoteTokenAddress: info.quoteTokenAddress, quoteTokenLabel: label, reserveQuote: info.reserve.toString(),
       circulatingSupply: info.circulatingSupply.toString(), price: info.price.toString(), status: info.status,
       statusName: label, buyTaxBps: info.buyTaxBps, sellTaxBps: info.sellTaxBps, pool: info.pool,
-      progress: info.progress.toString(), devBuyQuote: 0, createdBlock: ev.blockNumber });
+      progress: info.progress.toString(), devBuyQuote: 0, createdBlock: ev.blockNumber,
+      mktBps: rec.mktBps, dividendBps: rec.dividendBps, deflationBps: rec.deflationBps, lpBps: rec.lpBps });
     return rec;
   }
 
@@ -124,11 +131,22 @@ export class StrategyEngine {
       if (symbol.includes(String(c.value).toLowerCase()) || name.includes(String(c.value).toLowerCase()))
         fail("exclude_symbol", `命中排除 Symbol「${c.value}」`);
 
-    // Flap 未公开独立营销税流向字段，只能基于创建事件的名称/Symbol/metadata 标记过滤。
+    // 关键词过滤营销币：基于创建事件的名称/Symbol/metadata 标记。
     if ((strategy.conditions || []).some(c => c.type === "exclude_marketing")) {
       const marketingTerms = ["marketing", "market", "fund", "reward", "dividend", "营销", "基金", "分红", "奖励"];
       if (marketingTerms.some(term => symbol.includes(term) || name.includes(term) || meta.includes(term)))
         fail("marketing", "命中营销/基金/分红标记");
+    }
+
+    // 链上营销占比精确过滤：从创建交易 calldata 解出的 mktBps（基点）超过阈值则排除。
+    // rec.mktBps 为 null（解码失败）时按“拒绝”处理，保证“过滤营销币”意图不被绕过。
+    for (const c of (strategy.conditions || []).filter(c => c.type === "max_marketing")) {
+      const limitBps = Number(c.value);
+      if (rec.mktBps == null) {
+        fail("marketing_bps", "无法读取链上营销占比（数据缺失），按阈值策略拒绝");
+      } else if (rec.mktBps > limitBps) {
+        fail("marketing_bps", `链上营销占比 ${(rec.mktBps / 100).toFixed(1)}% > 上限 ${(limitBps / 100).toFixed(1)}%`);
+      }
     }
 
     // 2. 底池币种

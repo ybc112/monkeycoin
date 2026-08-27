@@ -238,6 +238,10 @@ if (db) {
     ["positions", "fee_total", "TEXT DEFAULT '0'"],
     ["positions", "auto_sell", "INTEGER DEFAULT 1"],
     ["flap_tokens", "dev_buy_quote", "TEXT"],
+    ["flap_tokens", "mkt_bps", "INTEGER"],
+    ["flap_tokens", "dividend_bps", "INTEGER"],
+    ["flap_tokens", "deflation_bps", "INTEGER"],
+    ["flap_tokens", "lp_bps", "INTEGER"],
   ].forEach(([t, c, d]) => ensureColumn(t, c, d));
 }
 
@@ -350,17 +354,20 @@ export const TokenRepo = {
     if (r) run(
       `UPDATE flap_tokens SET name=?,symbol=?,meta=?,creator=?,quote_token_address=?,quote_token_label=?,
         reserve_quote=?,circulating_supply=?,price=?,status=?,status_name=?,buy_tax_bps=?,sell_tax_bps=?,
-        pool=?,progress=?,dev_buy_quote=?,created_block=? WHERE address=?`,
+        pool=?,progress=?,dev_buy_quote=?,mkt_bps=?,dividend_bps=?,deflation_bps=?,lp_bps=?,created_block=? WHERE address=?`,
       [t.name, t.symbol, t.meta ?? "", t.creator, t.quoteTokenAddress, t.quoteTokenLabel || "BNB",
         t.reserveQuote, t.circulatingSupply, t.price, t.status, t.statusName, t.buyTaxBps, t.sellTaxBps,
-        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.createdBlock, t.address]);
+        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.mktBps ?? null, t.dividendBps ?? null,
+        t.deflationBps ?? null, t.lpBps ?? null, t.createdBlock, t.address]);
     else run(
       `INSERT INTO flap_tokens (address,name,symbol,meta,creator,quote_token_address,quote_token_label,
         reserve_quote,circulating_supply,price,status,status_name,buy_tax_bps,sell_tax_bps,pool,progress,
-        dev_buy_quote,created_block,created_at,first_seen_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        dev_buy_quote,mkt_bps,dividend_bps,deflation_bps,lp_bps,created_block,created_at,first_seen_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [t.address, t.name, t.symbol, t.meta ?? "", t.creator, t.quoteTokenAddress, t.quoteTokenLabel || "BNB",
         t.reserveQuote, t.circulatingSupply, t.price, t.status, t.statusName, t.buyTaxBps, t.sellTaxBps,
-        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.createdBlock, now(), now()]);
+        t.pool ?? "", t.progress, t.devBuyQuote ?? null, t.mktBps ?? null, t.dividendBps ?? null,
+        t.deflationBps ?? null, t.lpBps ?? null, t.createdBlock, now(), now()]);
   },
   list(limit = 50) { return all(`SELECT * FROM flap_tokens ORDER BY created_block DESC LIMIT ?`, [limit]); },
   get(address) { return get(`SELECT * FROM flap_tokens WHERE lower(address)=lower(?)`, [address]); },

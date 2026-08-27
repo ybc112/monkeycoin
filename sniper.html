@@ -403,7 +403,8 @@
             <label class="filter-toggle"><input type="checkbox" id="excludeMarketing"> <span>过滤营销币</span></label>
             <label class="filter-toggle"><input type="checkbox" id="singleTaxOnly"> <span>仅单税币</span></label>
           </div>
-          <div class="disabled-note">过滤营销币会排除名称、Symbol 或元数据中标记为 marketing/fund/reward 的代币；单税币要求买税与卖税相同。</div>
+          <div class="row" style="margin-top:4px"><span class="lbl">链上营销占比上限</span><input id="maxMarketing" type="number" min="0" max="100" step="1" placeholder="如 5（%）" style="flex:1"><span class="unit">%</span></div>
+          <div class="disabled-note">过滤营销币会排除名称、Symbol 或元数据中标记 marketing/fund/reward 的代币；填了营销占比上限还会用链上 mktBps（创建交易实参）精确过滤——占比超过上限或无法读取时同样排除。单税币要求买税与卖税相同。</div>
         </div>
         <div class="condition-section"><div class="g-t">排除代币 Symbol 条件</div><div class="condition-box" id="excludeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="excludeConditions" data-label="Symbol" data-type="exclude_symbol">＋ 添加 Symbol 条件</button></div>
         <div class="condition-section"><div class="g-t">指定代币 Symbol 条件</div><div class="condition-box" id="includeConditions"><div class="condition-empty">暂无条件</div></div><button class="condition-add" data-target="includeConditions" data-label="Symbol" data-type="include_symbol">＋ 添加 Symbol 条件</button></div>
@@ -903,6 +904,7 @@
         ...collectConditions(),
         ...($("excludeMarketing").checked ? [{ type: "exclude_marketing", operator: "eq", value: "true" }] : []),
         ...($("singleTaxOnly").checked ? [{ type: "single_tax_only", operator: "eq", value: "true" }] : []),
+        ...($("maxMarketing").value !== "" && Number($("maxMarketing").value) >= 0 ? [{ type: "max_marketing", operator: "lte", value: String(Math.round(Number($("maxMarketing").value) * 100)) }] : []),
       ],
     };
   }

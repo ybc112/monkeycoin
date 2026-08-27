@@ -1,5 +1,5 @@
 // Flap Portal 合约封装：ABI、代币状态读取、报价（所有签名来自官方文档，主网验证）
-import { Contract, JsonRpcProvider, ZeroAddress, getAddress, formatUnits, parseUnits } from "ethers";
+import { Contract, Interface, JsonRpcProvider, ZeroAddress, getAddress, formatUnits, parseUnits } from "ethers";
 import { FLAP, CHAIN_ID, RPC_HTTP_URLS, fetchOptionsFor } from "./config.mjs";
 
 // ── ABI（精确字段顺序，见 docs.flap.sh + IPortal.sol） ─────────────────────
@@ -36,6 +36,44 @@ export const TOKEN_ABI = [
   "function allowance(address,address) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)",
 ];
+
+// ── 代币创建入口 ABI（用于从创建交易 calldata 解码营销/分红/销毁/LP 占比） ──
+// 主网当前只走 TaxV3 的 newTokenV6（struct 参数）；旧协议仍可能用 createToken（扁平参数）。
+// 字段名/顺序精确来自 docs.flap.sh 的 IPortalTypes.NewTokenV6Params 与 legacy createToken ABI。
+const LAUNCH_FRAGMENTS = [
+  "function newTokenV6((string _name,string _symbol,string _meta,uint8 _dexThresh,bytes32 _salt,uint8 _migratorType,address _quoteToken,uint256 _quoteAmt,address _beneficiary,bytes _permitData,bytes32 _extensionID,bytes _extensionData,uint8 _dexId,uint8 _lpFeeProfile,uint16 _buyTaxRate,uint16 _sellTaxRate,uint64 _taxDuration,uint64 _antiFarmerDuration,uint16 _mktBps,uint16 _deflationBps,uint16 _dividendBps,uint16 _lpBps,uint256 _minimumShareBalance,address _dividendToken,address _commissionReceiver,uint8 _tokenVersion)) external payable returns (address)",
+  "function createToken(string _name,string _symbol,string _meta,address _feeTo,bytes32 _salt,uint16 _taxRate,uint16 _mktBps,uint16 _dividendBps,uint16 _deflationBps,uint16 _lpBps,uint256 _minimumShareBalance) external returns (address)",
+];
+const launchIfaces = LAUNCH_FRAGMENTS.map((frag) => ({ name: /function (\w+)/.exec(frag)[1], iface: new Interface([frag]) }));
+// 稳健读取不同 ABI 命名下的占比字段
+function pickBps(obj, keys) {
+  for (const k of keys) if (obj && obj[k] != null) return Number(obj[k]);
+  return null;
+}
+
+// 从创建交易的 calldata 解码营销占比等分配（多入口防御式尝试；解码失败返回 null 不阻断）
+export async function decodeLaunchBill(txHash, p = getProvider()) {
+  if (!txHash) return null;
+  let tx;
+  try { tx = await p.getTransaction(txHash); } catch { return null; }
+  if (!tx?.data || tx.data.length < 10) return null;
+  for (const { name, iface } of launchIfaces) {
+    try {
+      const r = iface.decodeFunctionData(name, tx.data);
+      // newTokenV6 是单 struct 参数；createToken 是扁平参数 → 统一归一为字段对象
+      const a = (r.length === 1 && typeof r[0] === "object" && r[0] !== null) ? r[0] : r;
+      const mktBps = pickBps(a, ["_mktBps", "mktBps"]);
+      if (mktBps === null) return null;
+      return {
+        mktBps, // 营销占比（基点，100=1%）
+        deflationBps: pickBps(a, ["_deflationBps", "deflationBps"]) ?? 0,
+        dividendBps: pickBps(a, ["_dividendBps", "dividendBps"]) ?? 0,
+        lpBps: pickBps(a, ["_lpBps", "lpBps"]) ?? 0,
+      };
+    } catch { /* 换下一个入口尝试 */ }
+  }
+  return null;
+}
 
 // ── RPC 轮换 provider ───────────────────────────────────────────────────────
 const providers = RPC_HTTP_URLS.map(u => new JsonRpcProvider(u, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() }));
