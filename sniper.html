@@ -397,6 +397,14 @@
 
       <div class="group">
         <div class="g-t">🔍 条件过滤</div>
+        <div class="condition-section">
+          <div class="g-t">营销与税率过滤</div>
+          <div class="row filter-toggle-row">
+            <label class="filter-toggle"><input type="checkbox" id="excludeMarketing"> <span>过滤营销币</span></label>
+            <label class="filter-toggle"><input type="checkbox" id="singleTaxOnly"> <span>仅单税币</span></label>
+          </div>
+          <div class="disabled-note">过滤营销币会排除名称、Symbol 或元数据中标记为 marketing/fund/reward 的代币；单税币要求买税与卖税相同。</div>
+        </div>
         <div class="condition-section"><div class="g-t">排除代币 Symbol 条件</div><div class="condition-box" id="excludeConditions"><div class="condition-empty">暂无条件，默认不限制 Symbol</div></div><button class="condition-add" data-target="excludeConditions" data-label="Symbol" data-type="exclude_symbol">＋ 添加 Symbol 条件</button></div>
         <div class="condition-section"><div class="g-t">指定代币 Symbol 条件</div><div class="condition-box" id="includeConditions"><div class="condition-empty">暂无条件</div></div><button class="condition-add" data-target="includeConditions" data-label="Symbol" data-type="include_symbol">＋ 添加 Symbol 条件</button></div>
         <div class="condition-section"><div class="g-t">初始底池不低于</div><div class="row" style="margin-top:4px"><input id="poolMin" type="number" placeholder="如 5" style="flex:1"><span class="unit">BNB</span></div></div>
@@ -891,7 +899,11 @@
       buyAmountQuote: $("buyAmt").value || "0.05",
       slippageBps: Math.round(Number($("slippage").value || 5) * 100),
       gasPriceManualGwei: $("gasManual").value ? Number($("gasManual").value) : null,
-      conditions: collectConditions(),
+      conditions: [
+        ...collectConditions(),
+        ...($("excludeMarketing").checked ? [{ type: "exclude_marketing", operator: "eq", value: "true" }] : []),
+        ...($("singleTaxOnly").checked ? [{ type: "single_tax_only", operator: "eq", value: "true" }] : []),
+      ],
     };
   }
   $("saveStrategy").addEventListener("click", async () => {

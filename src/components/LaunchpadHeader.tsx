@@ -1,4 +1,4 @@
-import { Crosshair, Flame, Home, Loader2, Rocket, TrendingUp, Wallet } from "lucide-react";
+import { Crosshair, Flame, Gift, Home, Loader2, Rocket, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallet } from "@/hooks/useWallet";
 import { useHashPath } from "@/lib/hashRouter";
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { path: "", label: "发射台", icon: Home, short: "发射" },
   { path: "mint", label: "Mint", icon: Flame, short: "Mint" },
   { path: "mint-launches", label: "已发射", icon: Rocket, short: "已发" },
+  { path: "nft", label: "NFT 兑换", icon: Gift, short: "NFT" },
   { path: "trending", label: "热搜榜", icon: TrendingUp, short: "热搜" },
   { path: "sniper", label: "内盘狙击", icon: Crosshair, short: "狙击", external: "sniper.html" },
 ];
@@ -79,7 +80,7 @@ export default function LaunchpadHeader() {
 
       {/* 手机端底部 Tab 导航 */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--sb-border)] bg-[var(--sb-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-4 gap-1 px-2 py-1.5">
+        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1 px-2 py-1.5">
           {NAV_ITEMS.filter((item) => !item.external).map((item) => {
             const Icon = item.icon;
             const active = route === item.path || (item.path === "" && route === "");

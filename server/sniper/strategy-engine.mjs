@@ -113,6 +113,7 @@ export class StrategyEngine {
     const fail = (cond, detail) => fails.push({ cond, detail });
     const symbol = String(rec.symbol || "").toLowerCase();
     const name = String(rec.name || "").toLowerCase();
+    const meta = String(rec.meta || "").toLowerCase();
     const dev = String(rec.creator || "").toLowerCase();
 
     // 1. Symbol 条件
@@ -122,6 +123,13 @@ export class StrategyEngine {
     for (const c of (strategy.conditions || []).filter(c => c.type === "exclude_symbol"))
       if (symbol.includes(String(c.value).toLowerCase()) || name.includes(String(c.value).toLowerCase()))
         fail("exclude_symbol", `命中排除 Symbol「${c.value}」`);
+
+    // Flap 未公开独立营销税流向字段，只能基于创建事件的名称/Symbol/metadata 标记过滤。
+    if ((strategy.conditions || []).some(c => c.type === "exclude_marketing")) {
+      const marketingTerms = ["marketing", "market", "fund", "reward", "dividend", "营销", "基金", "分红", "奖励"];
+      if (marketingTerms.some(term => symbol.includes(term) || name.includes(term) || meta.includes(term)))
+        fail("marketing", "命中营销/基金/分红标记");
+    }
 
     // 2. 底池币种
     if (!matchQuote(strategy, rec.quoteLabel, rec.state.quoteTokenAddress))
@@ -155,6 +163,8 @@ export class StrategyEngine {
       fail("buy_tax", `买入税 ${(rec.state.buyTaxBps / 100).toFixed(1)}% > ${(strategy.maxBuyTaxBps / 100).toFixed(1)}%`);
     if (strategy.maxSellTaxBps != null && rec.state.sellTaxBps > strategy.maxSellTaxBps)
       fail("sell_tax", `卖出税 ${(rec.state.sellTaxBps / 100).toFixed(1)}% > ${(strategy.maxSellTaxBps / 100).toFixed(1)}%`);
+    if ((strategy.conditions || []).some(c => c.type === "single_tax_only") && rec.state.buyTaxBps !== rec.state.sellTaxBps)
+      fail("single_tax", `非单税币：买税 ${(rec.state.buyTaxBps / 100).toFixed(1)}% / 卖税 ${(rec.state.sellTaxBps / 100).toFixed(1)}%`);
 
     // 6. Dev 地址
     for (const c of (strategy.conditions || []).filter(c => c.type === "dev_address"))

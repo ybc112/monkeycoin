@@ -5,6 +5,7 @@ import MintProjectDetail from "@/pages/MintProjectDetail";
 import TrendingTokens from "@/pages/TrendingTokens";
 import TokenManager from "@/components/TokenManager";
 import LaunchpadHeader from "@/components/LaunchpadHeader";
+import MonkeyNFT from "@/pages/MonkeyNFT";
 import { useAppStore } from "@/store";
 import { useHashPath } from "@/lib/hashRouter";
 import { X } from "lucide-react";
@@ -60,6 +61,14 @@ export default function App() {
   }
   if (route === "trending") {
     return <TrendingTokens />;
+  }
+  if (route === "nft") {
+    return (
+      <>
+        <LaunchpadHeader />
+        <MonkeyNFT />
+      </>
+    );
   }
   return (
     <>
