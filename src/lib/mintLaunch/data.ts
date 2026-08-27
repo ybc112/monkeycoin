@@ -56,7 +56,7 @@ export const initialAdvancedTax = {
   claimWaitSeconds: "60",
 };
 
-export const mintCreationFeeLabel = "30,000 $MKY（销毁）";
+export const mintCreationFeeLabel = "10,000 $MKY（销毁）";
 
 export const mintTemplates: MintLaunchTemplate[] = [
   {
