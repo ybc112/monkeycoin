@@ -157,6 +157,13 @@
   .legend .item p{color:var(--brown-soft);font-size:14.5px}
 
   .floor-hero{text-align:center;background:linear-gradient(160deg,#fff,#FFF3DE);border:1.5px solid rgba(255,154,0,.18);border-radius:var(--radius)}
+  .floor-live{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 8px}
+  .floor-live-box{display:flex;flex-direction:column;gap:6px;background:#fff;border:1.8px solid var(--gold);border-radius:18px;
+    padding:18px 16px;box-shadow:0 14px 34px -22px rgba(242,92,5,.5)}
+  .floor-live-box .fl-label{font-size:12.5px;font-weight:700;color:var(--gold-deep);letter-spacing:.5px}
+  .floor-live-box .fl-value{font-size:clamp(18px,2.6vw,26px);font-weight:900;color:var(--orange-deep);word-break:break-all;line-height:1.25}
+  .floor-live-box .fl-unit{font-size:12.5px;color:var(--brown-soft)}
+  @media(max-width:640px){.floor-live{grid-template-columns:1fr}}
   .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:26px}
   .flow .step{position:relative;background:#fff;border:1.5px solid rgba(255,201,61,.4);border-radius:20px;padding:24px 18px;text-align:center;transition:.3s}
   .flow .step:hover{transform:translateY(-8px);box-shadow:var(--shadow)}
@@ -376,6 +383,19 @@
       <p class="lead" style="font-size:17px;color:var(--brown)"><b style="color:var(--orange-deep)">托底价</b> = 本轮托底代币量 ÷ 托底池 BNB 数量</p>
       <p style="color:var(--brown-soft);font-size:15px">例如托底池进入 10 BNB，则：<b style="color:var(--orange-deep)">30,000,000 ÷ 10 = 3,000,000 代币 / 1 BNB</b></p>
 
+      <div class="floor-live">
+        <div class="floor-live-box">
+          <span class="fl-label">$MKY 当前托底价（金库实时）</span>
+          <span class="fl-value" id="flPrice">读取中…</span>
+          <span class="fl-unit">USDT / Token</span>
+        </div>
+        <div class="floor-live-box">
+          <span class="fl-label">$MKY 托底池（金库实时）</span>
+          <span class="fl-value" id="flPool">读取中…</span>
+          <span class="fl-unit">USDT · 自动刷新 15s</span>
+        </div>
+      </div>
+
       <div class="formula">
         <span>本轮托底量</span><b>30,000,000 $MKY</b><span class="eq">÷</span>
         <span>托底池 BNB</span><b id="fBnb">10</b><span class="eq">=</span>
@@ -500,6 +520,55 @@
 </footer>
 
 <script>
+  // ── 官网首页实时托底价（读 Flap 金库 currentPricePerToken / pools，BNB→USDT） ──
+  (async () => {
+    try {
+      const ethers = await import("https://esm.sh/ethers@6.13.5");
+      const RPC = "https://bsc-dataseed.bnbchain.org";
+      const PORTAL = "0x90497450f2a706f1951b5bdda52B4E5d16f34C06";
+      const MKY = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
+      const PAIR = "0x16b9a82891338f9bA80E2D6970FddA79D1eb0daE"; // WBNB/USDT
+      const USDT = "0x55d398326f99059fF775485246999027B3197955";
+      const floorAbi = [
+        "function tryGetVault(address) view returns (bool found,(address,address,string,bool,uint8))",
+        "function currentPricePerToken() view returns(uint256)",
+        "function pools() view returns(uint256 floorBnb,uint256 buyback,uint256 round,uint256 remaining)",
+      ];
+      const pairAbi = ["function getReserves() view returns(uint112,uint112,uint32)", "function token0() view returns(address)"];
+      const elPrice = document.getElementById("flPrice"), elPool = document.getElementById("flPool");
+
+      async function fetchBnbUsd(fp) {
+        try {
+          const pair = new ethers.Contract(PAIR, pairAbi, fp);
+          const [r0, r1] = await pair.getReserves();
+          const t0 = await pair.token0();
+          const usdtRes = t0.toLowerCase() === USDT.toLowerCase() ? r0 : r1;
+          const wbnbRes = t0.toLowerCase() === USDT.toLowerCase() ? r1 : r0;
+          return Number((usdtRes * 1000000n) / wbnbRes) || 0;
+        } catch { return 0; }
+      }
+      async function tick() {
+        try {
+          const fp = new ethers.JsonRpcProvider(RPC, 56);
+          const portal = new ethers.Contract(PORTAL, floorAbi, fp);
+          const [found, info] = await portal.tryGetVault(MKY);
+          if (!found) { setText(elPrice, "未找到金库"); setText(elPool, "—"); return; }
+          const vault = new ethers.Contract(info[0], floorAbi, fp);
+          const [price, pools] = await Promise.all([vault.currentPricePerToken(), vault.pools()]);
+          const rate = await fetchBnbUsd(fp);
+          if (!rate) { setText(elPrice, "—"); setText(elPool, "—"); return; }
+          const p = (Number(ethers.formatEther(price)) * rate).toExponential(6);
+          const pool = (Number(ethers.formatEther(pools[0])) * rate).toLocaleString("en-US", { maximumFractionDigits: 4 });
+          setText(elPrice, "$" + p);
+          setText(elPool, "$" + pool);
+        } catch (e) { setText(elPrice, "读取失败"); }
+      }
+      function setText(el, v) { if (el) el.textContent = v; }
+      tick();
+      setInterval(tick, 15000);
+    } catch (e) { /* 模块加载失败则静默 */ }
+  })();
+
   const toggle=document.getElementById('navToggle'),links=document.getElementById('navLinks');
   toggle.addEventListener('click',()=>links.classList.toggle('open'));
   links.addEventListener('click',(e)=>{if(e.target.closest('a')){links.classList.remove('open');}});
