@@ -29,13 +29,13 @@ export const ADDRESSES = {
   lpBlackHole: "0x000000000000000000000000000000000000dEaD",
 };
 
-// 猴子币 $MKY 代币合约（部署时一次性销毁 30,000 枚）
+// 猴子币 $MKY 代币合约（部署时一次性销毁 10,000 枚）
 export const MONKEY_TOKEN_ADDRESS = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
-export const MONKEY_MINT_BURN_AMOUNT = 30000n; // 30,000 枚 $MKY
+export const MONKEY_MINT_BURN_AMOUNT = 10000n; // 10,000 枚 $MKY
 
 export const FACTORY_ADDRESS =
   import.meta.env.VITE_SNOWBALL_FACTORY_ADDRESS ||
-  "0xD1Ce8ca63713fEc105D2a10Ff5f6DC2032a0731E"; // 猴子币发射台 Factory（创建费=30,000 $MKY 销毁，平台税归 0x436f...）
+  "0xbaA8f81dd4bdDF7B016cE49F793fAa2E1151440b"; // 猴子币发射台 TokenFactory（创建费=10,000 $MKY 销毁，后缀 0x7777，平台税归 0x436f...）
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TokenFactory ABI（对齐 flap-vault-ai-coder/contracts/tokenfactory/TokenFactory.sol）

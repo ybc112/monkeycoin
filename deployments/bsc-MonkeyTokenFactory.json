@@ -1,16 +1,15 @@
 {
   "network": "bsc",
   "chainId": 56,
-  "factory": "0xD1Ce8ca63713fEc105D2a10Ff5f6DC2032a0731E",
-  "tokenDeployer": "0xC9E60F4B43385c82EF69C521008Dcdb6172Dd98B",
+  "factory": "0xbaA8f81dd4bdDF7B016cE49F793fAa2E1151440b",
+  "tokenDeployer": "0x668fa82C3d6cDe55343De5a980C274e4134112FA",
   "dividendTrackerImpl": "0xb05Ca1221F6F7A037115EE29a1f6B4a42b3F1b79",
-  "platformReceiver": "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb",
   "feeRecipient": "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb",
   "creationFee": "0",
   "creationFeeToken": "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777",
-  "creationFeeTokenAmount": "30000000000000000000000",
+  "creationFeeAmount": "10000000000000000000000",
   "liquidityRouter": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
   "requiredTokenSuffix": 30583,
-  "deployedBy": "0xe1F9Fb65BBb39ebd4d0C204c95513d3f6421c407",
-  "deployedAt": "2026-08-26T00:15:19.133Z"
+  "deployedBy": "0x39bB78BAdEC9d906CA77aF6b0882D0114263544F",
+  "deployedAt": "2026-08-28T01:19:35.581Z"
 }
