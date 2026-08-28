@@ -128,6 +128,22 @@ async function broadcastRawToMultiple(signedRaw) {
   throw lastErr || new Error("广播失败");
 }
 
+// 多 RPC 轮询等待交易确认：某个 RPC 能查到已打包即返回（避免单 RPC 抖动/超时误判），status=1 成功、0 revert
+async function waitForTxAcrossRpc(hash, timeoutMs = 90000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    for (const url of RPC_HTTP_URLS) {
+      try {
+        const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
+        const rc = await p.waitForTransaction(hash, 1, 7000).catch(() => null);
+        if (rc) return rc; // { status, blockNumber, hash }
+      } catch { /* 切换下一个 RPC */ }
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return null;
+}
+
 // ── 事件 → 引擎 → WS ────────────────────────────────────────────────────────
 const engine = new StrategyEngine({
   onMatched: async ({ strategy, token, result }) => {
@@ -689,7 +705,8 @@ async function handleBroadcast(res, body) {
     const resp = await broadcastRawToMultiple(signedRaw);
     OrderRepo.updateState(orderId, "BROADCASTING", { txHash: resp.hash });
     ws.emit("transaction.pending", { orderId, txHash: resp.hash, side: body.side });
-    resp.wait().then((receipt) => {
+    waitForTxAcrossRpc(resp.hash).then((receipt) => {
+      if (!receipt || receipt.status !== 1) throw new Error("链上交易失败或确认失败（回滚/超时）");
       OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
       TransactionRepo.updateStatus(receipt.hash, "confirmed");
       ws.emit("transaction.confirmed", { orderId, txHash: receipt.hash, block: receipt.blockNumber, side: body.side });
