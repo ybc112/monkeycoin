@@ -488,7 +488,13 @@ export default function LaunchHome() {
       const built = await buildContractParams(params, deployMode === "launch");
       const suffix = activeFactoryInfo.requiredSuffix && activeFactoryInfo.requiredSuffix !== "0"
         ? activeFactoryInfo.requiredSuffix
-        : vanitySuffix.trim().toLowerCase() || "7777";
+        : "";
+      // 靓号后缀已关闭（suffix=0）：直接用随机盐，不再挖盐
+      if (!suffix) {
+        const noSuffixRes = { salt: ethers.hexlify(ethers.randomBytes(32)), address: "", attempts: 0 };
+        setMineResult(noSuffixRes);
+        return noSuffixRes;
+      }
       if (!/^[0-9a-f]{1,6}$/.test(suffix)) {
         showToast("靓号后缀需为 1-6 位十六进制字符（0-9、a-f）", "error");
         setMining(false);
