@@ -331,7 +331,6 @@ export default function LaunchHome() {
 
   const [launching, setLaunching] = useState(false);
   const [manageToken, setManageToken] = useState("");
-  const [vanitySuffix, setVanitySuffix] = useState("7777");
   const [manageInfo, setManageInfo] = useState<{ owner: string; launched: boolean } | null>(null);
 
   const [creating, setCreating] = useState(false);
@@ -422,20 +421,6 @@ export default function LaunchHome() {
       return 0n;
     }
   }, [params.totalSupply]);
-
-  const canCreate = useMemo(() => {
-    if (!isConnected) return false;
-    if (!params.name || !params.symbol || !params.totalSupply || !params.receiver) return false;
-    if (!ethers.isAddress(params.receiver)) return false;
-    if (params.fundAddress && !ethers.isAddress(params.fundAddress)) return false;
-    if (rewardTokenError) return false;
-    if (params.currency && !ethers.isAddress(params.currency)) return false;
-    if (totalSupplyBigint <= 0n) return false;
-    if (params.lpBurnFrequency < 3600 || params.percentForLPBurn < 1 || params.percentForLPBurn > 100) return false;
-    if (params.killBlocks < 0 || params.killBlocks > 100 || params.airdropNumbs < 0 || params.airdropNumbs > 3) return false;
-    if (shareError || taxError || rewardTokenError || launchParamError) return false;
-    return true;
-  }, [isConnected, params, shareError, taxError, rewardTokenError, launchParamError, totalSupplyBigint]);
 
   const liquidityTokens = useMemo(() => {
     if (deployMode !== "launch" || !totalSupplyBigint) return 0n;
@@ -689,10 +674,6 @@ export default function LaunchHome() {
                     : factoryStatus === "loading"
                       ? "读取中…"
                       : "--",
-              },
-              {
-                label: "靓号后缀",
-                value: factoryInfo ? (factoryInfo.requiredSuffix === "0" ? "无" : factoryInfo.requiredSuffix) : "--",
               },
               {
                 label: "分红代币",
@@ -1100,46 +1081,6 @@ export default function LaunchHome() {
               <p className="text-xs text-[var(--sb-muted)]">
                 实际触发条件：达到间隔后，下一笔非免税地址向主 Pair 的卖出交易才会燃烧；期间没有触发交易则不补算。
               </p>
-            </div>
-          </Card>
-
-          <Card title="靓号挖盐" icon={Sparkles}>
-            <div className="space-y-4">
-              <p className="text-sm text-[var(--sb-muted)]">
-                使用 CREATE2 离线预测地址，找到符合后缀的 salt 后再上链创建。模式或参数变化后需重新挖盐。
-              </p>
-              <InputGroup
-                label="靓号后缀"
-                value={vanitySuffix}
-                onChange={setVanitySuffix}
-                placeholder="如 7777 / 8888 / abcd"
-                hint="1-6 位十六进制字符（0-9、a-f），留空默认 7777"
-              />
-              <button
-                onClick={handleMine}
-                disabled={mining || !canCreate || !factoryInfo}
-                className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition",
-                  mining || !canCreate || !factoryInfo
-                    ? "cursor-not-allowed bg-[var(--sb-muted)]"
-                    : "bg-gradient-to-r from-[var(--sb-gold)] to-amber-500 hover:shadow-lg"
-                )}
-              >
-                {mining ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {mining ? "挖盐中..." : "开始挖靓号"}
-              </button>
-              {mineResult && (
-                <div className="rounded-xl border border-[var(--sb-gold)]/30 bg-[var(--sb-gold-light)] p-3 text-sm">
-                  <p className="mb-1 text-[var(--sb-muted)]">预测地址</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="break-all font-mono font-medium text-[var(--sb-text)]">{mineResult.address}</span>
-                    <button onClick={() => copy(mineResult.address)} className="shrink-0 text-[var(--sb-gold)] hover:text-[var(--sb-text)]">
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <p className="mt-2 text-xs text-[var(--sb-muted)]">尝试次数：{mineResult.attempts.toLocaleString()}</p>
-                </div>
-              )}
             </div>
           </Card>
 
