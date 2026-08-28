@@ -544,7 +544,8 @@
           const t0 = await pair.token0();
           const usdtRes = t0.toLowerCase() === USDT.toLowerCase() ? r0 : r1;
           const wbnbRes = t0.toLowerCase() === USDT.toLowerCase() ? r1 : r0;
-          return Number((usdtRes * 1000000n) / wbnbRes) || 0;
+          // BSC USDT 与 WBNB 均为 18 位小数，直接相除即得 1 BNB = ? USDT
+          return Number(usdtRes / wbnbRes) || 0;
         } catch { return 0; }
       }
       async function tick() {
