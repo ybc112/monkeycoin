@@ -388,6 +388,41 @@ export default function LaunchHome() {
     setMineResult(null);
   }, [paramsKey]);
 
+  // ── $MKY 托底价（读取 Flap 金库 currentPricePerToken / pools） ──
+  const [floor, setFloor] = useState<{ price: string; pool: string } | null>(null);
+  const floorAbi = [
+    "function tryGetVault(address) view returns (bool found,(address,address,string,bool,uint8))",
+    "function currentPricePerToken() view returns(uint256)",
+    "function pools() view returns(uint256 floorBnb,uint256 buyback,uint256 round,uint256 remaining)",
+  ];
+  useEffect(() => {
+    const fetchFloor = async () => {
+      try {
+        const fp = new ethers.JsonRpcProvider("https://bsc-dataseed.bnbchain.org", 56);
+        const portal = new ethers.Contract(
+          "0x90497450f2a706f1951b5bdda52B4E5d16f34C06", // Flap BSC VaultPortal
+          floorAbi,
+          fp,
+        );
+        const [found, info] = (await portal.tryGetVault("0x0c1fa1ff27cd3dd0663a8160498dea3603c17777")) as any;
+        if (!found) return;
+        const vault = new ethers.Contract(info[0], floorAbi, fp);
+        const [price, pools] = await Promise.all([
+          vault.currentPricePerToken(),
+          vault.pools(),
+        ]);
+        const p = Number(ethers.formatEther(price)).toExponential(6);
+        const pool = Number(ethers.formatEther(pools[0])).toFixed(4);
+        setFloor({ price: p, pool });
+      } catch (e) {
+        console.error("floor price error", e);
+      }
+    };
+    fetchFloor();
+    const timer = window.setInterval(fetchFloor, 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const shareError = useMemo(() => {
     const total = params.rewardShare + params.liquidityShare + params.burnShare + params.fundShare;
     return total !== BPS ? `四项占比之和必须为 100%，当前 ${(total / 100).toFixed(2)}%` : "";
@@ -694,6 +729,26 @@ export default function LaunchHome() {
                 <div className="sb-hero-stat-value mt-1 text-sm font-bold">{item.value}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* $MKY 托底价 / 托底池（Flap 金库实时读取） */}
+      <section className="mx-auto max-w-6xl px-4 pb-2">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:w-[460px]">
+          <div className="sb-hero-stat rounded-xl border border-[var(--sb-gold)]/20 bg-[var(--sb-card)] p-3">
+            <div className="sb-hero-stat-label text-xs text-[var(--sb-gold)]">$MKY 当前托底价</div>
+            <div className="sb-hero-stat-value mt-1 text-sm font-black text-[var(--sb-text)]">
+              {floor ? `${floor.price} BNB` : "读取中..."}
+            </div>
+            <div className="text-[10px] text-[var(--sb-muted)]">BNB / Token</div>
+          </div>
+          <div className="sb-hero-stat rounded-xl border border-[var(--sb-gold)]/20 bg-[var(--sb-card)] p-3">
+            <div className="sb-hero-stat-label text-xs text-[var(--sb-gold)]">$MKY 托底池</div>
+            <div className="sb-hero-stat-value mt-1 text-sm font-black text-[var(--sb-text)]">
+              {floor ? `${floor.pool} BNB` : "读取中..."}
+            </div>
+            <div className="text-[10px] text-[var(--sb-muted)]">自动刷新·15s</div>
           </div>
         </div>
       </section>
