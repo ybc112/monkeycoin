@@ -469,11 +469,14 @@
           </div>
           <div class="row" style="margin-top:4px"><span class="lbl">链上营销占比上限</span><input id="maxMarketing" type="number" min="0" max="100" step="1" placeholder="如 5（%）" style="flex:1"><span class="unit">%</span></div>
         </div>
-      </div><!-- 右侧：市场监控 -->
+      </div>
+    </div>
+
+    <!-- 右侧：市场监控 -->
     <div>
       <div class="panel" style="margin-bottom:22px">
         <div class="panel-head">
-          <h2><span class="ico">📡</span> 最近 Flap 内盘代币 <span class="mini" id="listCount"></span></h2>
+          <h2><span class="ico">📡</span> 最近 Flap 内盘代币 <span class="mini" id="listCount"></span><span class="mini" style="color:var(--muted)">· 仅显示前 10</span></h2>
           <div class="tabs" id="marketTabs">
             <button class="on" data-filter="all">全部</button>
             <button data-filter="bnb">BNB 底池</button>
@@ -1034,7 +1037,7 @@
       if (marketFilter === "usdt" && label !== "usdt") return false;
       if (q && !((t.symbol || "").toLowerCase().includes(q) || (t.name || "").toLowerCase().includes(q) || (t.address || "").toLowerCase().includes(q))) return false;
       return true;
-    });
+    }).slice(0, 10);
     const fmtQuote = (v) => v ? (Number(v) / 1e18).toFixed(4) : "0";
     const fmtBps = (b) => (b == null ? "-" : (b / 100).toFixed(1) + "%");
     const rowsHtml = list.map(t => `
