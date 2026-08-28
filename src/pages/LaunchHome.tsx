@@ -388,13 +388,21 @@ export default function LaunchHome() {
     setMineResult(null);
   }, [paramsKey]);
 
-  // ── $MKY 托底价（读取 Flap 金库 currentPricePerToken / pools） ──
-  const [floor, setFloor] = useState<{ price: string; pool: string } | null>(null);
+  // ── $MKY 托底价（读取 Flap 金库 currentPricePerToken / pools，BNB 换算成 USDT 显示） ──
+  const [floor, setFloor] = useState<{ price: string; pool: string; bnbUsd: number } | null>(null);
   const floorAbi = [
     "function tryGetVault(address) view returns (bool found,(address,address,string,bool,uint8))",
     "function currentPricePerToken() view returns(uint256)",
     "function pools() view returns(uint256 floorBnb,uint256 buyback,uint256 round,uint256 remaining)",
   ];
+  const routerAbi = ["function getAmountsOut(uint256 amountIn,address[] path) view returns(uint256[] amounts)"];
+  // 取 BNB→USDT 汇率（PancakeSwap Router，1 BNB = ? USDT）
+  async function fetchBnbUsd(fp: ethers.JsonRpcProvider): Promise<number> {
+    const router = new ethers.Contract(ADDRESSES.router, routerAbi, fp);
+    const out = (await router.getAmountsOut(ethers.parseEther("1"), [ADDRESSES.wbnb, ADDRESSES.usdt])) as bigint[];
+    const usd = Number(ethers.formatUnits(out[1], 6));
+    return usd > 0 ? usd : 0;
+  }
   useEffect(() => {
     const fetchFloor = async () => {
       try {
@@ -411,9 +419,13 @@ export default function LaunchHome() {
           vault.currentPricePerToken(),
           vault.pools(),
         ]);
-        const p = Number(ethers.formatEther(price)).toExponential(6);
-        const pool = Number(ethers.formatEther(pools[0])).toFixed(4);
-        setFloor({ price: p, pool });
+        const bnbUsd = await fetchBnbUsd(fp).catch(() => 0); // 汇率失败则保留 BNB
+        const pBnb = Number(ethers.formatEther(price));
+        const poolBnb = Number(ethers.formatEther(pools[0]));
+        // BNB → USDT：托底价用科学计数法，托底池 4 位小数
+        const p = bnbUsd > 0 ? (pBnb * bnbUsd).toExponential(6) : pBnb.toExponential(6);
+        const pool = bnbUsd > 0 ? (poolBnb * bnbUsd).toFixed(4) : poolBnb.toFixed(4);
+        setFloor({ price: p, pool, bnbUsd });
       } catch (e) {
         console.error("floor price error", e);
       }
@@ -739,16 +751,16 @@ export default function LaunchHome() {
           <div className="sb-hero-stat rounded-xl border border-[var(--sb-gold)]/20 bg-[var(--sb-card)] p-3">
             <div className="sb-hero-stat-label text-xs text-[var(--sb-gold)]">$MKY 当前托底价</div>
             <div className="sb-hero-stat-value mt-1 text-sm font-black text-[var(--sb-text)]">
-              {floor ? `${floor.price} BNB` : "读取中..."}
+              {floor ? `$${floor.price}` : "读取中..."}
             </div>
-            <div className="text-[10px] text-[var(--sb-muted)]">BNB / Token</div>
+            <div className="text-[10px] text-[var(--sb-muted)]">USDT / Token</div>
           </div>
           <div className="sb-hero-stat rounded-xl border border-[var(--sb-gold)]/20 bg-[var(--sb-card)] p-3">
             <div className="sb-hero-stat-label text-xs text-[var(--sb-gold)]">$MKY 托底池</div>
             <div className="sb-hero-stat-value mt-1 text-sm font-black text-[var(--sb-text)]">
-              {floor ? `${floor.pool} BNB` : "读取中..."}
+              {floor ? `$${floor.pool}` : "读取中..."}
             </div>
-            <div className="text-[10px] text-[var(--sb-muted)]">自动刷新·15s</div>
+            <div className="text-[10px] text-[var(--sb-muted)]">USDT · 自动刷新·15s</div>
           </div>
         </div>
       </section>

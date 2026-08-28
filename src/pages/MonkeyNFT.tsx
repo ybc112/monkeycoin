@@ -20,6 +20,7 @@ import {
   BURN_TO_MINT_ADDRESS,
   NFT_COST,
   NFT_MAX_SUPPLY,
+  RECEIVER_ADDRESS,
   isNftConfigured,
   MINT_TOKEN_ABI,
   MONKEY_NFT_ABI,
@@ -28,6 +29,10 @@ import {
 
 function formatNumber(n: bigint): string {
   return Number(n / 10n ** 18n).toLocaleString("zh-CN");
+}
+
+function shortAddr(a: string): string {
+  return a ? `${a.slice(0, 6)}…${a.slice(-6)}` : "";
 }
 
 export default function MonkeyNFT() {
@@ -173,8 +178,8 @@ export default function MonkeyNFT() {
           猴子币 NFT 兑换
         </h1>
         <p className="mt-2 text-[var(--sb-muted)]">
-          销毁 {formatNumber(NFT_COST)} MKY → 限量铸造一张「猴子币 NFT」，总量{" "}
-          {NFT_MAX_SUPPLY} 张
+          兑换 {formatNumber(NFT_COST)} MKY → 限量铸造一张「猴子币 NFT」，总量{" "}
+          {NFT_MAX_SUPPLY} 张 · 用于后续生态白名单
         </p>
       </header>
 
@@ -203,7 +208,7 @@ export default function MonkeyNFT() {
             </div>
             <div className="rounded-xl bg-[var(--sb-gold-light)] p-4">
               <div className="text-xs font-semibold uppercase tracking-wide text-[var(--sb-gold)]/80">
-                累计销毁
+                累计兑换
               </div>
               <div className="mt-1 text-2xl font-bold text-[var(--sb-text)]">
                 {formatNumber(totalBurned)}
@@ -272,7 +277,7 @@ export default function MonkeyNFT() {
                 >
                   {redeeming && <Loader2 className="h-5 w-5 animate-spin" />}
                   <Flame className="h-5 w-5" />
-                  销毁兑换 NFT
+                  兑换 NFT
                 </button>
               )}
               {enoughApproval && !enoughBalance && (
@@ -332,16 +337,16 @@ export default function MonkeyNFT() {
 
           <div className="mt-2 space-y-2 rounded-xl border border-[var(--sb-border)] p-4 text-sm text-[var(--sb-muted)]">
             <p>
-              <strong className="text-[var(--sb-text)]">兑换规则：</strong> 每销毁{" "}
+              <strong className="text-[var(--sb-text)]">兑换规则：</strong> 每兑换{" "}
               {formatNumber(NFT_COST)} MKY 获得一张限量 NFT，总量固定
-              {NFT_MAX_SUPPLY} 张，烧完即止。
+              {NFT_MAX_SUPPLY} 张，兑完即止。
             </p>
             <p>
-              销毁的 MKY 会永久打入黑洞地址
+              兑换的 MKY 会转至生态白名单基金地址
               <code className="mx-1 rounded bg-[var(--sb-gold-light)]/50 px-1 py-0.5 text-xs">
-                0x...dEaD
+                {shortAddr(RECEIVER_ADDRESS)}
               </code>
-              ，永久退出流通。
+              ，用于后续生态白名单与权益。
             </p>
           </div>
         </div>

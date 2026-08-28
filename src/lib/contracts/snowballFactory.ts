@@ -35,7 +35,7 @@ export const MONKEY_MINT_BURN_AMOUNT = 10000n; // 10,000 枚 $MKY
 
 export const FACTORY_ADDRESS =
   import.meta.env.VITE_SNOWBALL_FACTORY_ADDRESS ||
-  "0xC5D19185d1D15a904700658Dcf764947e2Bf2863"; // 猴子币发射台 TokenFactory（创建费=10,000 $MKY 销毁，靓号后缀已关闭，平台税归 0x436f...）
+  "0xC0c26E1964b2856f55E73E13D28c96E4402faAa9"; // 猴子币发射台 TokenFactory（创建费=10,000 MKY 销毁，平台税归 0x436f...）
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TokenFactory ABI（对齐 flap-vault-ai-coder/contracts/tokenfactory/TokenFactory.sol）

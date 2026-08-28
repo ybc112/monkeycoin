@@ -277,6 +277,9 @@ contract TokenFactory {
         // 1) 发币费 + 加池资金
         _collectPayment(creationFee);
 
+        // 1.5) 发币费代币销毁（如创建费 = 10,000 $MKY → 从调用方转入黑洞，永久退出流通）
+        _collectFeeToken(msg.sender);
+
         // 2) 部署（经 BananaTokenDeployer，避免 TokenFactory 内嵌 BananaToken 代码超限；
         //    BananaToken 构造内部会 createPair + approve router + clone dividend tracker）
         token = IBananaTokenDeployer(tokenDeployer).deploy(
@@ -500,6 +503,18 @@ contract TokenFactory {
             if (!paid) {
                 revert InvalidFee();
             }
+        }
+    }
+
+    /// @notice 发币费代币销毁：把 creationFeeTokenAmount 枚费用代币从调用方转入黑洞
+    ///         （永久退出流通）。未配置费用代币或数量为 0 时不执行。
+    function _collectFeeToken(address from) private {
+        if (creationFeeToken == address(0) || creationFeeTokenAmount == 0) {
+            return;
+        }
+        bool ok = IERC20(creationFeeToken).transferFrom(from, LP_BLACK_HOLE, creationFeeTokenAmount);
+        if (!ok) {
+            revert TokenTransferFailed();
         }
     }
 

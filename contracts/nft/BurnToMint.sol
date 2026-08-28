@@ -16,7 +16,7 @@ contract BurnToMint {
     address public owner;
     IERC20 public immutable mky;
     IMonkeyNFT public immutable nft;
-    address public constant BURN = 0x000000000000000000000000000000000000dEaD;
+    address public constant RECEIVER = 0x681E3ffCD487BE8C4BD39d1831fdE4d2dD0Df79A; // 收款地址（生态白名单基金）
     uint256 public immutable cost;
     uint256 public totalBurned;
     bool public paused;
@@ -43,7 +43,7 @@ contract BurnToMint {
     function redeem() external returns (uint256 tokenId) {
         require(!paused, "paused");
         require(nft.totalSupply() < nft.maxSupply(), "sold out");
-        bool ok = mky.transferFrom(msg.sender, BURN, cost);
+        bool ok = mky.transferFrom(msg.sender, RECEIVER, cost);
         require(ok, "mky transfer failed");
         totalBurned += cost;
         tokenId = nft.mintTo(msg.sender);

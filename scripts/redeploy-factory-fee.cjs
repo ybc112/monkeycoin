@@ -8,7 +8,7 @@ const { ethers } = require("ethers");
 
 const FEE_RECIPIENT = "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
 const FEE_TOKEN = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777"; // 猴子币
-const FEE_TOKEN_AMOUNT = 30_000n * 10n ** 18n; // 30,000 枚，销毁
+const FEE_TOKEN_AMOUNT = 10_000n * 10n ** 18n; // 10,000 枚，销毁
 const CREATION_FEE_BNB = 0n; // 不再收 BNB
 const PANCAKE_ROUTER = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 const TRACKER_IMPL = "0xb05Ca1221F6F7A037115EE29a1f6B4a42b3F1b79"; // 复用已部署

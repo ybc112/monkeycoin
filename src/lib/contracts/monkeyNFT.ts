@@ -1,17 +1,17 @@
 import { isAddress } from "ethers";
 
-// 猴子币销毁兑换 NFT 前端配置（BSC）
+// 猴子币兑换 NFT 前端配置（BSC）
 export const MONKEY_TOKEN = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777"; // $MKY
-export const NFT_COST = 10_000n * 10n ** 18n; // 销毁 10,000 MKY = 1 张 NFT
-export const NFT_MAX_SUPPLY = 999;
-export const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+export const NFT_COST = 50_000n * 10n ** 18n; // 50,000 MKY = 1 张 NFT
+export const NFT_MAX_SUPPLY = 300;
+export const RECEIVER_ADDRESS = "0x681E3ffCD487BE8C4BD39d1831fdE4d2dD0Df79A"; // 收款地址（生态白名单基金，不销毁）
 
 // 部署后回填（从 deployments/bsc-MonkeyNFT.json）
 export const MONKEY_NFT_ADDRESS = String(
-  (import.meta.env.VITE_MONKEY_NFT_ADDRESS ?? "") || "0x43c17De86DD20368a8651Afa4E6aE4152a7A6eC9"
+  (import.meta.env.VITE_MONKEY_NFT_ADDRESS ?? "") || "0x46c86675c84F2253CCb0BF7DBdF582Ed4377A57D"
 ).trim();
 export const BURN_TO_MINT_ADDRESS = String(
-  (import.meta.env.VITE_BURN_TO_MINT_ADDRESS ?? "") || "0xF0ce5c9B8f8b4486F7D8C615843CE880f9E57E7e"
+  (import.meta.env.VITE_BURN_TO_MINT_ADDRESS ?? "") || "0xd171C59595a1D53d623e5720873aa55f07302ec5"
 ).trim();
 
 export const isNftConfigured = isAddress(MONKEY_NFT_ADDRESS) && isAddress(BURN_TO_MINT_ADDRESS);

@@ -8,14 +8,18 @@ const { ethers } = require("ethers");
 const ROOT = path.resolve(__dirname, "..");
 
 const BSC_RPCS = [
-  "https://bsc-dataseed1.bnbchain.org",
+  "https://bsc.publicnode.com",
   "https://bsc-dataseed.bnbchain.org",
+  "https://bsc-dataseed1.bnbchain.org",
+  "https://bsc-dataseed2.bnbchain.org",
+  "https://1rpc.io/bnb",
   "https://bsc.drpc.org",
 ];
 
 const MONKEY_TOKEN = process.env.MONKEY_TOKEN_ADDRESS || "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
-const MAX_SUPPLY = Number(process.env.NFT_MAX_SUPPLY || 999);
-const COST_MKY = BigInt(process.env.NFT_COST_MKY || 10000) * 10n ** 18n;
+const MAX_SUPPLY = Number(process.env.NFT_MAX_SUPPLY || 300);
+const COST_MKY = BigInt(process.env.NFT_COST_MKY || 50000) * 10n ** 18n;
+const RECEIVER = process.env.NFT_RECEIVER || "0x681E3ffCD487BE8C4BD39d1831fdE4d2dD0Df79A"; // 收款地址（不销毁）
 const GAS_PRICE = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "1", "gwei");
 const GAS_LIMIT_NFT = 3_000_000;
 const GAS_LIMIT_BURN = 3_000_000;
@@ -69,7 +73,7 @@ async function main() {
   console.log("\n[1/4] Deploying MonkeyNFT maxSupply=" + MAX_SUPPLY);
   const nftIf = new ethers.Interface(nftArtifact.abi);
   const nftDeployData = nftArtifact.bytecode + nftIf.encodeDeploy([MAX_SUPPLY]).slice(2);
-  const nftTx = await signer.sendTransaction({ data: nftDeployData, gasLimit: GAS_LIMIT_NFT, gasPrice: GAS_PRICE });
+  const nftTx = await signer.sendTransaction({ data: nftDeployData, gasLimit: GAS_LIMIT_NFT });
   const nftReceipt = await nftTx.wait();
   const nftAddress = nftReceipt.contractAddress;
   console.log("  NFT:", nftAddress, "tx:", nftTx.hash);
@@ -79,7 +83,7 @@ async function main() {
   console.log("\n[2/4] Deploying BurnToMint cost=" + ethers.formatUnits(COST_MKY, 18) + " MKY");
   const burnIf = new ethers.Interface(burnArtifact.abi);
   const burnDeployData = burnArtifact.bytecode + burnIf.encodeDeploy([MONKEY_TOKEN, nftAddress, COST_MKY]).slice(2);
-  const burnTx = await signer.sendTransaction({ data: burnDeployData, gasLimit: GAS_LIMIT_BURN, gasPrice: GAS_PRICE });
+  const burnTx = await signer.sendTransaction({ data: burnDeployData, gasLimit: GAS_LIMIT_BURN });
   const burnReceipt = await burnTx.wait();
   const burnAddress = burnReceipt.contractAddress;
   console.log("  Exchange:", burnAddress, "tx:", burnTx.hash);
@@ -87,7 +91,7 @@ async function main() {
   // 3. NFT 授予兑换合约 mint 权限
   console.log("\n[3/4] Setting mintAuthority on NFT ->", burnAddress);
   const nft = new ethers.Contract(nftAddress, nftArtifact.abi, signer);
-  const authTx = await nft.setMintAuthority(burnAddress, { gasPrice: GAS_PRICE });
+  const authTx = await nft.setMintAuthority(burnAddress, {});
   await authTx.wait();
   console.log("  auth tx:", authTx.hash);
 
@@ -104,7 +108,7 @@ async function main() {
     burnToken: MONKEY_TOKEN,
     burnAmount: COST_MKY.toString(),
     burnAmountLabel: ethers.formatUnits(COST_MKY, 18) + " MKY",
-    burnTarget: "0x000000000000000000000000000000000000dEaD",
+    burnTarget: RECEIVER,
     metadataUri: "",
     deployedBy: deployer,
     nftDeployTx: nftTx.hash,
