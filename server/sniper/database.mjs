@@ -171,6 +171,13 @@ if (db) {
       created_at TEXT,
       updated_at TEXT
     );
+    CREATE TABLE IF NOT EXISTS sniper_users (
+      address TEXT PRIMARY KEY,
+      tx_hash TEXT,
+      activated_at TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );
     CREATE TABLE IF NOT EXISTS system_state (
       key TEXT PRIMARY KEY,
       value TEXT
@@ -538,6 +545,19 @@ export const WalletRepo = {
   list() { return all(`SELECT * FROM wallet_public_profiles ORDER BY created_at`); },
   enabled() { return all(`SELECT * FROM wallet_public_profiles WHERE enabled=1`); },
   setEnabled(address, enabled) { run(`UPDATE wallet_public_profiles SET enabled=?,updated_at=? WHERE lower(address)=lower(?)`, [enabled ? 1 : 0, now(), address]); },
+};
+
+// ── 狙击激活用户（销毁 50,000 $MKY 后由前端上报，后端再以链上 allowlist 校验） ──
+export const SniperUserRepo = {
+  upsert(u) {
+    if (get(`SELECT address FROM sniper_users WHERE lower(address)=lower(?)`, [u.address]))
+      run(`UPDATE sniper_users SET tx_hash=?,activated_at=?,updated_at=? WHERE lower(address)=lower(?)`,
+        [u.txHash ?? null, u.activatedAt ?? null, now(), u.address]);
+    else run(`INSERT INTO sniper_users (address,tx_hash,activated_at,created_at,updated_at) VALUES (?,?,?,?,?)`,
+      [u.address, u.txHash ?? null, u.activatedAt ?? null, now(), now()]);
+  },
+  get(address) { return get(`SELECT * FROM sniper_users WHERE lower(address)=lower(?)`, [address]) || null; },
+  list() { return all(`SELECT * FROM sniper_users ORDER BY activated_at DESC`); },
 };
 
 export function closeDb() { try { db?.close(); } catch { /* ignore */ } }

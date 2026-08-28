@@ -1,0 +1,9 @@
+{
+  "network": "bsc",
+  "chainId": 56,
+  "address": "0x1a8831721accc61AbEf99A9D2915b0572f92C73D",
+  "mky": "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777",
+  "activateCost": "50000000000000000000000",
+  "activatedAt": "2026-08-28T04:30:58.629Z",
+  "deployedBy": "0x39bB78BAdEC9d906CA77aF6b0882D0114263544F"
+}

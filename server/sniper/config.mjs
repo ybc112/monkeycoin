@@ -109,6 +109,19 @@ export const FEES = {
   STATE: { NONE: "NONE", PENDING: "PENDING", SENT: "SENT", CONFIRMED: "CONFIRMED", FAILED: "FAILED", RETRYING: "RETRYING" },
 };
 
+// ── 狙击激活门禁（销毁 $MKY 后 allowlist 才可使用；后端 on-chain 鉴权） ─────
+export const SNIPER_ACCESS = {
+  ADDRESS: env.SNIPER_ACCESS_ADDRESS || "0x1a8831721accc61AbEf99A9D2915b0572f92C73D",
+  TOKEN: "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777", // $MKY
+  COST: 50_000n * 10n ** 18n, // 销毁 50,000 $MKY
+  ENABLED: env.SNIPER_ACCESS_ENABLED !== "false", // 默认开启门禁
+  ABI: [
+    "function allowlist(address) view returns(bool)",
+    "function isRegistered(address) view returns(bool)",
+    "function activateCost() view returns(uint256)",
+  ],
+};
+
 // ── 监听参数 ────────────────────────────────────────────────────────────────
 export const MONITOR = {
   // 快速狙击模式：FAST_SNIPER=true 时不等待区块确认（BLOCK_CONFIRMATIONS=0），命中即触发策略

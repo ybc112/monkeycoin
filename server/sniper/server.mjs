@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isAddress, parseUnits, JsonRpcProvider, MaxUint256, Wallet } from "ethers";
-import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK, CHAIN_ID, RPC_HTTP_URLS, FLAP, FEES } from "./config.mjs";
+import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK, CHAIN_ID, RPC_HTTP_URLS, FLAP, FEES, SNIPER_ACCESS } from "./config.mjs";
 import { FlapMonitor } from "./flap-monitor.mjs";
 import { StrategyEngine } from "./strategy-engine.mjs";
 import { SniperWsServer } from "./websocket-server.mjs";
@@ -19,7 +19,7 @@ import { getProvider, getTokenContract, quoteBuy, quoteTokenLabel } from "./flap
 import { fetchOptionsFor } from "./config.mjs";
 import {
   StrategyRepo, TokenRepo, EventRepo, OrderRepo, TransactionRepo,
-  PositionRepo, StateRepo, Audit, closeDb, FeeRecordRepo, NotificationRepo,
+  PositionRepo, StateRepo, Audit, closeDb, FeeRecordRepo, NotificationRepo, SniperUserRepo,
 } from "./database.mjs";
 
 const ws = new SniperWsServer();
@@ -60,6 +60,18 @@ function saveStoredKey(rec) {
   fs.writeFileSync(WALLET_KEY_FILE, JSON.stringify(rec, null, 2), { mode: 0o600 });
   try { fs.chmodSync(WALLET_KEY_FILE, 0o600); } catch { /* windows 忽略 */ }
 }
+
+// ── 狙击激活门禁：执行钱包须已在链上销毁 50,000 $MKY（allowlist） ───────────
+async function isSniperActivated(wallet) {
+  if (!SNIPER_ACCESS.ENABLED) return true;
+  if (!wallet || !isAddress(wallet)) return false;
+  try {
+    const provider = getProvider();
+    const c = new ethers.Contract(SNIPER_ACCESS.ADDRESS, SNIPER_ACCESS.ABI, provider);
+    return Boolean(await c.allowlist(wallet));
+  } catch { return false; }
+}
+const ACTIVATION_REQUIRED_MSG = `未激活：该执行钱包需先销毁 ${Number(SNIPER_ACCESS.COST / 10n ** 18n).toLocaleString("en-US")} $MKY 销毁才能使用狙击（SniperAccess ${SNIPER_ACCESS.ADDRESS}）`;
 
 // 构建代币 → Flap Portal 授权交易（卖出必需）
 function buildApproveTx(token, gasPrice) {
@@ -408,6 +420,41 @@ const server = http.createServer(async (req, res) => {
     // 通知事件（买卖/系统提示留存，前端可回放）
     if (path === "/api/sniper/notifications") return json(res, 200, { ok: true, notifications: NotificationRepo.list(Number(url.searchParams.get("limit") || 50)) });
 
+    // 狙击激活门禁：查询个人激活状态（address=执行钱包）
+    if (path === "/api/sniper/me") {
+      const address = (url.searchParams.get("address") || "").trim();
+      if (address && !isAddress(address)) return json(res, 400, { ok: false, error: "地址无效" });
+      const activated = address ? await isSniperActivated(address) : false;
+      const user = address ? SniperUserRepo.get(address) : null;
+      return json(res, 200, {
+        ok: true,
+        enabled: SNIPER_ACCESS.ENABLED,
+        costWei: SNIPER_ACCESS.COST.toString(),
+        costLabel: Number(SNIPER_ACCESS.COST / 10n ** 18n).toLocaleString("en-US"),
+        tokenAddress: SNIPER_ACCESS.TOKEN,
+        accessContract: SNIPER_ACCESS.ADDRESS,
+        activated,
+        user: user
+          ? { address: user.address, txHash: user.tx_hash || null, activatedAt: user.activated_at || null }
+          : null,
+      });
+    }
+    // 上传激活记录：后端以链上 allowlist 复核，防伪造；记录钱包+销毁交易哈希+激活时间
+    if (path === "/api/sniper/activate" && req.method === "POST") {
+      const address = String(body.address || "").trim();
+      const txHash = String(body.txHash || "").trim();
+      if (!isAddress(address)) return json(res, 400, { ok: false, error: "地址无效" });
+      if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) return json(res, 400, { ok: false, error: "销毁交易哈希无效" });
+      const onChain = await isSniperActivated(address);
+      if (!onChain) return json(res, 403, { ok: false, error: "链上未检测到激活（allowlist=false），请确认该钱包已完成销毁" });
+      SniperUserRepo.upsert({ address, txHash, activatedAt: new Date().toISOString() });
+      Audit.log("access", `执行钱包激活狙击: ${address} tx=${txHash.slice(0, 12)}…`);
+      const user = SniperUserRepo.get(address);
+      return json(res, 200, { ok: true, activated: true, user });
+    }
+    // 已激活用户列表（运营查看）
+    if (path === "/api/sniper/users") return json(res, 200, { ok: true, users: SniperUserRepo.list() });
+
     // 执行钱包私钥保存/读取（自用便利；只校验格式，绝不打日志、不回显到日志）
     if (path === "/api/sniper/wallet-key" && req.method === "GET") {
       const rec = readStoredKey();
@@ -445,6 +492,8 @@ async function runSimulateSell(body) {
 async function handleBuy(res, body) {
   const { token, strategyId, amount, wallet } = body;
   if (!isAddress(token)) return json(res, 400, { ok: false, error: "token 无效" });
+  // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
+  if (!(await isSniperActivated(wallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
   const strategy = strategyId ? StrategyRepo.get(strategyId) : null;
   if (strategyId && !strategy) return json(res, 404, { ok: false, error: "策略不存在" });
   const buyAmount = amount || strategy?.buyAmountQuote || "0.05";
@@ -480,6 +529,8 @@ async function handleBuy(res, body) {
 async function handleSell(res, body) {
   const { token, amount, wallet, positionId, fraction } = body;
   if (!isAddress(token)) return json(res, 400, { ok: false, error: "token 无效" });
+  // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
+  if (!(await isSniperActivated(wallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
   const tokenAmount = parseUnits(String(amount || "1"), 18);
   const sim = await simulateSell({ token, tokenAmount, wallet: wallet || "0x0000000000000000000000000000000000000001" });
   if (!sim.ok) return json(res, 400, { ok: false, error: `模拟卖出失败: ${sim.error}` });
@@ -605,6 +656,9 @@ async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
 async function handleBroadcast(res, body) {
   const { orderId, signedRaw } = body;
   if (!orderId || !signedRaw) return json(res, 400, { ok: false, error: "orderId 与 signedRaw 必填" });
+  // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
+  const execWallet = String(body.wallet || "").trim();
+  if (!(await isSniperActivated(execWallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
   // 安全校验：Dry Run / 未开启 Live / 紧急停止 / 格式 / 订单状态 / 方向 / 代币（纯逻辑复用）
   const order = OrderRepo.get(Number(orderId));
   const v = validateBroadcast({ DRY_RUN, ENABLE_LIVE_TRADING, signedRaw, order, body });

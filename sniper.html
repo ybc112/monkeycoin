@@ -350,6 +350,16 @@
           <input id="privKeyInput" type="password" placeholder="粘贴你的执行钱包私钥" style="flex:1">
         </div>
         <div class="disabled-note" style="margin-top:6px">🔐 私钥仅用于本地签名交易，请使用<b>只放少量、可承受损失 BNB</b>的独立钱包。</div>
+        <div id="activateRow" style="margin-top:10px;border:1.5px solid var(--gold);border-radius:14px;padding:10px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div>
+              <b id="activateTitle" style="font-size:14px;color:var(--gold-deep)">狙击资格：未激活</b>
+              <div class="t-stat" id="activateStatus" style="margin-top:4px">等待设置执行钱包…</div>
+            </div>
+            <button class="btn primary" id="activateBtn" style="display:none;padding:8px 16px;font-size:13px">🔥 销毁 50,000 $MKY 激活</button>
+          </div>
+          <div class="disabled-note" id="activateNote" style="margin-top:6px">使用狙击需先由该执行钱包销毁 <b>50,000 $MKY</b> 完成激活，并记录钱包 + 销毁交易哈希 + 激活时间（实名）。</div>
+        </div>
         <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
 
