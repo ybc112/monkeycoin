@@ -121,7 +121,7 @@ async function broadcastRawToMultiple(signedRaw) {
   let lastErr;
   for (const url of RPC_HTTP_URLS) {
     try {
-      const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
+      const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(url) });
       return await p.broadcastTransaction(signedRaw);
     } catch (e) { lastErr = e; }
   }
@@ -134,7 +134,7 @@ async function waitForTxAcrossRpc(hash, timeoutMs = 90000) {
   while (Date.now() < deadline) {
     for (const url of RPC_HTTP_URLS) {
       try {
-        const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
+        const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(url) });
         const rc = await p.waitForTransaction(hash, 1, 7000).catch(() => null);
         if (rc) return rc; // { status, blockNumber, hash }
       } catch { /* 切换下一个 RPC */ }

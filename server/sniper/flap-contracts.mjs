@@ -76,7 +76,7 @@ export async function decodeLaunchBill(txHash, p = getProvider()) {
 }
 
 // ── RPC 轮换 provider ───────────────────────────────────────────────────────
-const providers = RPC_HTTP_URLS.map(u => new JsonRpcProvider(u, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() }));
+const providers = RPC_HTTP_URLS.map(u => new JsonRpcProvider(u, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(u) }));
 let providerIdx = 0;
 export function getProvider() {
   for (let i = 0; i < providers.length; i += 1) {
@@ -92,7 +92,7 @@ export async function rotateProvider() {
 // 按 URL 缓存的 provider 池（供事件扫描复用，避免反复网络检测）
 const providerPool = new Map();
 export function getProviderByUrl(url) {
-  if (!providerPool.has(url)) providerPool.set(url, new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() }));
+  if (!providerPool.has(url)) providerPool.set(url, new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(url) }));
   return providerPool.get(url);
 }
 export const getPortal = (p = getProvider()) => new Contract(FLAP.PORTAL, PORTAL_ABI, p);

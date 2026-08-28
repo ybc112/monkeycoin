@@ -33,7 +33,7 @@ export class FlapMonitor {
     const last = this.getLastProcessed();
     if (!last) {
       // 首次启动：从最新块往前回看一段，抓最近的创建
-      const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
+      const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(RPC_HTTP_URLS[0]) });
       const latest = await prov.getBlockNumber();
       this.setLastProcessed(Math.max(0, latest - 200));
       this.latestBlock = latest;
@@ -97,7 +97,7 @@ export class FlapMonitor {
     if (!this.running) return;
     this._httpPollTimer = setTimeout(async () => {
       try {
-        const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor() });
+        const prov = new JsonRpcProvider(RPC_HTTP_URLS[0], CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(RPC_HTTP_URLS[0]) });
         const latest = await prov.getBlockNumber();
         if (latest > this.latestBlock) this._onNewHead(latest);
       } catch { /* 下次轮询再试 */ }

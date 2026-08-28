@@ -5,10 +5,16 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 
 const env = process.env;
 
-// 服务器走本地代理访问公网 RPC（与 monkeycoin-backend 一致）
+// 服务器走本地代理访问公网 RPC（与 monkeycoin-backend 一致）；NO_PROXY 中的主机改为直连（如已购的 QuikNode，避免绕代理增加延迟）
 const PROXY_URL = env.HTTPS_PROXY || env.HTTP_PROXY || "";
 export const HTTP_AGENT = PROXY_URL ? new HttpsProxyAgent(PROXY_URL) : null;
-export const fetchOptionsFor = () => (HTTP_AGENT ? { fetchOptions: { agent: HTTP_AGENT } } : {});
+const NO_PROXY = (env.NO_PROXY || "").split(",").map((s) => s.trim()).filter(Boolean);
+function proxyBypass(url) {
+  if (!url || !NO_PROXY.length) return false;
+  try { const h = new URL(url).hostname.toLowerCase(); return NO_PROXY.some((x) => h === x || h.endsWith("." + x.replace(/^\./, ""))); } catch { return false; }
+}
+export const fetchOptionsFor = (url) =>
+  (HTTP_AGENT && !proxyBypass(url) ? { fetchOptions: { agent: HTTP_AGENT } } : {});
 
 // ── 链与 RPC ────────────────────────────────────────────────────────────────
 export const CHAIN_ID = Number(env.CHAIN_ID || 56);
