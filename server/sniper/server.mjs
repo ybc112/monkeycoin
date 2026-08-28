@@ -3,7 +3,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isAddress, parseUnits, JsonRpcProvider, MaxUint256, Wallet } from "ethers";
+import { isAddress, parseUnits, JsonRpcProvider, Contract, MaxUint256, Wallet } from "ethers";
 import { SNIPER_PORT, CORS_ORIGIN, DRY_RUN, ENABLE_LIVE_TRADING, GAS, RISK, CHAIN_ID, RPC_HTTP_URLS, FLAP, FEES, SNIPER_ACCESS } from "./config.mjs";
 import { FlapMonitor } from "./flap-monitor.mjs";
 import { StrategyEngine } from "./strategy-engine.mjs";
@@ -69,12 +69,12 @@ async function isSniperActivated(wallet) {
     const provider = getProvider();
     // 1) 持有 MonkeyNFT → 免费
     if (SNIPER_ACCESS.NFT_FREE) {
-      const nft = new ethers.Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
+      const nft = new Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
       const bal = await nft.balanceOf(wallet);
       if (bal > 0n) return true;
     }
     // 2) 已销毁 50,000 $MKY → allowlist
-    const c = new ethers.Contract(SNIPER_ACCESS.ADDRESS, SNIPER_ACCESS.ABI, provider);
+    const c = new Contract(SNIPER_ACCESS.ADDRESS, SNIPER_ACCESS.ABI, provider);
     return Boolean(await c.allowlist(wallet));
   } catch { return false; }
 }
@@ -84,7 +84,7 @@ async function nftBalance(wallet) {
   if (!SNIPER_ACCESS.NFT_FREE || !wallet || !isAddress(wallet)) return 0;
   try {
     const provider = getProvider();
-    const nft = new ethers.Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
+    const nft = new Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
     const bal = await nft.balanceOf(wallet);
     return Number(bal) || 0;
   } catch { return 0; }
