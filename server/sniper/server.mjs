@@ -779,6 +779,7 @@ function normalizeStrategy(b) {
     takeProfitBps: b.takeProfitBps ?? null, stopLossBps: b.stopLossBps ?? null,
     sellBatches: b.sellBatches ?? null, maxTxBps: b.maxTxBps ?? null, maxWalletBps: b.maxWalletBps ?? null,
     gasPriceManualGwei: b.gasPriceManualGwei ?? null, gasMultiplier: b.gasMultiplier ?? null,
+    buyGasLimit: b.buyGasLimit ?? null, sellGasPrice: b.sellGasPrice ?? null, sellGasLimit: b.sellGasLimit ?? null,
     maxGasPriceGwei: b.maxGasPriceGwei ?? null, slippageBps: b.slippageBps || 500,
     conditions: Array.isArray(b.conditions) ? b.conditions : [],
   };
