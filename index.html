@@ -558,13 +558,23 @@
           const [price, pools] = await Promise.all([vault.currentPricePerToken(), vault.pools()]);
           const rate = await fetchBnbUsd(fp);
           if (!rate) { setText(elPrice, "—"); setText(elPool, "—"); return; }
-          const p = (Number(ethers.formatEther(price)) * rate).toExponential(6);
+          const p = fmtTokenPrice(Number(ethers.formatEther(price)) * rate);
           const pool = (Number(ethers.formatEther(pools[0])) * rate).toLocaleString("en-US", { maximumFractionDigits: 4 });
           setText(elPrice, "$" + p);
           setText(elPool, "$" + pool);
         } catch (e) { setText(elPrice, "读取失败"); }
       }
       function setText(el, v) { if (el) el.textContent = v; }
+      // 托底价：以定点小数显示（避免 like 6.17e-5 的科学计数法）
+      function fmtTokenPrice(v) {
+        if (!isFinite(v)) return "—";
+        if (v === 0) return "0";
+        if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: 6 });
+        // 0<v<1：保留 6 位有效数字，纯小数不带指数
+        return Number(v).toFixed(0).length > 0
+          ? v.toLocaleString("en-US", { maximumSignificantDigits: 6 })
+          : String(v);
+      }
       tick();
       setInterval(tick, 15000);
     } catch (e) { /* 模块加载失败则静默 */ }
