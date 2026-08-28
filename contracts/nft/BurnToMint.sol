@@ -20,6 +20,8 @@ contract BurnToMint {
     uint256 public immutable cost;
     uint256 public totalBurned;
     bool public paused;
+    /// @dev 每地址限购 1 张
+    mapping(address => bool) public claimed;
 
     event Redeemed(address indexed redeemer, uint256 tokenId, uint256 amount);
     event Paused(bool paused);
@@ -42,9 +44,11 @@ contract BurnToMint {
 
     function redeem() external returns (uint256 tokenId) {
         require(!paused, "paused");
+        require(!claimed[msg.sender], "already claimed");
         require(nft.totalSupply() < nft.maxSupply(), "sold out");
         bool ok = mky.transferFrom(msg.sender, RECEIVER, cost);
         require(ok, "mky transfer failed");
+        claimed[msg.sender] = true;
         totalBurned += cost;
         tokenId = nft.mintTo(msg.sender);
         emit Redeemed(msg.sender, tokenId, cost);

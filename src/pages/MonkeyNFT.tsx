@@ -46,11 +46,13 @@ export default function MonkeyNFT() {
   const [totalMinted, setTotalMinted] = useState<number>(0);
   const [totalBurned, setTotalBurned] = useState<bigint>(0n);
   const [paused, setPaused] = useState<boolean>(false);
+  const [hasClaimed, setHasClaimed] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const enoughApproval = allowance >= NFT_COST;
   const enoughBalance = balance >= NFT_COST;
   const soldOut = totalMinted >= NFT_MAX_SUPPLY;
+  const alreadyClaimed = hasClaimed || myNFTs.length >= 1;
 
   async function loadData() {
     if (!isConnected || !provider || !account || !isNftConfigured) return;
@@ -69,12 +71,14 @@ export default function MonkeyNFT() {
       setTotalMinted(Number(total));
 
       const burn = new Contract(BURN_TO_MINT_ADDRESS, BURN_TO_MINT_ABI, provider);
-      const [burned, isPaused] = await Promise.all([
+      const [burned, isPaused, isClaimed] = await Promise.all([
         burn.totalBurned() as Promise<bigint>,
         burn.paused() as Promise<boolean>,
+        burn.claimed(account).catch(() => false) as Promise<boolean>,
       ]);
       setTotalBurned(burned);
       setPaused(isPaused);
+      setHasClaimed(Boolean(isClaimed));
 
       // 离线枚举：扫描 0..totalMinted 判断归属（总量≤999，开销可接受）
       const ids: number[] = [];
@@ -119,6 +123,10 @@ export default function MonkeyNFT() {
 
   async function doRedeem() {
     if (!isConnected || !signer) return;
+    if (alreadyClaimed) {
+      showToast("每个地址限购 1 张，你已兑换过", "error");
+      return;
+    }
     if (!enoughApproval) {
       showToast("请先授权 MKY", "error");
       return;
@@ -179,7 +187,7 @@ export default function MonkeyNFT() {
         </h1>
         <p className="mt-2 text-[var(--sb-muted)]">
           兑换 {formatNumber(NFT_COST)} MKY → 限量铸造一张「猴子币 NFT」，总量{" "}
-          {NFT_MAX_SUPPLY} 张 · 用于后续生态白名单
+          {NFT_MAX_SUPPLY} 张 · 用于后续生态白名单 · 每个地址限购 1 张
         </p>
       </header>
 
@@ -242,6 +250,10 @@ export default function MonkeyNFT() {
                 <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                   已暂停
                 </span>
+              ) : alreadyClaimed ? (
+                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                  已兑换（每地址限 1 张）
+                </span>
               ) : soldOut ? (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                   已售罄
@@ -267,6 +279,14 @@ export default function MonkeyNFT() {
                   {approving && <Loader2 className="h-5 w-5 animate-spin" />}
                   授权 MKY
                 </button>
+              ) : alreadyClaimed ? (
+                <button
+                  disabled
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--sb-muted)] px-4 py-3 font-bold text-white opacity-70"
+                >
+                  <CheckCircle className="h-5 w-5" />
+                  已兑换（每地址限 1 张）
+                </button>
               ) : (
                 <button
                   onClick={doRedeem}
@@ -277,7 +297,7 @@ export default function MonkeyNFT() {
                 >
                   {redeeming && <Loader2 className="h-5 w-5 animate-spin" />}
                   <Flame className="h-5 w-5" />
-                  兑换 NFT
+                  兑换 80,000 MKY
                 </button>
               )}
               {enoughApproval && !enoughBalance && (
@@ -339,7 +359,7 @@ export default function MonkeyNFT() {
             <p>
               <strong className="text-[var(--sb-text)]">兑换规则：</strong> 每兑换{" "}
               {formatNumber(NFT_COST)} MKY 获得一张限量 NFT，总量固定
-              {NFT_MAX_SUPPLY} 张，兑完即止。
+              {NFT_MAX_SUPPLY} 张，兑完即止。<b className="text-[var(--sb-text)]">每个地址限购 1 张。</b>
             </p>
             <p>
               兑换的 MKY 会转至生态白名单基金地址
@@ -347,6 +367,9 @@ export default function MonkeyNFT() {
                 {shortAddr(RECEIVER_ADDRESS)}
               </code>
               ，用于后续生态白名单与权益。
+            </p>
+            <p className="text-[var(--sb-text)]">
+              持有 NFT 即可用于后续生态白名单，并可免费试用狙击机器人。
             </p>
           </div>
         </div>

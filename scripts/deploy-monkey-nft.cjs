@@ -8,17 +8,15 @@ const { ethers } = require("ethers");
 const ROOT = path.resolve(__dirname, "..");
 
 const BSC_RPCS = [
-  "https://bsc.publicnode.com",
   "https://bsc-dataseed.bnbchain.org",
   "https://bsc-dataseed1.bnbchain.org",
   "https://bsc-dataseed2.bnbchain.org",
-  "https://1rpc.io/bnb",
-  "https://bsc.drpc.org",
+  "https://bsc.publicnode.com",
 ];
 
 const MONKEY_TOKEN = process.env.MONKEY_TOKEN_ADDRESS || "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
 const MAX_SUPPLY = Number(process.env.NFT_MAX_SUPPLY || 300);
-const COST_MKY = BigInt(process.env.NFT_COST_MKY || 50000) * 10n ** 18n;
+const COST_MKY = BigInt(process.env.NFT_COST_MKY || 80000) * 10n ** 18n;
 const RECEIVER = process.env.NFT_RECEIVER || "0x681E3ffCD487BE8C4BD39d1831fdE4d2dD0Df79A"; // 收款地址（不销毁）
 const GAS_PRICE = ethers.parseUnits(process.env.GAS_PRICE_GWEI || "1", "gwei");
 const GAS_LIMIT_NFT = 3_000_000;
