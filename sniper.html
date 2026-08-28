@@ -285,12 +285,12 @@
 
   <div class="pay-card">
     <div>
-      <div class="t1">🎯 MONKEY SNIPER · 会员开通</div>
+      <div class="t1">🎯 MONKEY SNIPER · 内盘狙击</div>
       <div class="t2">内盘狙击 · 高级功能</div>
       <div class="t3">自动监控 Flap 内盘新币 · 一键狙击 · 实时持仓管理</div>
     </div>
-    <div class="price">50,000 <small>猴子币 / 7天</small></div>
-    <button class="pay-btn" id="payBtn" disabled style="cursor:not-allowed"><span class="lock">🔒</span> 暂不开放</button>
+    <div class="price">持 MonkeyNFT 免费 · 或销毁 50,000 猴子币</div>
+    <button class="pay-btn" id="payBtn"><span class="lock">🔓</span> 立即使用</button>
   </div>
 
   <div class="status-bar">
@@ -1260,8 +1260,14 @@
     });
   }));
 
-  // ── 开通（锁定） ───────────────────────────────────────────────────────────
-  $("payBtn").addEventListener("click", () => toast("内盘狙击会员暂未开放，敬请期待。", "🔒"));
+  // ── 立即使用：滚动到激活面板并刷新状态 ───────────────────────────────────────────────────────────
+  $("payBtn").addEventListener("click", () => {
+
+    const row = document.getElementById("activateRow");
+    if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+    refreshActivation();
+    toast("内盘狙击已开放：持 MonkeyNFT 免费，或销毁 50,000 猴子币激活。", "🔓", "buy");
+  });
 
   // ── 初始化 ────────────────────────────────────────────────────────────────
   refreshNotifState();
