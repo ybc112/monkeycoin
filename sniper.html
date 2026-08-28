@@ -344,6 +344,7 @@
         <div class="g-t">👛 我的执行钱包</div>
         <div class="wallet" id="connectedWallet" style="justify-content:space-between">
           <span class="addr" id="walletAddr">未设置钱包</span>
+          <span class="bal" id="walletBal"></span>
         </div>
         <div class="row" style="margin-top:8px">
           <label>私钥</label>
@@ -496,7 +497,22 @@
   function applyWallet(addr) {
     $("walletAddr").textContent = addr ? addr.slice(0, 6) + "…" + addr.slice(-4) : "未设置钱包";
     if (!addr) $("privKeyInput").value = "";
+    refreshBalance();
   }
+  // ── 实时显示执行钱包 BNB 余额（每 15s 刷新） ──
+  async function refreshBalance() {
+    const el = document.getElementById("walletBal");
+    if (!el) return;
+    if (!localWallet || !localWallet.address) { el.textContent = ""; return; }
+    try {
+      const { JsonRpcProvider, formatEther } = await loadEthers();
+      const provider = new JsonRpcProvider(BSC_RPC, 56);
+      const bal = await provider.getBalance(localWallet.address);
+      const bnb = Number(formatEther(bal));
+      el.textContent = (bnb >= 0.001 ? bnb.toFixed(4) : bnb.toPrecision(4)) + " BNB";
+    } catch { el.textContent = "—"; }
+  }
+  setInterval(refreshBalance, 15000);
   $("privKeyInput").addEventListener("change", async () => {
     const pk = $("privKeyInput").value.trim();
     if (!pk) { return; }
