@@ -61,17 +61,35 @@ function saveStoredKey(rec) {
   try { fs.chmodSync(WALLET_KEY_FILE, 0o600); } catch { /* windows 忽略 */ }
 }
 
-// ── 狙击激活门禁：执行钱包须已在链上销毁 50,000 $MKY（allowlist） ───────────
+// ── 狙击激活门禁：销毁 50,000 $MKY（allowlist）或 持有 MonkeyNFT 免费 ────
 async function isSniperActivated(wallet) {
   if (!SNIPER_ACCESS.ENABLED) return true;
   if (!wallet || !isAddress(wallet)) return false;
   try {
     const provider = getProvider();
+    // 1) 持有 MonkeyNFT → 免费
+    if (SNIPER_ACCESS.NFT_FREE) {
+      const nft = new ethers.Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
+      const bal = await nft.balanceOf(wallet);
+      if (bal > 0n) return true;
+    }
+    // 2) 已销毁 50,000 $MKY → allowlist
     const c = new ethers.Contract(SNIPER_ACCESS.ADDRESS, SNIPER_ACCESS.ABI, provider);
     return Boolean(await c.allowlist(wallet));
   } catch { return false; }
 }
-const ACTIVATION_REQUIRED_MSG = `未激活：该执行钱包需先销毁 ${Number(SNIPER_ACCESS.COST / 10n ** 18n).toLocaleString("en-US")} $MKY 销毁才能使用狙击（SniperAccess ${SNIPER_ACCESS.ADDRESS}）`;
+
+// 查询持有 NFT 数量（0 = 无）
+async function nftBalance(wallet) {
+  if (!SNIPER_ACCESS.NFT_FREE || !wallet || !isAddress(wallet)) return 0;
+  try {
+    const provider = getProvider();
+    const nft = new ethers.Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
+    const bal = await nft.balanceOf(wallet);
+    return Number(bal) || 0;
+  } catch { return 0; }
+}
+const ACTIVATION_REQUIRED_MSG = `未激活：当前执行钱包未持有 MonkeyNFT，也未销毁 ${Number(SNIPER_ACCESS.COST / 10n ** 18n).toLocaleString("en-US")} $MKY。持有 NFT 可免费使用，或前往 #/nft 销毁 $MKY 兑换 NFT / 销毁激活。`;
 
 // 构建代币 → Flap Portal 授权交易（卖出必需）
 function buildApproveTx(token, gasPrice) {
@@ -425,6 +443,7 @@ const server = http.createServer(async (req, res) => {
       const address = (url.searchParams.get("address") || "").trim();
       if (address && !isAddress(address)) return json(res, 400, { ok: false, error: "地址无效" });
       const activated = address ? await isSniperActivated(address) : false;
+      const nftCnt = address ? await nftBalance(address) : 0;
       const user = address ? SniperUserRepo.get(address) : null;
       return json(res, 200, {
         ok: true,
@@ -433,6 +452,9 @@ const server = http.createServer(async (req, res) => {
         costLabel: Number(SNIPER_ACCESS.COST / 10n ** 18n).toLocaleString("en-US"),
         tokenAddress: SNIPER_ACCESS.TOKEN,
         accessContract: SNIPER_ACCESS.ADDRESS,
+        nftAddress: SNIPER_ACCESS.NFT_ADDRESS,
+        nftFree: SNIPER_ACCESS.NFT_FREE,
+        nftBalance: nftCnt,
         activated,
         user: user
           ? { address: user.address, txHash: user.tx_hash || null, activatedAt: user.activated_at || null }

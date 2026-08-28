@@ -358,7 +358,7 @@
             </div>
             <button class="btn primary" id="activateBtn" style="display:none;padding:8px 16px;font-size:13px">🔥 销毁 50,000 $MKY 激活</button>
           </div>
-          <div class="disabled-note" id="activateNote" style="margin-top:6px">使用狙击需先由该执行钱包销毁 <b>50,000 $MKY</b> 完成激活，并记录钱包 + 销毁交易哈希 + 激活时间（实名）。</div>
+          <div class="disabled-note" id="activateNote" style="margin-top:6px">持有 <b>MonkeyNFT</b> 可免费使用狙击；未持有时由该执行钱包销毁 <b>50,000 $MKY</b> 完成激活，并记录钱包 + 销毁交易哈希 + 激活时间（实名）。</div>
         </div>
         <div class="security-note">🔐 自动交易请只放少量、可承受损失的资金，绝不要放主钱包资产；私钥不要截图、发送给他人或提交到代码仓库。</div>
       </div>
@@ -505,9 +505,96 @@
       localWallet = new Wallet(pk);
       applyWallet(localWallet.address);
       api("/api/sniper/wallet-key", { method: "POST", body: JSON.stringify({ privateKey: pk }) }).catch(() => {});
+      refreshActivation();
     } catch (e) { toast("私钥无效", "❌"); }
   });
 
+  // ── 狙击资格：销毁 50,000 $MKY 激活 或 持有 MonkeyNFT 免费（后端 on-chain 鉴权） ──
+  const SNIPER_ACCESS_CT = "0x1a8831721accc61AbEf99A9D2915b0572f92C73D";
+  const SNIPER_ACCESS_TOKEN = "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777";
+  const SNIPER_ACCESS_COST = 50000n * 10n ** 18n; // 销毁 50,000 $MKY
+  let activationRefreshing = false;
+
+  async function refreshActivation() {
+    if (activationRefreshing) return;
+    activationRefreshing = true;
+    try {
+      const title = $("activateTitle"), status = $("activateStatus"), btn = $("activateBtn");
+      if (!localWallet || !localWallet.address) {
+        title.textContent = "狙击资格：未激活";
+        title.style.color = "var(--gold-deep)";
+        status.textContent = "等待设置执行钱包…";
+        btn.style.display = "none";
+        return;
+      }
+      const a = localWallet.address;
+      const r = await api(`/api/sniper/me?address=${encodeURIComponent(a)}`);
+      if (r.ok && r.enabled) {
+        const nftCnt = r.nftFree ? (r.nftBalance || 0) : 0;
+        if (r.activated) {
+          title.textContent = "✅ 狙击资格：已激活";
+          title.style.color = "#16a34a";
+          if (nftCnt > 0) {
+            status.textContent = `持有 MonkeyNFT ×${nftCnt} → 免费使用狙击（无需销毁 $MKY）`;
+          } else {
+            const tx = r.user?.txHash ? `销毁哈希：${r.user.txHash.slice(0, 10)}…${r.user.txHash.slice(-6)}` : "（链上 allowlist=true）";
+            const at = r.user?.activatedAt ? ` | 激活时间：${new Date(r.user.activatedAt).toLocaleString("zh-CN")}` : "";
+            status.textContent = `已记录 → ${tx}${at}`;
+          }
+          btn.style.display = "none";
+        } else {
+          const owned = nftCnt > 0;
+          title.textContent = owned ? "✅ 狙击资格：已激活（持有 NFT 免费）" : "🔥 狙击资格：未激活";
+          title.style.color = owned ? "#16a34a" : "var(--orange-deep)";
+          status.textContent = owned
+            ? `当前执行钱包持有 MonkeyNFT ×${nftCnt} → 免费使用狙击。`
+            : `当前执行钱包 ${a.slice(0, 6)}…${a.slice(-4)} 尚未激活。${r.nftFree ? "持有 MonkeyNFT 可免费使用，或" : ""}销毁 50,000 $MKY 激活。`;
+          btn.style.display = owned ? "none" : "inline-flex";
+        }
+      } else {
+        title.textContent = "狙击资格：未激活";
+        status.textContent = "门禁未启用或查询失败";
+        btn.style.display = "none";
+      }
+    } catch (e) {
+      $("activateStatus").textContent = "激活状态查询失败：" + (e.message || e);
+    } finally {
+      activationRefreshing = false;
+    }
+  }
+
+  $("activateBtn").addEventListener("click", activateNow);
+
+  // 销毁 50,000 $MKY 完成链上注册（allowlist=true）后，将钱包+哈希上报后端实名记录
+  async function activateNow() {
+    if (!localWallet) { toast("请先在私钥输入框粘贴执行钱包私钥", "❌"); return; }
+    const addr = localWallet.address;
+    try {
+      const { Wallet, JsonRpcProvider, Contract } = await loadEthers();
+      const provider = new JsonRpcProvider(BSC_RPC, 56);
+      const w = localWallet.connect(provider);
+      const mkyAbi = [ "function allowance(address owner,address spender) view returns(uint256)", "function approve(address spender,uint256 amount) returns(bool)" ];
+      const actAbi = [ "function register() external returns(bool)" ];
+      const mky = new Contract(SNIPER_ACCESS_TOKEN, mkyAbi, w);
+      const act = new Contract(SNIPER_ACCESS_CT, actAbi, w);
+      const cur = await mky.allowance(addr, SNIPER_ACCESS_CT).catch(() => 0n);
+      if (cur < SNIPER_ACCESS_COST) {
+        toast("授权 50,000 $MKY 给激活合约…", "⏳");
+        const ap = await mky.approve(SNIPER_ACCESS_CT, SNIPER_ACCESS_COST, { gasLimit: 120000n });
+        toast("授权已广播，等待确认…", "⏳");
+        await ap.wait();
+      }
+      toast("销毁 50,000 $MKY 激活中…", "🔥");
+      const tx = await act.register({ gasLimit: 250000n });
+      toast("激活交易已广播，等待上链…", "⏳");
+      const rc = await tx.wait();
+      await api("/api/sniper/activate", { method: "POST", body: JSON.stringify({ address: addr, txHash: rc.hash }) });
+      toast("✅ 已销毁 50,000 $MKY，狙击资格激活成功！", "🎉", "buy");
+      refreshActivation();
+    } catch (e) {
+      toast("激活失败：" + (e?.reason || e?.message || e), "❌");
+    }
+  }
   // 用执行钱包签名 unsignedTx 并广播（服务器只收到已签名交易，接触不到私钥）
   async function signAndBroadcast({ orderId, unsignedTx, extra }) {
     let signedRaw;
@@ -1193,6 +1280,7 @@
         localWallet = new Wallet(r.privateKey.trim());
         $("privKeyInput").value = r.privateKey.trim();
         applyWallet(localWallet.address);
+        refreshActivation();
       }
     } catch { /* 服务器未保存/不可用时静默忽略 */ }
   })();

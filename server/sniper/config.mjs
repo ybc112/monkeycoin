@@ -109,7 +109,7 @@ export const FEES = {
   STATE: { NONE: "NONE", PENDING: "PENDING", SENT: "SENT", CONFIRMED: "CONFIRMED", FAILED: "FAILED", RETRYING: "RETRYING" },
 };
 
-// ── 狙击激活门禁（销毁 $MKY 后 allowlist 才可使用；后端 on-chain 鉴权） ─────
+// ── 狙击激活门禁（销毁 $MKY 或持有 MonkeyNFT 后可用；后端 on-chain 鉴权） ──
 export const SNIPER_ACCESS = {
   ADDRESS: env.SNIPER_ACCESS_ADDRESS || "0x1a8831721accc61AbEf99A9D2915b0572f92C73D",
   TOKEN: "0x0c1fa1ff27cd3dd0663a8160498dea3603c17777", // $MKY
@@ -119,6 +119,12 @@ export const SNIPER_ACCESS = {
     "function allowlist(address) view returns(bool)",
     "function isRegistered(address) view returns(bool)",
     "function activateCost() view returns(uint256)",
+  ],
+  // 持有 MonkeyNFT 免费用狙击（每地址限购 1 张 → balanceOf>=1 即免费）
+  NFT_ADDRESS: env.SNIPER_NFT_ADDRESS || "0x8c6932FC68727C35eCb224F47230f17cC1341EA6",
+  NFT_FREE: env.SNIPER_NFT_FREE !== "false", // 默认开启：持 NFT 免费
+  NFT_ABI: [
+    "function balanceOf(address) view returns(uint256)",
   ],
 };
 
