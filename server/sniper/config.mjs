@@ -96,7 +96,7 @@ export const RISK = {
 };
 
 // ── 平台手续费（后端唯一权威，前端不可覆盖；启动即校验地址/比例） ──────────
-const FEE_RECIPIENT = env.SNIPER_FEE_RECIPIENT || "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
+const FEE_RECIPIENT = env.SNIPER_FEE_RECIPIENT || "0x780BAd01DF08D974f7E8bbFbc733f645539f83D9";
 const FEE_BPS = Number(env.SNIPER_FEE_BPS ?? 50);
 if (!/^0x[a-fA-F0-9]{40}$/.test(FEE_RECIPIENT)) throw new Error(`[config] SNIPER_FEE_RECIPIENT 地址格式无效: ${FEE_RECIPIENT}`);
 if (!Number.isInteger(FEE_BPS) || FEE_BPS < 0 || FEE_BPS > 10000) throw new Error(`[config] SNIPER_FEE_BPS 无效: ${FEE_BPS}`);
