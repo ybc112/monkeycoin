@@ -128,20 +128,23 @@ async function broadcastRawToMultiple(signedRaw) {
   throw lastErr || new Error("广播失败");
 }
 
-// 多 RPC 轮询等待交易确认：某个 RPC 能查到已打包即返回（避免单 RPC 抖动/超时误判），status=1 成功、0 revert
-async function waitForTxAcrossRpc(hash, timeoutMs = 90000) {
+// 多 RPC 并行等待交易确认：任一 RPC 先查到已打包即返回（避免单 RPC 抖动/超时误判），status=1 成功、0 revert
+// 并行 + 快速轮询（600ms）取代原串行 7s 超时 + 1.5s 固定间隔，显著缩短确认等待
+async function waitForTxAcrossRpc(hash, timeoutMs = 30000) {
   const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    for (const url of RPC_HTTP_URLS) {
-      try {
-        const p = new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(url) });
-        const rc = await p.waitForTransaction(hash, 1, 7000).catch(() => null);
-        if (rc) return rc; // { status, blockNumber, hash }
-      } catch { /* 切换下一个 RPC */ }
+  const providers = RPC_HTTP_URLS.map((url) => new JsonRpcProvider(url, CHAIN_ID, { batchMaxCount: 1, ...fetchOptionsFor(url) }));
+  try {
+    while (Date.now() < deadline) {
+      // 任一 RPC 已见区块 receipt 即返回（不必等到 confirmations=1，省掉一个区块等待）
+      const results = await Promise.allSettled(providers.map((p) => p.getTransactionReceipt(hash)));
+      const rc = results.find((r) => r.status === "fulfilled" && r.value && r.value.status !== undefined);
+      if (rc) return rc.value; // { status, blockNumber, hash }
+      await new Promise((r) => setTimeout(r, 500));
     }
-    await new Promise((r) => setTimeout(r, 1500));
+    return null;
+  } finally {
+    providers.forEach((p) => { try { p.destroy(); } catch { /* ignore */ } });
   }
-  return null;
 }
 
 // ── 事件 → 引擎 → WS ────────────────────────────────────────────────────────

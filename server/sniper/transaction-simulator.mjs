@@ -15,8 +15,11 @@ export async function simulateBuy({ token, buyAmountWei, wallet, provider }) {
     permitData: "0x",
   };
   try {
-    const gas = await portal.swapExactInput.estimateGas(params, { value: buyAmountWei, from: wallet });
-    const out = await portal.swapExactInput.staticCall(params, { value: buyAmountWei, from: wallet });
+    // 并行发两个 eth_call（estimateGas + staticCall 相互独立），省一次 RPC 往返延迟
+    const [gas, out] = await Promise.all([
+      portal.swapExactInput.estimateGas(params, { value: buyAmountWei, from: wallet }),
+      portal.swapExactInput.staticCall(params, { value: buyAmountWei, from: wallet }),
+    ]);
     return { ok: true, outputAmount: out, gasEstimate: gas, error: null };
   } catch (err) {
     return { ok: false, error: String(err?.reason || err?.message || err) };
@@ -35,8 +38,11 @@ export async function simulateSell({ token, tokenAmount, wallet, provider }) {
     permitData: "0x",
   };
   try {
-    const gas = await portal.swapExactInput.estimateGas(params, { from: wallet });
-    const out = await portal.swapExactInput.staticCall(params, { from: wallet });
+    // 并行发两个 eth_call（estimateGas + staticCall 相互独立），省一次 RPC 往返延迟
+    const [gas, out] = await Promise.all([
+      portal.swapExactInput.estimateGas(params, { from: wallet }),
+      portal.swapExactInput.staticCall(params, { from: wallet }),
+    ]);
     return { ok: true, outputAmount: out, gasEstimate: gas, error: null };
   } catch (err) {
     const msg = String(err?.reason || err?.message || err);
