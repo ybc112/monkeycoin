@@ -100,7 +100,13 @@ export const getRouter = (p = getProvider()) => new Contract(FLAP.DEX.ROUTER_V2,
 export const getTokenContract = (addr, p = getProvider()) => new Contract(addr, TOKEN_ABI, p);
 
 // ── 归一化代币状态（优先 V8，回退 V6） ──────────────────────────────────────
+// 代币状态短时缓存（加速 /buy 等重复读取同一代币，TTL 2.5s）
+const getTokenInfoCache = new Map(); // token(lower) -> { ts, val }
+const TOKEN_INFO_TTL = 2500;
 export async function getTokenInfo(token, p = getProvider()) {
+  const key = String(token).toLowerCase();
+  const hit = getTokenInfoCache.get(key);
+  if (hit && Date.now() - hit.ts < TOKEN_INFO_TTL) return hit.val;
   const portal = getPortal(p);
   let s;
   try {
@@ -110,10 +116,14 @@ export async function getTokenInfo(token, p = getProvider()) {
       const v6 = await portal.getTokenV6(token);
       s = { ...v6, buyTaxRate: v6.taxRate, sellTaxRate: v6.taxRate };
     } catch (err) {
-      return { exists: false, error: String(err?.reason || err?.message || err) };
+      const info = { exists: false, error: String(err?.reason || err?.message || err) };
+      getTokenInfoCache.set(key, { ts: Date.now(), val: info });
+      return info;
     }
   }
-  return normalizeTokenState(s);
+  const info = normalizeTokenState(s);
+  getTokenInfoCache.set(key, { ts: Date.now(), val: info });
+  return info;
 }
 
 function normalizeTokenState(s) {

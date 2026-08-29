@@ -20,7 +20,9 @@ export function validateBroadcast({ DRY_RUN, ENABLE_LIVE_TRADING, signedRaw, ord
     return { ok: false, error: "signedRaw 格式无效" };
   if (!order) return { ok: false, error: "订单不存在" };
   const broadcastable = new Set(["SIGNING", "BROADCASTING", "PENDING"]);
-  if (!broadcastable.has(order.state)) return { ok: false, error: `订单状态 ${order.state} 不可广播` };
+  // 买入跟单续跑：手续费已确认（订单因手续费确认而置为 CONFIRMED），放行这笔买入广播（连续 nonce 快速流程）
+  const isBuyFollowUp = order.state === "CONFIRMED" && body.side === "buy" && body.token && body.amountTokens && (order.fee_state === "CONFIRMED" || order.fee_state === "SENT");
+  if (!isBuyFollowUp && !broadcastable.has(order.state)) return { ok: false, error: `订单状态 ${order.state} 不可广播` };
   if (body.side && order.side && body.side !== order.side) return { ok: false, error: "订单方向不匹配" };
   if (body.token && order.token && String(body.token).toLowerCase() !== String(order.token).toLowerCase())
     return { ok: false, error: "订单代币不匹配" };

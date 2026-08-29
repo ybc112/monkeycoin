@@ -67,15 +67,16 @@ async function isSniperActivated(wallet) {
   if (!wallet || !isAddress(wallet)) return false;
   try {
     const provider = getProvider();
-    // 1) 持有 MonkeyNFT → 免费
+    const checks = [];
+    // 持有 MonkeyNFT → 免费；或已销毁 $MKY → allowlist（并行查询）
     if (SNIPER_ACCESS.NFT_FREE) {
       const nft = new Contract(SNIPER_ACCESS.NFT_ADDRESS, SNIPER_ACCESS.NFT_ABI, provider);
-      const bal = await nft.balanceOf(wallet);
-      if (bal > 0n) return true;
+      checks.push(nft.balanceOf(wallet).then((b) => b > 0n));
     }
-    // 2) 已销毁 50,000 $MKY → allowlist
     const c = new Contract(SNIPER_ACCESS.ADDRESS, SNIPER_ACCESS.ABI, provider);
-    return Boolean(await c.allowlist(wallet));
+    checks.push(c.allowlist(wallet).then(Boolean));
+    const res = await Promise.allSettled(checks);
+    return res.some((r) => r.status === "fulfilled" && r.value === true);
   } catch { return false; }
 }
 
@@ -533,37 +534,43 @@ async function runSimulateSell(body) {
 async function handleBuy(res, body) {
   const { token, strategyId, amount, wallet } = body;
   if (!isAddress(token)) return json(res, 400, { ok: false, error: "token 无效" });
-  // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
-  if (!(await isSniperActivated(wallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
   const strategy = strategyId ? StrategyRepo.get(strategyId) : null;
   if (strategyId && !strategy) return json(res, 404, { ok: false, error: "策略不存在" });
   const buyAmount = amount || strategy?.buyAmountQuote || "0.05";
-  const check = await runPreTradeChecks({ token, strategy: strategy || {}, quoteLabel: null, buyAmountQuote: buyAmount, slippageBps: strategy?.slippageBps || RISK.MAX_SLIPPAGE_BPS });
-  if (!check.ok) return json(res, 400, { ok: false, error: check.reason, results: check.results });
-  // 手续费（总额 → fee + 实际成交金额）；比例/地址以后端权威为准，忽略前端任何 fee 输入
-  const { fee: feeWei, trade: tradeWei } = calcFee(check.buyWei);
+  // 并行：激活鉴权 + 预检 + Gas（三者相互独立，同时发出省 2 轮 RPC）
+  const [activated, check, gas] = await Promise.allSettled([
+    isSniperActivated(wallet),
+    runPreTradeChecks({ token, strategy: strategy || {}, quoteLabel: null, buyAmountQuote: buyAmount, slippageBps: strategy?.slippageBps || RISK.MAX_SLIPPAGE_BPS }),
+    computeGasPrice({ manualGwei: strategy?.gasPriceManualGwei }),
+  ]);
+  // 激活门禁：执行钱包须已销毁 50,000 $MKY 或持有 NFT
+  if (activated.status !== "fulfilled" || !activated.value) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
+  if (check.status !== "fulfilled" || !check.value.ok)
+    return json(res, 400, { ok: false, error: (check.status === "fulfilled" && check.value.reason) ? check.value.reason : (check.status === "rejected" ? String(check.reason?.message || check.reason) : "预检未通过"), results: check.status === "fulfilled" ? check.value.results : [] });
+  // 手续费（总额 → fee + 实际成交金额）；比例/地址以后端权威为准
+  const { fee: feeWei, trade: tradeWei } = calcFee(check.value.buyWei);
   if (feeWei === 0n) return json(res, 400, { ok: false, error: "手续费为 0，拒绝下单" });
-  const gas = await computeGasPrice({ manualGwei: strategy?.gasPriceManualGwei });
-  if (gas.capped) return json(res, 400, { ok: false, error: `Gas ${gas.gwei.toFixed(2)} 超上限 ${gas.cap} Gwei` });
+  if (gas.status !== "fulfilled" || gas.value.capped)
+    return json(res, 400, { ok: false, error: "Gas " + (gas.status === "fulfilled" ? gas.value.gwei.toFixed(2) + " 超上限 " + gas.value.cap + " Gwei" : String(gas.reason?.message || gas.reason)) });
   const sim = await simulateBuy({ token, buyAmountWei: tradeWei, wallet: wallet || "0x0000000000000000000000000000000000000001" });
-  if (!sim.ok) return json(res, 400, { ok: false, error: `模拟买入失败: ${sim.error}` });
+  if (!sim.ok) return json(res, 400, { ok: false, error: "模拟买入失败: " + sim.error });
   const minOut = applySlippage(sim.outputAmount, strategy?.slippageBps || RISK.MAX_SLIPPAGE_BPS);
-  const buyTx = await buildBuyTx({ token, buyAmountWei: tradeWei, minOut, gasPrice: gas.raw, gasLimit: GAS.BUY_GAS_LIMIT });
-  const feeTx = buildFeeTransferTx({ feeWei, gasPrice: gas.raw });
+  const buyTx = await buildBuyTx({ token, buyAmountWei: tradeWei, minOut, gasPrice: gas.value.raw, gasLimit: GAS.BUY_GAS_LIMIT });
+  const feeTx = buildFeeTransferTx({ feeWei, gasPrice: gas.value.raw });
   const orderId = OrderRepo.create({
     token, strategyId: strategyId ?? null, side: "buy", state: "SIGNING", mode: "user",
     amountIn: tradeWei.toString(), amountOut: sim.outputAmount.toString(), minOut: minOut.toString(),
-    gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.BUY_GAS_LIMIT,
+    gasPriceGwei: gas.value.gwei.toFixed(2), gasLimit: GAS.BUY_GAS_LIMIT,
     feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeAmount: feeWei.toString(), feeRecipient: FEES.RECIPIENT,
-    grossAmount: check.buyWei.toString(), netAmount: tradeWei.toString(), feeState: "PENDING",
+    grossAmount: check.value.buyWei.toString(), netAmount: tradeWei.toString(), feeState: "PENDING",
   });
   // 激进加速：前端拿到 feeNonce 后立即连续广播 手续费(nonce)→买入(nonce+1)，无需等手续费确认
   const feeNonce = wallet && isAddress(wallet) ? await getProvider().getTransactionCount(wallet, "pending").catch(() => 0) : 0;
-  const fee = feeBreakdown(check.buyWei);
+  const fee = feeBreakdown(check.value.buyWei);
   return json(res, 200, {
     ok: true, orderId, fee,
-    feeTx: { to: feeTx.to, data: feeTx.data, value: feeWei.toString(), gasPrice: gas.raw.toString(), gasLimit: 21000, isFee: true },
-    buyTx: { to: buyTx.to, data: buyTx.data, value: tradeWei.toString(), gasPrice: gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT },
+    feeTx: { to: feeTx.to, data: feeTx.data, value: feeWei.toString(), gasPrice: gas.value.raw.toString(), gasLimit: 21000, isFee: true },
+    buyTx: { to: buyTx.to, data: buyTx.data, value: tradeWei.toString(), gasPrice: gas.value.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT },
     tradeWei: tradeWei.toString(), feeWei: feeWei.toString(),
     quote: sim.outputAmount.toString(), minOut: minOut.toString(), feeNonce,
   });
