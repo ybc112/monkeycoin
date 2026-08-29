@@ -581,10 +581,14 @@ async function handleSell(res, body) {
   if (!isAddress(token)) return json(res, 400, { ok: false, error: "token 无效" });
   // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
   if (!(await isSniperActivated(wallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
-  const tokenAmount = parseUnits(String(amount || "1"), 18);
+  let tokenAmount = parseUnits(String(amount || "1"), 18);
   const gas = await computeGasPrice({});
   if (gas.capped) return json(res, 400, { ok: false, error: "Gas " + gas.gwei.toFixed(2) + " 超上限 " + gas.cap + " Gwei" });
   const walletAddr = wallet || "0x0000000000000000000000000000000000000001";
+  // 按链上实际余额截断，防止持仓数量偏大导致"模拟卖出 transfer amount exceeds balance"
+  const sellBal = await getTokenBalance(token, walletAddr).catch(() => ({ raw: 0n }));
+  if (sellBal && sellBal.raw > 0n && tokenAmount > sellBal.raw) tokenAmount = sellBal.raw;
+  if (tokenAmount <= 0n) return json(res, 400, { ok: false, error: "可卖数量不足（链上无余额）" });
   const tc = getTokenContract(token);
   const allowance = await tc.allowance(walletAddr, FLAP.PORTAL).catch(() => 0n);
   const needApprove = allowance < tokenAmount;
