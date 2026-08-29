@@ -428,7 +428,7 @@ const server = http.createServer(async (req, res) => {
           ...p,
           tokenName: t.name || "", tokenSymbol: t.symbol || "",
           quoteTokenLabel: t.quote_token_label || "", reserveQuote: t.reserve_quote || "",
-          buyTaxBps: t.buy_tax_bps ?? null, sellTaxBps: t.sell_tax_bps ?? null,
+          buyTaxBps: t.buy_tax_bps ?? null, sellTaxBps: t.sell_tax_bps ?? null, dividendBps: t.dividend_bps ?? null, deflationBps: t.deflation_bps ?? null, mktBps: t.mkt_bps ?? null,
           creator: t.creator || "", statusName: t.status_name || "",
           devBuyQuote: t.dev_buy_quote ?? null,
           orderTxHash: order?.tx_hash || "", orderFeeState: order?.fee_state || "NONE",
@@ -442,6 +442,12 @@ const server = http.createServer(async (req, res) => {
       const id = Number(path.split("/").filter(Boolean).pop());
       const pos = PositionRepo.all(1000).find(p => p.id === id);
       if (!pos) return json(res, 404, { ok: false, error: "持仓不存在" });
+      if (body.remove === true) {
+        PositionRepo.close(id, String(pos.realized_pnl || "0"), String(pos.realized_pnl_quote || "0"));
+        Audit.log("position", `移除持仓记录 #${id}`);
+        ws.emit("position.updated", { positionId: id, state: "closed" });
+        return json(res, 200, { ok: true });
+      }
       if (body.takeProfitBps !== undefined || body.stopLossBps !== undefined) {
         const tp = body.takeProfitBps != null ? Number(body.takeProfitBps) : pos.take_profit_bps;
         const sl = body.stopLossBps != null ? Number(body.stopLossBps) : pos.stop_loss_bps;

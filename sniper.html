@@ -253,6 +253,19 @@
   .modal-box .row input{flex:1;max-width:none}
   .modal-box .mini-row{font-size:11.5px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--line)}
   @media(max-width:640px){.pos-card .pc-kv{grid-template-columns:1fr}}
+  .pos-card .pc-chg{display:flex;justify-content:space-between;align-items:baseline;margin:10px 0 2px}
+  .pos-card .pc-chg .k{font-size:12px;color:var(--muted)}
+  .pos-card .pc-chg .v{font-size:24px;font-weight:900}
+  .pos-card .pc-ret{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .pos-card .pc-ret .k{font-size:12px;color:var(--muted)}
+  .pos-card .pc-ret .v{font-size:18px;font-weight:800}
+  .pos-card .pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+  .pos-card .pc-grid .cell{background:rgba(255,122,0,.05);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .pos-card .pc-grid .cell .k{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+  .pos-card .pc-grid .cell .v{font-weight:800;font-size:14px}
+  .pos-card .pc-tax{font-size:12px;color:var(--brown-soft);background:rgba(255,122,0,.05);border-radius:8px;padding:6px 10px;margin:6px 0}
+  .pc-del{margin-left:auto;background:none;border:1px solid rgba(229,72,77,.33);color:#e5484d;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .pos-card .good{color:#128052}.pos-card .bad{color:#e5484d}.pos-card .flat{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1216,12 +1229,19 @@
     });
   }
   function positionCard(p) {
-    const cost = Number(p.entry_quote || 0) / 1e18;          // 实际成本（BNB）
-    const realized = Number(p.realized_pnl_quote || 0);      // 已实现净盈亏（已含手续费）
+    const cost = Number(p.entry_quote || 0) / 1e18;          // 总成本（BNB，投入买入金额）
+    const amountT = Number(p.amount_tokens || 0) / 1e18;     // 持仓量（代币）
+    const entryPer = amountT > 0 ? (Number(p.entry_quote || 0) / Number(p.amount_tokens || 0)) : 0; // 成本/代币(BNB)
+    const curPer = Number(p.current_price || 0) || entryPer; // 现价(BNB/代币)
+    const holding = curPer * amountT;                        // 当前余仓价值(BNB)
+    const realized = Number(p.realized_pnl_quote || 0) / 1e18; // 已实现净盈亏
     const grossSold = Number(p.gross_sold || 0);
     const feeTotal = Number(p.fee_total || 0);
-    const retPct = cost > 0 ? (realized / cost * 100) : 0;
-    const pnlColor = realized > 0 ? "good" : (realized < 0 ? "bad" : "flat");
+    const totalPnl = holding + realized - cost;              // 总盈亏(未实现+已实现-成本)
+    const retPct = cost > 0 ? (totalPnl / cost * 100) : 0;   // 总收益率
+    const chg = entryPer > 0 ? (curPer - entryPer) / entryPer * 100 : 0; // 代币涨幅%(止盈依据)
+    const pnlColor = totalPnl > 0 ? "good" : (totalPnl < 0 ? "bad" : "flat");
+    const chgColor = chg > 0 ? "good" : (chg < 0 ? "bad" : "flat");
     const isDex = (p.statusName || "") === "DEX" || (p.status_name || "") === "DEX";
     const showOps = p.state === "open";
     const tp = p.take_profit_bps != null ? (p.take_profit_bps / 100).toFixed(1) + "%" : "-";
@@ -1235,7 +1255,17 @@
         <span class="pc-tag flap">Flap</span>
         <span class="pc-tag ${isDex ? "dex" : "inner"}">${isDex ? "DEX" : "内盘"}</span>
         <span class="pc-state ${p.state}">${p.state === "open" ? "持仓中" : "已平仓"}</span>
+        <button class="pc-del" data-act="del" data-pos="${p.id}">删除</button>
       </div>
+      <div class="pc-chg"><div class="k">代币涨幅（止盈依据）</div><div class="v ${chgColor}">${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%</div></div>
+      <div class="pc-ret"><div class="k">总收益率</div><div class="v ${pnlColor}">${retPct >= 0 ? "+" : ""}${retPct.toFixed(2)}%</div></div>
+      <div class="pc-grid">
+        <div class="cell"><span class="k">总成本</span><span class="v">${cost.toFixed(4)} BNB</span></div>
+        <div class="cell"><span class="k">当前余仓价值</span><span class="v">${holding.toFixed(4)} BNB</span></div>
+        <div class="cell"><span class="k">持仓量</span><span class="v">${amountT.toFixed(4)}</span></div>
+        <div class="cell"><span class="k">总盈亏</span><span class="v ${pnlColor}">${totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(4)} BNB</span></div>
+      </div>
+      <div class="pc-tax">机制代币 · 买税 ${fmtPct(p.buyTaxBps)} · 卖税 ${fmtPct(p.sellTaxBps)} · 分红 ${fmtPct(p.dividendBps)}</div>
       <div class="pc-kv">
         <div class="kv"><span class="k">钱包</span><span class="v">${short(p.wallet)}</span></div>
         <div class="kv"><span class="k">代币</span><span class="v">${short(p.token)}</span></div>
@@ -1284,6 +1314,7 @@
     const frac = Number(btn.dataset.frac || 1);
     try {
       if (act === "sell" || act === "sellall") await sellFraction(token, pos, amt, entry, frac);
+      else if (act === "del") { await api("/api/sniper/positions/" + pos, { method: "PUT", body: JSON.stringify({ remove: true }) }); toast("已移除持仓记录", "🗑️"); loadPositions(); }
       else if (act === "auto") await toggleAutoSell(pos, btn);
       else if (act === "tpsl") editTpSl(pos);
       else if (act === "orders") showTokenOrders(token);
