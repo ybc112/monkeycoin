@@ -181,8 +181,11 @@ export class StrategyEngine {
       fail("buy_tax", `买入税 ${(rec.state.buyTaxBps / 100).toFixed(1)}% > ${(strategy.maxBuyTaxBps / 100).toFixed(1)}%`);
     if (strategy.maxSellTaxBps != null && rec.state.sellTaxBps > strategy.maxSellTaxBps)
       fail("sell_tax", `卖出税 ${(rec.state.sellTaxBps / 100).toFixed(1)}% > ${(strategy.maxSellTaxBps / 100).toFixed(1)}%`);
-    if ((strategy.conditions || []).some(c => c.type === "single_tax_only") && rec.state.buyTaxBps !== rec.state.sellTaxBps)
-      fail("single_tax", `非单税币：买税 ${(rec.state.buyTaxBps / 100).toFixed(1)}% / 卖税 ${(rec.state.sellTaxBps / 100).toFixed(1)}%`);
+    if ((strategy.conditions || []).some(c => c.type === "single_tax_only")) {
+      const noMechanism = !rec.state.buyTaxBps && !rec.state.sellTaxBps &&
+        [rec.mktBps, rec.dividendBps, rec.deflationBps, rec.lpBps].every(v => v == null || v === 0);
+      if (noMechanism) fail("single_tax", `无机制裸币被过滤（买税 0 / 卖税 0，且无营销/分红/通缩/LP 机制）`);
+    }
 
     // 6. Dev 地址
     for (const c of (strategy.conditions || []).filter(c => c.type === "dev_address"))

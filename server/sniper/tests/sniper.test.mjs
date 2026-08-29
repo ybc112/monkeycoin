@@ -23,7 +23,7 @@ const { pickBuyWallet } = await load("strategy-engine.mjs");
 const { PositionManager } = await load("position-manager.mjs");
 const cfg = await load("config.mjs");
 const { FEES, DRY_RUN } = cfg;
-const FIXED_FEE_RECIPIENT = "0x436fB3245Ad8377DF443Ca1c67f997705D5843bb";
+const FIXED_FEE_RECIPIENT = "0x39bB78BAdEC9d906CA77aF6b0882D0114263544F";
 
 test("事件解析：5 类事件 topic hash 存在", () => {
   const iface = new Interface([
@@ -74,6 +74,26 @@ test("策略拒绝：底池不足/税率超限/Symbol 排除", () => {
   const r = engine.matchOne(strategy, rec);
   assert.equal(r.matched, false);
   assert.ok(r.fails.length >= 1);
+});
+
+test("过滤单税(无机制)币：买/卖税为0且无任何机制 → 拒绝；有税或有营销机制 → 通过", () => {
+  const engine = new StrategyEngine({});
+  const strategy = {
+    id: 9, platform: "flap", quoteTokens: ["BNB"], maxBuyTaxBps: 1000, maxSellTaxBps: 1000,
+    conditions: [{ type: "single_tax_only", operator: "eq", value: "true" }], maxPositions: null,
+  };
+  const ZER = "0x0000000000000000000000000000000000000000";
+  const base = { symbol: "T", name: "T Coin", creator: "0x" + "66".repeat(20), quoteLabel: "BNB",
+    initialReserveQuote: "6", devBuyQuote: 1 };
+  // 无机制裸币：买卖税 0，且 mkt/dividend/deflation/lp 全 0 → 拒绝
+  const bare = { ...base, state: { quoteTokenAddress: ZER, buyTaxBps: 0, sellTaxBps: 0 }, mktBps: 0, dividendBps: 0, deflationBps: 0, lpBps: 0 };
+  assert.equal(engine.matchOne(strategy, bare).matched, false, JSON.stringify(engine.matchOne(strategy, bare)));
+  // 有税收机制：买卖税>0 → 通过
+  const taxy = { ...base, state: { quoteTokenAddress: ZER, buyTaxBps: 400, sellTaxBps: 400 }, mktBps: 300, dividendBps: 100, deflationBps: 0, lpBps: 0 };
+  assert.equal(engine.matchOne(strategy, taxy).matched, true);
+  // 买卖税 0，但有营销/分红机制 → 通过
+  const mktOnly = { ...base, state: { quoteTokenAddress: ZER, buyTaxBps: 0, sellTaxBps: 0 }, mktBps: 500, dividendBps: 0, deflationBps: 0, lpBps: 0 };
+  assert.equal(engine.matchOne(strategy, mktOnly).matched, true);
 });
 
 test("滑点计算：minOut = amount * (1 - slippage)", () => {
@@ -196,7 +216,7 @@ test("手续费精度：BigInt 整除截断，无浮点误差", () => {
   assert.ok(fee <= odd * 50n / 10000n); // 向下取整
 });
 
-test("手续费地址固定：默认 = 0x436f…843bb，不受前端影响", () => {
+test("手续费地址固定：默认 EOA 0x39bB…444F，不受前端影响", () => {
   assert.equal(FEES.RECIPIENT.toLowerCase(), FIXED_FEE_RECIPIENT.toLowerCase());
   // 前端即使传其它地址也被忽略（后端只用 FEES.RECIPIENT 构建转账）
   const tx = buildFeeTransferTx({ feeWei: 1000n, gasPrice: 1n });
