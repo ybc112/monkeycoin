@@ -722,16 +722,16 @@
     }
   }
   // 用执行钱包签名 unsignedTx 并广播（服务器只收到已签名交易，接触不到私钥）
-  async function signAndBroadcast({ orderId, unsignedTx, extra }) {
+  async function signAndBroadcast({ orderId, unsignedTx, extra, nonce }) {
     let signedRaw;
     if (localWallet) {
       const { JsonRpcProvider } = await loadEthers();
       const provider = new JsonRpcProvider(BSC_RPC, 56);
-      const nonce = await provider.getTransactionCount(localWallet.address, "pending");
+      const n = nonce ?? (await provider.getTransactionCount(localWallet.address, "pending"));
       signedRaw = await localWallet.signTransaction({
         to: unsignedTx.to, data: unsignedTx.data, value: unsignedTx.value,
         gasPrice: unsignedTx.gasPrice, gasLimit: unsignedTx.gasLimit,
-        chainId: 56, nonce, type: 0,
+        chainId: 56, nonce: n, type: 0,
       });
     } else {
       throw new Error("未设置执行钱包：请先粘贴私钥");
@@ -1096,12 +1096,14 @@
       // 展示手续费明细（金额/实际交易金额/地址，全部来自后端）
       const f = r.fee || {};
       toast(`平台手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际买入 ${f.netBnb || "0"} BNB`, "💸");
-      // 第 1 笔：手续费转账（isFee）→ 后端确认后会自动推送买入待签
-      const out = await signAndBroadcast({
-        orderId: r.orderId, unsignedTx: r.feeTx,
-        extra: { isFee: true, side: "buy" },
+      // 连续两笔立即广播（不再等手续费确认）：手续费(nonce) → 买入(nonce+1)
+      const n0 = Number(r.feeNonce || 0);
+      const feeOut = await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.feeTx, extra: { isFee: true, side: "buy" }, nonce: n0 });
+      await signAndBroadcast({
+        orderId: r.orderId, unsignedTx: r.buyTx, nonce: n0 + 1,
+        extra: { side: "buy", token, amountTokens: r.quote, entryPrice: "0", entryQuote: r.tradeWei },
       });
-      toast(`手续费已广播 ${(out.txHash || "").slice(0, 10)}…，等待确认后自动买入`, "💸");
+      toast(`买入已提交（手续费+买入已广播）${(feeOut.txHash || "").slice(0, 8)}…`, "✅", "buy");
     } catch (e) {
       toast("买入失败: " + String(e.message || e), "❌");
     } finally {
@@ -1302,10 +1304,13 @@
       const f = r.fee || {};
       toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸", "sell");
       let walletAddr = localWallet ? localWallet.address : "";
-      // approve 需要先授权
-      if (r.needApprove && r.approveTx) {
-        const out = await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction } });
-        toast(`授权已广播 ${(out.txHash || "").slice(0, 10)}…，确认后自动卖出`, "⛏️", "sell");
+      // 需要授权：连续广播 授权(nonce)→卖出(nonce+1)，无需等授权确认
+      if (r.needApprove && r.approveTx && r.sellTx) {
+        const n0 = Number(r.nonce || 0);
+        await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction }, nonce: n0 });
+        await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.sellTx, extra: { side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction, quoteOut: r.quote, entryQuote }, nonce: n0 + 1 });
+        toast(`售卖已提交（授权+卖出已广播）`, "✅", "sell");
+        loadOrders(); loadPositions();
         return;
       }
       const out = await signAndBroadcast({

@@ -557,15 +557,15 @@ async function handleBuy(res, body) {
     feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeAmount: feeWei.toString(), feeRecipient: FEES.RECIPIENT,
     grossAmount: check.buyWei.toString(), netAmount: tradeWei.toString(), feeState: "PENDING",
   });
-  // 手动买入也走"模式A"：手续费确认后由后端推送买入待签（页面本机签名广播）
-  pendingBuyAfterFee.set(orderId, { token, gas, buyTx, tradeWei, sim });
+  // 激进加速：前端拿到 feeNonce 后立即连续广播 手续费(nonce)→买入(nonce+1)，无需等手续费确认
+  const feeNonce = wallet && isAddress(wallet) ? await getProvider().getTransactionCount(wallet, "pending").catch(() => 0) : 0;
   const fee = feeBreakdown(check.buyWei);
   return json(res, 200, {
     ok: true, orderId, fee,
     feeTx: { to: feeTx.to, data: feeTx.data, value: feeWei.toString(), gasPrice: gas.raw.toString(), gasLimit: 21000, isFee: true },
     buyTx: { to: buyTx.to, data: buyTx.data, value: tradeWei.toString(), gasPrice: gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT },
     tradeWei: tradeWei.toString(), feeWei: feeWei.toString(),
-    quote: sim.outputAmount.toString(), minOut: minOut.toString(),
+    quote: sim.outputAmount.toString(), minOut: minOut.toString(), feeNonce,
   });
 }
 
@@ -597,12 +597,15 @@ async function handleSell(res, body) {
   const allowance = await tc.allowance(walletAddr, FLAP.PORTAL).catch(() => 0n);
   if (allowance < tokenAmount) {
     const approveTx = buildApproveTx(token, gas.raw);
-    pendingSellAfterApprove.set(orderId, { token, positionId: positionId ?? null, fraction: fraction ?? 1, sellTx: tx, amountToSell: tokenAmount, quoteOut: grossWei, gas });
+    // 激进加速：前端连续广播 授权(nonce)→卖出(nonce+1)，无需等授权确认
+    const nonce = wallet && isAddress(wallet) ? await getProvider().getTransactionCount(wallet, "pending").catch(() => 0) : 0;
     return json(res, 200, {
       ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee,
-      needApprove: true,
+      needApprove: true, nonce,
       approveTx: { to: approveTx.to, data: approveTx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: 60000, isApprove: true },
+      sellTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
       gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(),
+      quote: grossWei.toString(), minOut: minOut.toString(),
     });
   }
   return json(res, 200, {
