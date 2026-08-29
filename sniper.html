@@ -432,9 +432,10 @@
       <div class="group">
         <div class="g-t">🎯 买入条件</div>
         <div class="condition-section">
-          <div class="g-t">只买指定底池（Flap · BNB 池）</div>
-          <div class="row" style="margin-top:4px"><input id="poolMin" type="number" placeholder="如 5" style="flex:1"><span class="unit">BNB</span></div>
-          <button class="condition-add">＋ 添加只买底池 (1/30)</button>
+          <div class="g-t">底池过滤（仅支持 Flap · BNB 底池）</div>
+          <div class="row" style="margin-top:6px"><span class="lbl">底池币种</span><span style="flex:1;font-weight:800;color:var(--orange-deep)">BNB</span><span class="unit">仅支持 BNB</span></div>
+          <div class="row" style="margin-top:6px"><span class="lbl">底池金额下限</span><input id="poolMin" type="number" placeholder="如 5 = 初始底池 ≥5 BNB 才触发" style="flex:1"><span class="unit">BNB</span></div>
+          <div style="margin-top:6px;font-size:12px;color:#7a6a52">只买入「初始底池 ≥ 上述金额（BNB）」且底池币种为 <b>BNB</b> 的 Flap 内盘代币。</div>
         </div>
         <div class="condition-section">
           <div class="g-t">创建时 Dev 首买买入条件</div>
