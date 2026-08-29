@@ -554,6 +554,8 @@ async function handleBuy(res, body) {
     feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeAmount: feeWei.toString(), feeRecipient: FEES.RECIPIENT,
     grossAmount: check.buyWei.toString(), netAmount: tradeWei.toString(), feeState: "PENDING",
   });
+  // 手动买入也走"模式A"：手续费确认后由后端推送买入待签（页面本机签名广播）
+  pendingBuyAfterFee.set(orderId, { token, gas, buyTx, tradeWei, sim });
   const fee = feeBreakdown(check.buyWei);
   return json(res, 200, {
     ok: true, orderId, fee,
@@ -722,6 +724,8 @@ async function handleBroadcast(res, body) {
         const ctx = pendingBuyAfterFee.get(orderId);
         if (ctx) {
           pendingBuyAfterFee.delete(orderId);
+          // 该订单先广播的是手续费（现在已 CONFIRMED）；重置为 SIGNING 以放行后续买入广播
+          OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "手续费已确认，等待买入签名" });
           ws.emit("transaction.pending", {
             orderId, token: ctx.token, side: "buy", requiresSignature: true,
             unsignedTx: { to: ctx.buyTx.to, data: ctx.buyTx.data, value: ctx.tradeWei.toString(), gasPrice: ctx.gas.raw.toString(), gasLimit: GAS.BUY_GAS_LIMIT },

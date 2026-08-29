@@ -480,7 +480,7 @@
           <div class="tabs" id="marketTabs">
             <button class="on" data-filter="all">全部</button>
             <button data-filter="bnb">BNB 底池</button>
-            <button data-filter="usdt">USDT 底池</button>
+            
           </div>
         </div>
         <div class="toolbar">
@@ -736,7 +736,7 @@
     } else {
       throw new Error("未设置执行钱包：请先粘贴私钥");
     }
-    const r = await api("/api/sniper/broadcast", { method: "POST", body: JSON.stringify({ orderId, signedRaw, ...extra }) });
+    const r = await api("/api/sniper/broadcast", { method: "POST", body: JSON.stringify({ orderId, signedRaw, wallet: localWallet ? localWallet.address : "", ...extra }) });
     return r;
   }
 
@@ -1033,8 +1033,7 @@
     const q = ($("searchInput").value || "").trim().toLowerCase();
     const list = tokens.filter(t => {
       const label = (t.quote_token_label || "").toLowerCase();
-      if (marketFilter === "bnb" && label !== "bnb") return false;
-      if (marketFilter === "usdt" && label !== "usdt") return false;
+      if (label !== "bnb") return false; // 仅显示 BNB 底池代币
       if (q && !((t.symbol || "").toLowerCase().includes(q) || (t.name || "").toLowerCase().includes(q) || (t.address || "").toLowerCase().includes(q))) return false;
       return true;
     }).slice(0, 10);
@@ -1092,7 +1091,7 @@
     try {
       const strategyId = await ensureStrategy();
       toast(`正在构建买入 ${symbol || ""}…`, "⏳");
-      const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value }) });
+      const r = await api("/api/sniper/buy", { method: "POST", body: JSON.stringify({ token, strategyId, amount: $("buyAmt").value, wallet: localWallet.address }) });
       if (!r.ok) { toast("买入被拒: " + (r.error || ""), "⚠️"); return; }
       // 展示手续费明细（金额/实际交易金额/地址，全部来自后端）
       const f = r.fee || {};
@@ -1298,7 +1297,7 @@
     const label = fraction >= 1 ? "全部卖出" : (fraction * 100) + "% 卖出";
     try {
       toast(`构建${label}…`, "⏳");
-      const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: sellAmt.toFixed(6), fraction }) });
+      const r = await api("/api/sniper/sell", { method: "POST", body: JSON.stringify({ token, amount: sellAmt.toFixed(6), fraction, wallet: localWallet.address }) });
       if (!r.ok) { toast("卖出被拒: " + (r.error || ""), "⚠️"); return; }
       const f = r.fee || {};
       toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸", "sell");
