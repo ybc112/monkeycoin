@@ -1405,6 +1405,7 @@
   loadOrders();
   loadPositions();
   setInterval(refreshStatus, 8000);
+  setInterval(loadTokens, 8000);
   connectWs();
   // 自用：打开页面静默回填服务器保存的执行钱包（无任何提示）
   (async () => {
