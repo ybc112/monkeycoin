@@ -971,7 +971,7 @@
             const extra = isSell
               ? { side: "sell", wallet: walletAddr, positionId: data.positionId, fraction: data.fraction, quoteOut: data.quoteOut, entryQuote: data.entryQuote }
               : { side: "buy", token: data.token, wallet: walletAddr, amountTokens: data.amountTokens, entryPrice: data.entryPrice, entryQuote: data.entryQuote };
-            const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra });
+            const out = await signAndBroadcast({ orderId: data.orderId, unsignedTx: data.unsignedTx, extra, nonce: data.nonce });
             toast(`已广播${isSell ? "卖出" : "买入"} ${(out.txHash || "").slice(0, 10)}…`, "⛏️", isSell ? "sell" : "buy");
           } catch (e) {
             toast(`自动签名失败: ${String(e.message || e)}（请确认已设置执行钱包）`, "⚠️", "error");
@@ -1305,13 +1305,9 @@
       const f = r.fee || {};
       toast(`预计到账 ${f.grossBnb || "0"} BNB，手续费 ${f.percent || "0.5%"}（${f.feeBnb || "0"} BNB），实际到账 ${f.netBnb || "0"} BNB`, "💸", "sell");
       let walletAddr = localWallet ? localWallet.address : "";
-      // 需要授权：连续广播 授权(nonce)→卖出(nonce+1)，无需等授权确认
-      if (r.needApprove && r.approveTx && r.sellTx) {
-        const n0 = Number(r.nonce || 0);
-        await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction }, nonce: n0 });
-        await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.sellTx, extra: { side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction, quoteOut: r.quote, entryQuote }, nonce: n0 + 1 });
-        toast(`售卖已提交（授权+卖出已广播）`, "✅", "sell");
-        loadOrders(); loadPositions();
+      if (r.needApprove && r.approveTx) {
+        await signAndBroadcast({ orderId: r.orderId, unsignedTx: r.approveTx, extra: { isApprove: true, side: "sell", wallet: walletAddr, positionId: Number(positionId), fraction }, nonce: Number(r.nonce || 0) });
+        toast(`授权已广播，确认后自动卖出`, "⛏️", "sell");
         return;
       }
       const out = await signAndBroadcast({

@@ -575,48 +575,35 @@ async function handleSell(res, body) {
   // 狙击激活门禁：执行钱包须已销毁 50,000 $MKY
   if (!(await isSniperActivated(wallet))) return json(res, 403, { ok: false, error: ACTIVATION_REQUIRED_MSG });
   const tokenAmount = parseUnits(String(amount || "1"), 18);
-  const sim = await simulateSell({ token, tokenAmount, wallet: wallet || "0x0000000000000000000000000000000000000001" });
-  if (!sim.ok) return json(res, 400, { ok: false, error: `模拟卖出失败: ${sim.error}` });
   const gas = await computeGasPrice({});
-  const minOut = applySlippage(sim.outputAmount, RISK.MAX_SLIPPAGE_BPS);
-  const tx = await buildSellTx({ token, tokenAmount, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
-  // 卖出手续费：按预计到账 gross 计算（确认后按实际到账再算并转账）
-  const grossWei = sim.outputAmount;
-  const { fee: feeWei } = calcFee(grossWei);
-  const orderId = OrderRepo.create({
-    token, side: "sell", state: "SIGNING", mode: "user",
-    amountIn: tokenAmount.toString(), amountOut: grossWei.toString(), minOut: minOut.toString(),
-    gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT,
-    feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeAmount: feeWei.toString(), feeRecipient: FEES.RECIPIENT,
-    grossAmount: grossWei.toString(), netAmount: (grossWei - feeWei).toString(), feeState: "PENDING",
-  });
-  const fee = feeBreakdown(grossWei);
-  // 完整 approve：allowance 不足时先返回 approve 交易，确认后再卖出
+  if (gas.capped) return json(res, 400, { ok: false, error: "Gas " + gas.gwei.toFixed(2) + " 超上限 " + gas.cap + " Gwei" });
   const walletAddr = wallet || "0x0000000000000000000000000000000000000001";
   const tc = getTokenContract(token);
   const allowance = await tc.allowance(walletAddr, FLAP.PORTAL).catch(() => 0n);
-  if (allowance < tokenAmount) {
+  const needApprove = allowance < tokenAmount;
+
+  // 需先授权：返回 approveTx + nonce，授权确认后由后端自动构建并推送卖出（连续 nonce）
+  if (needApprove) {
     const approveTx = buildApproveTx(token, gas.raw);
-    // 激进加速：前端连续广播 授权(nonce)→卖出(nonce+1)，无需等授权确认
     const nonce = wallet && isAddress(wallet) ? await getProvider().getTransactionCount(wallet, "pending").catch(() => 0) : 0;
-    return json(res, 200, {
-      ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee,
-      needApprove: true, nonce,
-      approveTx: { to: approveTx.to, data: approveTx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: 60000, isApprove: true },
-      sellTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
-      gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(),
-      quote: grossWei.toString(), minOut: minOut.toString(),
-    });
+    const orderId = OrderRepo.create({ token, side: "sell", state: "SIGNING", mode: "user", amountIn: tokenAmount.toString(), gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT, feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeRecipient: FEES.RECIPIENT, feeState: "PENDING" });
+    pendingSellAfterApprove.set(Number(orderId), { token, positionId: positionId ?? null, fraction: fraction ?? 1, amountToSell: tokenAmount, gas, approveNonce: nonce });
+    return json(res, 200, { ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee: feeBreakdown("0"), needApprove: true, nonce, approveTx: { to: approveTx.to, data: approveTx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: 60000, isApprove: true } });
   }
-  return json(res, 200, {
-    ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee, needApprove: false,
-    unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
-    gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(),
-    quote: grossWei.toString(), minOut: minOut.toString(),
-  });
+
+  // 已授权：直接模拟 → 构建 → 返回卖出交易（连续 nonce 即时广播）
+  const sim = await simulateSell({ token, tokenAmount, wallet: walletAddr });
+  if (!sim.ok) return json(res, 400, { ok: false, error: "模拟卖出失败: " + sim.error });
+  const minOut = applySlippage(sim.outputAmount, RISK.MAX_SLIPPAGE_BPS);
+  const tx = await buildSellTx({ token, tokenAmount, minOut, gasPrice: gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
+  const grossWei = sim.outputAmount;
+  const { fee: feeWei } = calcFee(grossWei);
+  const orderId = OrderRepo.create({ token, side: "sell", state: "SIGNING", mode: "user", amountIn: tokenAmount.toString(), amountOut: grossWei.toString(), minOut: minOut.toString(), gasPriceGwei: gas.gwei.toFixed(2), gasLimit: GAS.SELL_GAS_LIMIT, feeBps: FEES.BPS, feeAsset: FEES.ASSET, feeAmount: feeWei.toString(), feeRecipient: FEES.RECIPIENT, grossAmount: grossWei.toString(), netAmount: (grossWei - feeWei).toString(), feeState: "PENDING" });
+  const fee = feeBreakdown(grossWei);
+  const nonce = wallet && isAddress(wallet) ? await getProvider().getTransactionCount(wallet, "pending").catch(() => 0) : 0;
+  return json(res, 200, { ok: true, orderId, positionId: positionId ?? null, fraction: fraction ?? 1, fee, needApprove: false, nonce, unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT }, gross: grossWei.toString(), feeWei: feeWei.toString(), net: (grossWei - feeWei).toString(), quote: grossWei.toString(), minOut: minOut.toString() });
 }
 
-// ── 自动卖出流水线（止盈/止损/分批；模式B 自动签名广播） ────────────────────
 async function executeSellPipeline({ position, fraction = 1, reason = "" }) {
   const token = position.token;
   const wallet = position.wallet;
@@ -713,7 +700,7 @@ async function handleBroadcast(res, body) {
     const resp = await broadcastRawToMultiple(signedRaw);
     OrderRepo.updateState(orderId, "BROADCASTING", { txHash: resp.hash });
     ws.emit("transaction.pending", { orderId, txHash: resp.hash, side: body.side });
-    waitForTxAcrossRpc(resp.hash).then((receipt) => {
+    waitForTxAcrossRpc(resp.hash).then(async (receipt) => {
       if (!receipt || receipt.status !== 1) throw new Error("链上交易失败或确认失败（回滚/超时）");
       OrderRepo.updateState(orderId, "CONFIRMED", { txHash: receipt.hash });
       TransactionRepo.updateStatus(receipt.hash, "confirmed");
@@ -739,17 +726,25 @@ async function handleBroadcast(res, body) {
           });
         }
       } else if (body.isApprove) {
-        // approve 确认后：继续卖出（需要授权 → 卖出）
-        OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "授权成功，等待卖出签名" });
+        // approve 确认后：授权生效，再模拟并构建卖出，推送卖出待签（连续 nonce = approveNonce+1）
+        OrderRepo.updateState(orderId, "SIGNING", { matchedReason: "授权成功，构建卖出" });
         const ctx = pendingSellAfterApprove.get(orderId);
         if (ctx) {
           pendingSellAfterApprove.delete(orderId);
-          ws.emit("transaction.pending", {
-            orderId, token: ctx.token, side: "sell", requiresSignature: true,
-            positionId: ctx.positionId, fraction: ctx.fraction,
-            unsignedTx: { to: ctx.sellTx.to, data: ctx.sellTx.data, value: "0", gasPrice: ctx.gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
-            amountTokens: ctx.amountToSell.toString(), quoteOut: ctx.quoteOut.toString(),
-          });
+          try {
+            const sim = await simulateSell({ token: ctx.token, tokenAmount: ctx.amountToSell, wallet: body.wallet });
+            if (!sim.ok) throw new Error(sim.error || "模拟卖出失败");
+            const minOut = applySlippage(sim.outputAmount, RISK.MAX_SLIPPAGE_BPS);
+            const tx = await buildSellTx({ token: ctx.token, tokenAmount: ctx.amountToSell, minOut, gasPrice: ctx.gas.raw, gasLimit: GAS.SELL_GAS_LIMIT });
+            ws.emit("transaction.pending", {
+              orderId, token: ctx.token, side: "sell", requiresSignature: true,
+              positionId: ctx.positionId, fraction: ctx.fraction, nonce: Number(ctx.approveNonce || 0) + 1,
+              unsignedTx: { to: tx.to, data: tx.data, value: "0", gasPrice: ctx.gas.raw.toString(), gasLimit: GAS.SELL_GAS_LIMIT },
+              amountTokens: ctx.amountToSell.toString(), quoteOut: sim.outputAmount.toString(),
+            });
+          } catch (err) {
+            ws.emit("transaction.failed", { orderId, reason: String(err?.message || err) });
+          }
         }
       } else if (body.side === "sell" && body.positionId) {
         // 卖出确认：平仓或记批次 + 盈亏（净到账=毛利−手续费） + 手续费转账 + 日亏损熔断
