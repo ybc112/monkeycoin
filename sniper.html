@@ -476,7 +476,7 @@
     <div>
       <div class="panel" style="margin-bottom:22px">
         <div class="panel-head">
-          <h2><span class="ico">📡</span> 最近 Flap 内盘代币 <span class="mini" id="listCount"></span><span class="mini" style="color:var(--muted)">· 仅显示前 10</span></h2>
+          <h2><span class="ico">📡</span> 最近 Flap 内盘代币 <span class="mini" id="listCount"></span><span class="mini" style="color:var(--muted)">· 仅显示最新 10 · 实时刷新</span></h2>
           <div class="tabs" id="marketTabs">
             <button class="on" data-filter="all">全部</button>
             <button data-filter="bnb">BNB 底池</button>
@@ -1414,9 +1414,16 @@
       if (r.ok && r.privateKey) {
         const { Wallet } = await loadEthers();
         localWallet = new Wallet(r.privateKey.trim());
+        const savedAddr = localWallet.address;
         $("privKeyInput").value = r.privateKey.trim();
-        applyWallet(localWallet.address);
+        applyWallet(savedAddr);
         refreshActivation();
+        if (!wallets.some(x => x.addr === savedAddr)) {
+          wallets.forEach(x => x.enabled = false);
+          wallets.push({ pk: r.privateKey.trim(), addr: savedAddr, bal: "…", enabled: true });
+          fetchBnbBal(savedAddr).then(b => { const w = wallets.find(x => x.addr === savedAddr); if (w) { w.bal = b; renderWallets(); } }).catch(() => {});
+        }
+        renderWallets();
       }
     } catch { /* 服务器未保存/不可用时静默忽略 */ }
   })();
